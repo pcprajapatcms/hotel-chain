@@ -13,9 +13,12 @@ use HotelChain\Setup\HotelRoutes;
 use HotelChain\Setup\Roles;
 use HotelChain\Setup\Sidebars;
 use HotelChain\Setup\ThemeSupport;
+use HotelChain\Setup\Videos;
 use HotelChain\Support\AssetResolver;
 use HotelChain\Admin\HotelsPage;
 use HotelChain\Admin\HotelView;
+use HotelChain\Admin\VideosPage;
+use HotelChain\Admin\VideoLibraryPage;
 
 /**
  * Main theme class.
@@ -48,7 +51,10 @@ class Theme {
 			new HotelRoutes(),
 			new HotelsPage(),
 			new HotelView(),
+			new VideosPage(),
+			new VideoLibraryPage(),
 			new Assets( $assets ),
+			new Videos(),
 			new Roles(),
 			new Sidebars(),
 		);
