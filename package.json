@@ -1,0 +1,19 @@
+{
+  "name": "hotel-chain-theme",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OO WordPress theme with Tailwind CSS",
+  "scripts": {
+    "dev": "tailwindcss -i ./src/styles/main.css -o ./assets/css/main.css --watch",
+    "build": "tailwindcss -i ./src/styles/main.css -o ./assets/css/main.css --minify",
+    "lint:php": "composer run lint:php -- --extensions=php",
+    "lint": "npm run lint:php",
+    "fix:php": "composer run fix:php -- --extensions=php",
+    "fix": "npm run fix:php"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.14"
+  }
+}
