@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<ruleset name="Hotel Chain Theme">
+    <description>WordPress Coding Standards for Hotel Chain theme.</description>
+    <file>./</file>
+    <exclude-pattern>vendor/*</exclude-pattern>
+    <exclude-pattern>node_modules/*</exclude-pattern>
+    <exclude-pattern>assets/js/*</exclude-pattern>
+    <exclude-pattern>assets/css/*</exclude-pattern>
+    <exclude-pattern>*.js</exclude-pattern>
+    <exclude-pattern>*.json</exclude-pattern>
+    <exclude-pattern>*.css</exclude-pattern>
+    <exclude-pattern>src/**/*.js</exclude-pattern>
+    <exclude-pattern>src/**/*.css</exclude-pattern>
+    <rule ref="WordPress-Core" />
+    <rule ref="WordPress-Docs" />
+    <rule ref="WordPress-Extra" />
+    <rule ref="PHPCompatibilityWP">
+        <config name="testVersion" value="8.0-"/>
+    </rule>
+    <config name="minimum_supported_wp_version" value="6.6"/>
+    <config name="wordpress-theme" value="true"/>
+    <!-- Allow PSR-4 naming in app directory -->
+    <rule ref="WordPress.Files.FileName">
+        <exclude-pattern>app/*</exclude-pattern>
+    </rule>
+    <arg name="basepath" value="."/>
+    <arg value="sp"/>
+</ruleset>
