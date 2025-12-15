@@ -92,9 +92,9 @@ class Assets implements ServiceProviderInterface {
 	 * @return void
 	 */
 	public function enqueue_admin( string $hook ): void {
-		// Only load on our Hotel admin pages.
+		// Only load on our Hotel and Video admin pages.
 		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( ! in_array( $page, array( 'hotel-chain-accounts', 'hotel-details' ), true ) ) {
+		if ( ! in_array( $page, array( 'hotel-chain-accounts', 'hotel-details', 'hotel-video-upload', 'hotel-video-library' ), true ) ) {
 			return;
 		}
 
@@ -120,12 +120,32 @@ class Assets implements ServiceProviderInterface {
 			true
 		);
 
+		$video_tags = array();
+		if ( taxonomy_exists( 'video_tag' ) ) {
+			$terms = get_terms(
+				array(
+					'taxonomy'   => 'video_tag',
+					'hide_empty' => false,
+				)
+			);
+
+			if ( ! is_wp_error( $terms ) ) {
+				$video_tags = wp_list_pluck( $terms, 'name' );
+			}
+		}
+
 		wp_localize_script(
 			'hotel-chain-admin',
 			'hotelChainAdmin',
 			array(
-				'regCopiedText'  => esc_html__( 'Registration URL copied to clipboard!', 'hotel-chain' ),
-				'landCopiedText' => esc_html__( 'Landing page URL copied to clipboard!', 'hotel-chain' ),
+				'regCopiedText'       => esc_html__( 'Registration URL copied to clipboard!', 'hotel-chain' ),
+				'landCopiedText'      => esc_html__( 'Landing page URL copied to clipboard!', 'hotel-chain' ),
+				'videoUploadUrl'      => esc_url_raw( admin_url( 'edit.php?post_type=video&page=hotel-video-upload' ) ),
+				'uploadPreparingText' => esc_html__( 'Preparing upload...', 'hotel-chain' ),
+				'uploadInProgressText'=> esc_html__( 'Uploading...', 'hotel-chain' ),
+				'uploadFinishingText' => esc_html__( 'Finalizing upload...', 'hotel-chain' ),
+				'uploadErrorText'     => esc_html__( 'Upload failed. Please try again.', 'hotel-chain' ),
+				'videoTags'           => $video_tags,
 			)
 		);
 	}
