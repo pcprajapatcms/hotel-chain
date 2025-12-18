@@ -1,0 +1,387 @@
+<?php
+/**
+ * Hotel repository for database operations.
+ *
+ * @package HotelChain
+ */
+
+namespace HotelChain\Repositories;
+
+use HotelChain\Database\Schema;
+use WP_User;
+
+/**
+ * Hotel repository.
+ */
+class HotelRepository {
+	/**
+	 * Get table name.
+	 *
+	 * @return string
+	 */
+	private function get_table_name(): string {
+		return Schema::get_table_name( 'hotels' );
+	}
+
+	/**
+	 * Create a new hotel record.
+	 *
+	 * @param array $data Hotel data.
+	 * @return int|false Hotel ID on success, false on failure.
+	 */
+	public function create( array $data ) {
+		global $wpdb;
+		$table = $this->get_table_name();
+
+		$defaults = array(
+			'user_id'          => 0,
+			'hotel_code'       => '',
+			'hotel_name'       => '',
+			'hotel_slug'       => '',
+			'contact_email'    => '',
+			'contact_phone'    => '',
+			'address'          => '',
+			'city'             => '',
+			'country'          => '',
+			'access_duration'  => 0,
+			'license_start'    => null,
+			'license_end'      => null,
+			'registration_url' => '',
+			'landing_url'      => '',
+			'status'           => 'active',
+		);
+
+		$data = wp_parse_args( $data, $defaults );
+
+		// Calculate license dates if access_duration is set.
+		if ( $data['access_duration'] > 0 && ! $data['license_start'] ) {
+			$data['license_start'] = current_time( 'mysql' );
+			$data['license_end'] = gmdate( 'Y-m-d H:i:s', strtotime( $data['license_start'] ) + ( $data['access_duration'] * DAY_IN_SECONDS ) );
+		}
+
+		$result = $wpdb->insert(
+			$table,
+			array(
+				'user_id'          => absint( $data['user_id'] ),
+				'hotel_code'       => sanitize_text_field( $data['hotel_code'] ),
+				'hotel_name'       => sanitize_text_field( $data['hotel_name'] ),
+				'hotel_slug'       => sanitize_title( $data['hotel_slug'] ),
+				'contact_email'    => sanitize_email( $data['contact_email'] ),
+				'contact_phone'    => sanitize_text_field( $data['contact_phone'] ),
+				'address'          => sanitize_text_field( $data['address'] ),
+				'city'             => sanitize_text_field( $data['city'] ),
+				'country'          => sanitize_text_field( $data['country'] ),
+				'access_duration'  => absint( $data['access_duration'] ),
+				'license_start'    => $data['license_start'] ? sanitize_text_field( $data['license_start'] ) : null,
+				'license_end'      => $data['license_end'] ? sanitize_text_field( $data['license_end'] ) : null,
+				'registration_url' => esc_url_raw( $data['registration_url'] ),
+				'landing_url'      => esc_url_raw( $data['landing_url'] ),
+				'status'           => sanitize_text_field( $data['status'] ),
+			),
+			array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%s' )
+		);
+
+		if ( false === $result ) {
+			return false;
+		}
+
+		return $wpdb->insert_id;
+	}
+
+	/**
+	 * Update hotel record.
+	 *
+	 * @param int   $hotel_id Hotel ID.
+	 * @param array $data     Data to update.
+	 * @return bool True on success, false on failure.
+	 */
+	public function update( int $hotel_id, array $data ): bool {
+		global $wpdb;
+		$table = $this->get_table_name();
+
+		$update_data = array();
+		$format = array();
+
+		if ( isset( $data['hotel_name'] ) ) {
+			$update_data['hotel_name'] = sanitize_text_field( $data['hotel_name'] );
+			$format[] = '%s';
+		}
+
+		if ( isset( $data['contact_phone'] ) ) {
+			$update_data['contact_phone'] = sanitize_text_field( $data['contact_phone'] );
+			$format[] = '%s';
+		}
+
+		if ( isset( $data['address'] ) ) {
+			$update_data['address'] = sanitize_text_field( $data['address'] );
+			$format[] = '%s';
+		}
+
+		if ( isset( $data['city'] ) ) {
+			$update_data['city'] = sanitize_text_field( $data['city'] );
+			$format[] = '%s';
+		}
+
+		if ( isset( $data['country'] ) ) {
+			$update_data['country'] = sanitize_text_field( $data['country'] );
+			$format[] = '%s';
+		}
+
+		if ( isset( $data['access_duration'] ) ) {
+			$update_data['access_duration'] = absint( $data['access_duration'] );
+			$format[] = '%d';
+
+			// Recalculate license dates.
+			if ( $update_data['access_duration'] > 0 ) {
+				$hotel = $this->get_by_id( $hotel_id );
+				if ( $hotel ) {
+					$start = $hotel->license_start ? strtotime( $hotel->license_start ) : time();
+					$update_data['license_start'] = gmdate( 'Y-m-d H:i:s', $start );
+					$update_data['license_end'] = gmdate( 'Y-m-d H:i:s', $start + ( $update_data['access_duration'] * DAY_IN_SECONDS ) );
+					$format[] = '%s';
+					$format[] = '%s';
+				}
+			}
+		}
+
+		if ( isset( $data['status'] ) ) {
+			$update_data['status'] = sanitize_text_field( $data['status'] );
+			$format[] = '%s';
+		}
+
+		if ( empty( $update_data ) ) {
+			return false;
+		}
+
+		$result = $wpdb->update(
+			$table,
+			$update_data,
+			array( 'id' => $hotel_id ),
+			$format,
+			array( '%d' )
+		);
+
+		return false !== $result;
+	}
+
+	/**
+	 * Get hotel by ID.
+	 *
+	 * @param int $hotel_id Hotel ID.
+	 * @return object|null Hotel object or null.
+	 */
+	public function get_by_id( int $hotel_id ) {
+		global $wpdb;
+		$table = $this->get_table_name();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$hotel = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $hotel_id ) );
+
+		return $hotel ? $hotel : null;
+	}
+
+	/**
+	 * Get hotel by user ID.
+	 *
+	 * @param int $user_id WordPress user ID.
+	 * @return object|null Hotel object or null.
+	 */
+	public function get_by_user_id( int $user_id ) {
+		global $wpdb;
+		$table = $this->get_table_name();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$hotel = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE user_id = %d", $user_id ) );
+
+		return $hotel ? $hotel : null;
+	}
+
+	/**
+	 * Get hotel by slug.
+	 *
+	 * @param string $slug Hotel slug.
+	 * @return object|null Hotel object or null.
+	 */
+	public function get_by_slug( string $slug ) {
+		global $wpdb;
+		$table = $this->get_table_name();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$hotel = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE hotel_slug = %s", $slug ) );
+
+		return $hotel ? $hotel : null;
+	}
+
+	/**
+	 * Get hotel by code.
+	 *
+	 * @param string $code Hotel code.
+	 * @return object|null Hotel object or null.
+	 */
+	public function get_by_code( string $code ) {
+		global $wpdb;
+		$table = $this->get_table_name();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$hotel = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE hotel_code = %s", $code ) );
+
+		return $hotel ? $hotel : null;
+	}
+
+	/**
+	 * Get all hotels with optional filters.
+	 *
+	 * @param array $args Query arguments.
+	 * @return array Array of hotel objects.
+	 */
+	public function get_all( array $args = array() ): array {
+		global $wpdb;
+		$table = $this->get_table_name();
+
+		$defaults = array(
+			'status'   => '',
+			'search'   => '',
+			'orderby'  => 'id',
+			'order'    => 'DESC',
+			'limit'    => 20,
+			'offset'   => 0,
+		);
+
+		$args = wp_parse_args( $args, $defaults );
+
+		$where = array( '1=1' );
+		$where_values = array();
+
+		if ( ! empty( $args['status'] ) ) {
+			$where[] = 'status = %s';
+			$where_values[] = $args['status'];
+		}
+
+		if ( ! empty( $args['search'] ) ) {
+			$search = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+			$where[] = '(hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s)';
+			$where_values[] = $search;
+			$where_values[] = $search;
+			$where_values[] = $search;
+			$where_values[] = $search;
+			$where_values[] = $search;
+		}
+
+		$where_clause = implode( ' AND ', $where );
+
+		$orderby = in_array( $args['orderby'], array( 'id', 'hotel_name', 'created_at', 'city', 'country' ), true ) ? $args['orderby'] : 'id';
+		$order = 'DESC' === strtoupper( $args['order'] ) ? 'DESC' : 'ASC';
+
+		$limit = absint( $args['limit'] );
+		$offset = absint( $args['offset'] );
+
+		$query = "SELECT * FROM {$table} WHERE {$where_clause} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d";
+
+		if ( ! empty( $where_values ) ) {
+			$prepared_values = array_merge( $where_values, array( $limit, $offset ) );
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			$results = $wpdb->get_results( $wpdb->prepare( $query, ...$prepared_values ) );
+		} else {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$results = $wpdb->get_results( $wpdb->prepare( $query, $limit, $offset ) );
+		}
+
+		return $results ? $results : array();
+	}
+
+	/**
+	 * Get hotel count.
+	 *
+	 * @param array $args Query arguments.
+	 * @return int Count.
+	 */
+	public function count( array $args = array() ): int {
+		global $wpdb;
+		$table = $this->get_table_name();
+
+		$where = array( '1=1' );
+		$where_values = array();
+
+		if ( ! empty( $args['status'] ) ) {
+			$where[] = 'status = %s';
+			$where_values[] = $args['status'];
+		}
+
+		if ( ! empty( $args['search'] ) ) {
+			$search = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+			$where[] = '(hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s)';
+			$where_values[] = $search;
+			$where_values[] = $search;
+			$where_values[] = $search;
+			$where_values[] = $search;
+			$where_values[] = $search;
+		}
+
+		$where_clause = implode( ' AND ', $where );
+
+		if ( ! empty( $where_values ) ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_clause}", ...$where_values ) );
+		} else {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
+		}
+
+		return absint( $count );
+	}
+
+	/**
+	 * Delete hotel.
+	 *
+	 * @param int $hotel_id Hotel ID.
+	 * @return bool True on success, false on failure.
+	 */
+	public function delete( int $hotel_id ): bool {
+		global $wpdb;
+		$table = $this->get_table_name();
+
+		$result = $wpdb->delete(
+			$table,
+			array( 'id' => $hotel_id ),
+			array( '%d' )
+		);
+
+		return false !== $result;
+	}
+
+	/**
+	 * Get hotel with WordPress user data.
+	 *
+	 * @param int $hotel_id Hotel ID.
+	 * @return object|null Hotel object with user property or null.
+	 */
+	public function get_with_user( int $hotel_id ) {
+		$hotel = $this->get_by_id( $hotel_id );
+
+		if ( ! $hotel ) {
+			return null;
+		}
+
+		$hotel->user = get_user_by( 'id', $hotel->user_id );
+
+		return $hotel;
+	}
+
+	/**
+	 * Calculate days to renewal.
+	 *
+	 * @param object $hotel Hotel object.
+	 * @return int|null Days to renewal or null if not applicable.
+	 */
+	public function get_days_to_renewal( $hotel ): ?int {
+		if ( ! $hotel->license_end ) {
+			return null;
+		}
+
+		$end_timestamp = strtotime( $hotel->license_end );
+		$now_timestamp = current_time( 'timestamp' );
+		$days_diff = (int) ceil( ( $end_timestamp - $now_timestamp ) / DAY_IN_SECONDS );
+
+		return $days_diff;
+	}
+}

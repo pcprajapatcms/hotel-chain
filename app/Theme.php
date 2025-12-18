@@ -8,6 +8,7 @@
 namespace HotelChain;
 
 use HotelChain\Contracts\ServiceProviderInterface;
+use HotelChain\Database\Migration;
 use HotelChain\Setup\Assets;
 use HotelChain\Setup\HotelRoutes;
 use HotelChain\Setup\Roles;
@@ -19,6 +20,10 @@ use HotelChain\Admin\HotelsPage;
 use HotelChain\Admin\HotelView;
 use HotelChain\Admin\VideosPage;
 use HotelChain\Admin\VideoLibraryPage;
+use HotelChain\Admin\DatabaseToolsPage;
+use HotelChain\Admin\VideoTaxonomyPage;
+use HotelChain\Admin\VideoRequestsPage;
+use HotelChain\Frontend\HotelDashboard;
 
 /**
  * Main theme class.
@@ -47,12 +52,17 @@ class Theme {
 		$assets = new AssetResolver();
 
 		$this->providers = array(
+			new Migration(),
 			new ThemeSupport(),
 			new HotelRoutes(),
 			new HotelsPage(),
 			new HotelView(),
 			new VideosPage(),
 			new VideoLibraryPage(),
+			new DatabaseToolsPage(),
+			new VideoTaxonomyPage(),
+			new VideoRequestsPage(),
+			new HotelDashboard(),
 			new Assets( $assets ),
 			new Videos(),
 			new Roles(),
