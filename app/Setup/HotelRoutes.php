@@ -8,6 +8,7 @@
 namespace HotelChain\Setup;
 
 use HotelChain\Contracts\ServiceProviderInterface;
+use HotelChain\Repositories\HotelRepository;
 
 /**
  * Handle hotel custom URLs.
@@ -82,15 +83,14 @@ class HotelRoutes implements ServiceProviderInterface {
 	 * @return \WP_User|null
 	 */
 	private function get_hotel_by_slug( string $slug ): ?\WP_User {
-		$users = get_users(
-			array(
-				'role'       => 'hotel',
-				'meta_key'   => 'hotel_slug',
-				'meta_value' => $slug,
-				'number'     => 1,
-			)
-		);
+		$repository = new HotelRepository();
+		$hotel = $repository->get_by_slug( $slug );
 
-		return ! empty( $users ) ? $users[0] : null;
+		if ( ! $hotel ) {
+			return null;
+		}
+
+		$user = get_user_by( 'id', $hotel->user_id );
+		return $user ? $user : null;
 	}
 }

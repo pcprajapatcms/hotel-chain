@@ -8,6 +8,7 @@
 namespace HotelChain\Admin;
 
 use HotelChain\Contracts\ServiceProviderInterface;
+use HotelChain\Repositories\VideoRepository;
 
 /**
  * Render Video upload admin page.
@@ -23,24 +24,24 @@ class VideosPage implements ServiceProviderInterface {
 		add_action( 'admin_post_hotel_chain_upload_video', array( $this, 'handle_upload' ) );
 	}
 
-	/**
-	 * Register submenu under Videos post type.
-	 *
-	 * @return void
-	 */
-	public function register_menu(): void {
-		// Parent slug for custom post type "video".
-		$parent_slug = 'edit.php?post_type=video';
+		/**
+		 * Register admin menu entry.
+		 *
+		 * @return void
+		 */
+		public function register_menu(): void {
+			// Attach under the main Hotel Accounts menu for consistency.
+			$parent_slug = 'hotel-chain-accounts';
 
-		add_submenu_page(
-			$parent_slug,
-			__( 'Upload Videos', 'hotel-chain' ),
-			__( 'Upload Videos', 'hotel-chain' ),
-			'manage_options',
-			'hotel-video-upload',
-			array( $this, 'render_page' )
-		);
-	}
+			add_submenu_page(
+				$parent_slug,
+				__( 'Upload Videos', 'hotel-chain' ),
+				__( 'Upload Videos', 'hotel-chain' ),
+				'manage_options',
+				'hotel-video-upload',
+				array( $this, 'render_page' )
+			);
+		}
 
 	/**
 	 * Handle video upload form submit.
@@ -60,114 +61,141 @@ class VideosPage implements ServiceProviderInterface {
 
 		$title       = isset( $_POST['video_title'] ) ? sanitize_text_field( wp_unslash( $_POST['video_title'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$description = isset( $_POST['video_description'] ) ? wp_kses_post( wp_unslash( $_POST['video_description'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$category_id = isset( $_POST['video_category'] ) ? absint( $_POST['video_category'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$tags_raw    = isset( $_POST['video_tags'] ) ? sanitize_text_field( wp_unslash( $_POST['video_tags'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$language    = isset( $_POST['video_language'] ) ? sanitize_text_field( wp_unslash( $_POST['video_language'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$category_id = isset( $_POST['video_category'] ) ? sanitize_text_field( wp_unslash( $_POST['video_category'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+
+		// Tags are selected one-by-one (checkboxes); normalise to comma-separated string for storage.
+		$tags_raw = '';
+		if ( isset( $_POST['video_tags'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$raw_tags = (array) wp_unslash( $_POST['video_tags'] );
+			$clean    = array();
+			foreach ( $raw_tags as $tag ) {
+				$tag = sanitize_text_field( $tag );
+				if ( '' !== $tag ) {
+					$clean[] = $tag;
+				}
+			}
+			$tags_raw = implode( ',', array_unique( $clean ) );
+		}
+
+		$language = isset( $_POST['video_language'] ) ? sanitize_text_field( wp_unslash( $_POST['video_language'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		if ( empty( $title ) || empty( $_FILES['video_file']['name'] ?? '' ) ) {
 			wp_safe_redirect(
 				add_query_arg(
 					array(
-						'post_type'  => 'video',
-						'page'       => 'hotel-video-upload',
-						'video_err'  => 'missing_required',
+						'page'      => 'hotel-video-upload',
+						'video_err' => 'missing_required',
 					),
-					admin_url( 'edit.php' )
+					admin_url( 'admin.php' )
 				)
 			);
 			exit;
-		}
-
-		$post_id = wp_insert_post(
-			array(
-				'post_title'   => $title,
-				'post_content' => $description,
-				'post_status'  => 'publish',
-				'post_type'    => 'video',
-				'meta_input'   => array(
-					'video_default_language' => $language,
-				),
-			)
-		);
-
-		if ( is_wp_error( $post_id ) ) {
-			wp_safe_redirect(
-				add_query_arg(
-					array(
-						'post_type'  => 'video',
-						'page'       => 'hotel-video-upload',
-						'video_err'  => 'create_failed',
-					),
-					admin_url( 'edit.php' )
-				)
-			);
-			exit;
-		}
-
-		// Attach category.
-		if ( $category_id ) {
-			wp_set_object_terms( $post_id, array( $category_id ), 'video_category', false );
-		}
-
-		// Attach tags (comma separated).
-		if ( ! empty( $tags_raw ) ) {
-			$tags = array_filter(
-				array_map(
-					'trim',
-					explode( ',', $tags_raw )
-				)
-			);
-			if ( ! empty( $tags ) ) {
-				wp_set_object_terms( $post_id, $tags, 'video_tag', false );
-			}
 		}
 
 		// Handle main video file upload.
 		$video_attachment_id = 0;
 		if ( ! empty( $_FILES['video_file']['name'] ?? '' ) ) {
-			$video_attachment_id = media_handle_upload( 'video_file', $post_id );
+			// Upload as an unattached media item (no CPT parent).
+			$video_attachment_id = media_handle_upload( 'video_file', 0 );
+		}
+
+		// Optional thumbnail upload (do this now so we can persist it together with metadata).
+		$thumb_attachment_id = 0;
+		$thumb_url           = '';
+		if ( ! empty( $_FILES['video_thumbnail']['name'] ?? '' ) ) {
+			// Upload thumbnail as unattached media and track its ID/URL only.
+			$thumb_attachment_id = media_handle_upload( 'video_thumbnail', 0 );
+			if ( ! is_wp_error( $thumb_attachment_id ) && $thumb_attachment_id ) {
+				$thumb_url = wp_get_attachment_url( $thumb_attachment_id ) ?: '';
+			} else {
+				$thumb_attachment_id = 0;
+			}
 		}
 
 		if ( ! is_wp_error( $video_attachment_id ) && $video_attachment_id ) {
-			update_post_meta( $post_id, 'video_file_id', $video_attachment_id );
 
-			// Derive duration from attachment metadata and store as human-readable label.
-			$duration_label = '';
-			$metadata       = wp_get_attachment_metadata( $video_attachment_id );
+			// Derive duration and technical metadata from attachment metadata.
+			$duration_label    = '';
+			$duration_seconds  = null;
+			$file_size         = null;
+			$resolution_width  = null;
+			$resolution_height = null;
+			$file_format       = '';
+
+			$metadata = wp_get_attachment_metadata( $video_attachment_id );
+
 			if ( ! empty( $metadata['length_formatted'] ) ) {
 				$duration_label = $metadata['length_formatted'];
-			} else {
-				$file = get_attached_file( $video_attachment_id );
-				if ( $file && function_exists( 'wp_read_video_metadata' ) ) {
+			}
+
+			if ( isset( $metadata['length'] ) ) {
+				$duration_seconds = (int) $metadata['length'];
+			}
+
+			if ( isset( $metadata['filesize'] ) ) {
+				$file_size = (int) $metadata['filesize'];
+			}
+
+			if ( isset( $metadata['width'] ) ) {
+				$resolution_width = (int) $metadata['width'];
+			}
+
+			if ( isset( $metadata['height'] ) ) {
+				$resolution_height = (int) $metadata['height'];
+			}
+
+			$file = get_attached_file( $video_attachment_id );
+			if ( $file ) {
+				$ext = pathinfo( $file, PATHINFO_EXTENSION );
+				if ( $ext ) {
+					$file_format = strtoupper( $ext );
+				}
+
+				// Fallback to wp_read_video_metadata if duration label is still empty.
+				if ( '' === $duration_label && function_exists( 'wp_read_video_metadata' ) ) {
 					$video_meta = wp_read_video_metadata( $file );
 					if ( ! empty( $video_meta['length_formatted'] ) ) {
 						$duration_label = $video_meta['length_formatted'];
 					}
+					if ( isset( $video_meta['length'] ) && null === $duration_seconds ) {
+						$duration_seconds = (int) $video_meta['length'];
+					}
 				}
 			}
 
-			if ( $duration_label ) {
-				update_post_meta( $post_id, 'video_duration_label', $duration_label );
-			}
-		}
-
-		// Optional thumbnail upload.
-		if ( ! empty( $_FILES['video_thumbnail']['name'] ?? '' ) ) {
-			$thumb_attachment_id = media_handle_upload( 'video_thumbnail', $post_id );
-			if ( ! is_wp_error( $thumb_attachment_id ) && $thumb_attachment_id ) {
-				set_post_thumbnail( $post_id, $thumb_attachment_id );
-			}
+			// Persist metadata into custom video_metadata table.
+			$video_repository = new VideoRepository();
+			$video_id = $video_repository->create_or_update(
+				null,
+				array(
+					'title'              => $title,
+					'description'        => $description,
+					'category'           => $category_id ? (string) $category_id : '',
+					'tags'               => $tags_raw,
+					'thumbnail_id'       => $thumb_attachment_id,
+					'thumbnail_url'      => $thumb_url,
+					'video_file_id'      => $video_attachment_id,
+					'duration_seconds'   => $duration_seconds,
+					'duration_label'     => $duration_label,
+					'file_size'          => $file_size,
+					'file_format'        => $file_format,
+					'resolution_width'   => $resolution_width,
+					'resolution_height'  => $resolution_height,
+					'default_language'   => $language,
+					'total_views'        => 0,
+					'total_completions'  => 0,
+					'avg_completion_rate'=> 0.00,
+				)
+			);
 		}
 
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'post_type' => 'video',
-					'page'      => 'hotel-video-upload',
-					'video_ok'  => 1,
-					'video_id'  => $post_id,
+					'page'     => 'hotel-video-upload',
+					'video_ok' => 1,
 				),
-				admin_url( 'edit.php' )
+				admin_url( 'admin.php' )
 			)
 		);
 		exit;
@@ -186,12 +214,28 @@ class VideosPage implements ServiceProviderInterface {
 		$video_ok  = isset( $_GET['video_ok'] ) ? absint( $_GET['video_ok'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$video_err = isset( $_GET['video_err'] ) ? sanitize_text_field( wp_unslash( $_GET['video_err'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		$categories = get_terms(
-			array(
-				'taxonomy'   => 'video_category',
-				'hide_empty' => false,
-			)
-		);
+		// Categories & suggested tags come from the dedicated Video Taxonomy settings page.
+		$raw_categories   = get_option( 'hotel_chain_video_categories', array() );
+		$tags_suggestions = get_option( 'hotel_chain_video_tags', array() );
+
+		// Normalise categories so a line like \"Onboarding, Safety\" becomes two options.
+		$categories = array();
+		if ( is_array( $raw_categories ) ) {
+			foreach ( $raw_categories as $line ) {
+				$parts = explode( ',', (string) $line );
+				foreach ( $parts as $part ) {
+					$part = trim( $part );
+					if ( '' !== $part ) {
+						$categories[] = $part;
+					}
+				}
+			}
+		}
+		$categories = array_values( array_unique( $categories ) );
+
+		if ( ! is_array( $tags_suggestions ) ) {
+			$tags_suggestions = array();
+		}
 		?>
 		<div class="wrap w-8/12 mx-auto">
 			<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Upload New Video', 'hotel-chain' ); ?></h1>
@@ -265,16 +309,27 @@ class VideosPage implements ServiceProviderInterface {
 							</div>
 							<div class="mb-4">
 								<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_category"><?php esc_html_e( 'Category', 'hotel-chain' ); ?></label>
-								<select id="video_category" name="video_category" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500">
+								<select id="video_category" name="video_category" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 max-w-full">
 									<option value=""><?php esc_html_e( 'Select category...', 'hotel-chain' ); ?></option>
-									<?php foreach ( $categories as $term ) : ?>
-										<option value="<?php echo esc_attr( $term->term_id ); ?>"><?php echo esc_html( $term->name ); ?></option>
+									<?php foreach ( $categories as $category_name ) : ?>
+										<option value="<?php echo esc_attr( $category_name ); ?>"><?php echo esc_html( $category_name ); ?></option>
 									<?php endforeach; ?>
 								</select>
 							</div>
 							<div class="mb-4">
-								<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_tags"><?php esc_html_e( 'Tags (comma separated)', 'hotel-chain' ); ?></label>
-								<input type="text" id="video_tags" name="video_tags" placeholder="<?php esc_attr_e( 'welcome, onboarding, tour', 'hotel-chain' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
+								<label class="mb-1 block text-gray-700 text-sm font-semibold"><?php esc_html_e( 'Tags', 'hotel-chain' ); ?></label>
+								<?php if ( ! empty( $tags_suggestions ) ) : ?>
+									<div class="flex flex-wrap gap-2">
+										<?php foreach ( $tags_suggestions as $tag_name ) : ?>
+											<label class="inline-flex items-center gap-1 text-sm text-slate-800 border border-slate-300 rounded px-2 py-1 bg-white">
+												<input type="checkbox" name="video_tags[]" value="<?php echo esc_attr( $tag_name ); ?>" />
+												<span><?php echo esc_html( $tag_name ); ?></span>
+											</label>
+										<?php endforeach; ?>
+									</div>
+								<?php else : ?>
+									<p class="text-xs text-gray-600"><?php esc_html_e( 'No tags defined yet. Add tags in the Video Taxonomy page.', 'hotel-chain' ); ?></p>
+								<?php endif; ?>
 							</div>
 						</div>
 						<div>

@@ -8,6 +8,7 @@
 namespace HotelChain\Admin;
 
 use HotelChain\Contracts\ServiceProviderInterface;
+use HotelChain\Repositories\HotelRepository;
 
 /**
  * Render Hotel admin page.
@@ -36,12 +37,8 @@ class HotelsPage implements ServiceProviderInterface {
 
 		check_admin_referer( 'hotel_chain_export_hotels' );
 
-		$hotels = get_users(
-			array(
-				'role'   => 'hotel',
-				'number' => -1,
-			)
-		);
+		$repository = new HotelRepository();
+		$hotels = $repository->get_all( array( 'limit' => -1 ) );
 
 		nocache_headers();
 		header( 'Content-Type: text/csv; charset=utf-8' );
@@ -71,23 +68,23 @@ class HotelsPage implements ServiceProviderInterface {
 		);
 
 		foreach ( $hotels as $hotel ) {
-			$code            = get_user_meta( $hotel->ID, 'hotel_code', true );
-			$name            = get_user_meta( $hotel->ID, 'hotel_name', true );
-			$email           = $hotel->user_email;
-			$phone           = get_user_meta( $hotel->ID, 'contact_phone', true );
-			$city            = get_user_meta( $hotel->ID, 'city', true );
-			$country         = get_user_meta( $hotel->ID, 'country', true );
-			$access_duration = (int) get_user_meta( $hotel->ID, 'access_duration', true );
-			$reg_url         = get_user_meta( $hotel->ID, 'hotel_registration', true );
-			$land_url        = get_user_meta( $hotel->ID, 'hotel_landing', true );
+			$code            = $hotel->hotel_code ?? '';
+			$name            = $hotel->hotel_name ?? '';
+			$email           = $hotel->contact_email ?? '';
+			$phone           = $hotel->contact_phone ?? '';
+			$city            = $hotel->city ?? '';
+			$country         = $hotel->country ?? '';
+			$access_duration = (int) ( $hotel->access_duration ?? 0 );
+			$reg_url         = $hotel->registration_url ?? '';
+			$land_url        = $hotel->landing_url ?? '';
 
-			$start_timestamp = strtotime( $hotel->user_registered );
+			$start_timestamp = $hotel->license_start ? strtotime( $hotel->license_start ) : null;
 			if ( ! $start_timestamp ) {
-				$start_timestamp = time();
+				$start_timestamp = strtotime( $hotel->created_at ?? current_time( 'mysql' ) );
 			}
 
-			if ( $access_duration > 0 ) {
-				$end_timestamp   = $start_timestamp + ( $access_duration * DAY_IN_SECONDS );
+			if ( $access_duration > 0 && $hotel->license_end ) {
+				$end_timestamp   = strtotime( $hotel->license_end );
 				$now_timestamp   = time();
 				$days_diff       = (int) ceil( ( $end_timestamp - $now_timestamp ) / DAY_IN_SECONDS );
 				$start_label     = gmdate( 'Y-m-d', $start_timestamp );
@@ -102,7 +99,7 @@ class HotelsPage implements ServiceProviderInterface {
 			fputcsv(
 				$output,
 				array(
-					$name ? $name : $hotel->display_name,
+					$name,
 					$code,
 					$email,
 					$phone,
@@ -223,22 +220,45 @@ class HotelsPage implements ServiceProviderInterface {
 			exit;
 		}
 
-		update_user_meta( $user_id, 'hotel_code', $code );
-		update_user_meta( $user_id, 'hotel_name', $data['name'] );
-		update_user_meta( $user_id, 'hotel_slug', $hotel_slug );
-		update_user_meta( $user_id, 'contact_phone', $data['phone'] );
-		update_user_meta( $user_id, 'address', $data['address'] );
-		update_user_meta( $user_id, 'city', $data['city'] );
-		update_user_meta( $user_id, 'country', $data['country'] );
-		update_user_meta( $user_id, 'access_duration', $data['duration'] );
-		update_user_meta( $user_id, 'hotel_registration', $this->registration_url( $code ) );
-		update_user_meta( $user_id, 'hotel_landing', $this->landing_url( $hotel_slug ) );
+		// Create hotel record in custom table.
+		$repository = new HotelRepository();
+		$hotel_data = array(
+			'user_id'          => $user_id,
+			'hotel_code'       => $code,
+			'hotel_name'       => $data['name'],
+			'hotel_slug'       => $hotel_slug,
+			'contact_email'    => $data['email'],
+			'contact_phone'    => $data['phone'],
+			'address'          => $data['address'],
+			'city'             => $data['city'],
+			'country'          => $data['country'],
+			'access_duration'  => ! empty( $data['duration'] ) ? absint( $data['duration'] ) : 0,
+			'registration_url' => $this->registration_url( $code ),
+			'landing_url'      => $this->landing_url( $hotel_slug ),
+			'status'           => 'active',
+		);
+
+		$hotel_id = $repository->create( $hotel_data );
+
+		if ( ! $hotel_id ) {
+			// Fallback: still save to user meta for backward compatibility.
+			update_user_meta( $user_id, 'hotel_code', $code );
+			update_user_meta( $user_id, 'hotel_name', $data['name'] );
+			update_user_meta( $user_id, 'hotel_slug', $hotel_slug );
+			update_user_meta( $user_id, 'contact_phone', $data['phone'] );
+			update_user_meta( $user_id, 'address', $data['address'] );
+			update_user_meta( $user_id, 'city', $data['city'] );
+			update_user_meta( $user_id, 'country', $data['country'] );
+			update_user_meta( $user_id, 'access_duration', $data['duration'] );
+			update_user_meta( $user_id, 'hotel_registration', $this->registration_url( $code ) );
+			update_user_meta( $user_id, 'hotel_landing', $this->landing_url( $hotel_slug ) );
+		}
 
 		wp_safe_redirect(
 			add_query_arg(
 				array(
 					'page'          => 'hotel-chain-accounts',
-					'hotel_created' => $user_id,
+					'hotel_created' => $hotel_id ? $hotel_id : $user_id,
 				),
 				admin_url( 'admin.php' )
 			)
@@ -346,53 +366,19 @@ class HotelsPage implements ServiceProviderInterface {
 
 		$search_term = isset( $_GET['hotel_search'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['hotel_search'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		$user_query_args = array(
-			'role'    => 'hotel',
-			'number'  => 20,
-			'orderby' => 'ID',
-			'order'   => 'DESC',
+		$repository = new HotelRepository();
+
+		// Get hotels from custom table.
+		$hotels = $repository->get_all(
+			array(
+				'search'  => $search_term,
+				'status'  => 'active',
+				'orderby' => 'id',
+				'order'   => 'DESC',
+				'limit'   => 20,
+				'offset'  => 0,
+			)
 		);
-
-		$hotels = get_users( $user_query_args );
-
-		// Filter hotels if search term exists
-		if ( ! empty( $search_term ) ) {
-			$filtered_hotels = array();
-			$search_lower = strtolower( $search_term );
-
-			error_log( 'HOTEL SEARCH: Searching for "' . $search_lower . '" among ' . count( $hotels ) . ' hotels' );
-
-			foreach ( $hotels as $hotel ) {
-				$hotel_name = get_user_meta( $hotel->ID, 'hotel_name', true );
-				$hotel_code = get_user_meta( $hotel->ID, 'hotel_code', true );
-				$email = $hotel->user_email;
-				$city = get_user_meta( $hotel->ID, 'city', true );
-				$country = get_user_meta( $hotel->ID, 'country', true );
-
-				// Build searchable text - make sure all fields are strings
-				$searchable_parts = array_filter( array(
-					(string) $hotel_name,
-					(string) $hotel_code,
-					(string) $email,
-					(string) $city,
-					(string) $country,
-					(string) $hotel->user_login,
-					(string) $hotel->display_name,
-				) );
-
-				$searchable_text = strtolower( implode( ' ', $searchable_parts ) );
-
-				error_log( 'HOTEL SEARCH: Checking hotel ID ' . $hotel->ID . ' - Name: "' . $hotel_name . '", Code: "' . $hotel_code . '", Searchable: "' . $searchable_text . '"' );
-
-				if ( strpos( $searchable_text, $search_lower ) !== false ) {
-					$filtered_hotels[] = $hotel;
-					error_log( 'HOTEL SEARCH: MATCH found for hotel ID ' . $hotel->ID );
-				}
-			}
-
-			error_log( 'HOTEL SEARCH: Found ' . count( $filtered_hotels ) . ' matching hotels out of ' . count( $hotels ) );
-			$hotels = $filtered_hotels;
-		}
 
 		$created_id = isset( $_GET['hotel_created'] ) ? absint( $_GET['hotel_created'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$error_type = isset( $_GET['hotel_error'] ) ? sanitize_text_field( wp_unslash( $_GET['hotel_error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -404,10 +390,25 @@ class HotelsPage implements ServiceProviderInterface {
 
 			<?php if ( $created_id ) : ?>
 				<?php
-				$hotel_name = get_user_meta( $created_id, 'hotel_name', true );
-				$hotel_code = get_user_meta( $created_id, 'hotel_code', true );
-				$reg_url    = get_user_meta( $created_id, 'hotel_registration', true );
-				$land_url   = get_user_meta( $created_id, 'hotel_landing', true );
+				$created_hotel = $repository->get_by_id( $created_id );
+				if ( ! $created_hotel ) {
+					// Fallback to user meta for backward compatibility.
+					$user = get_user_by( 'id', $created_id );
+					if ( $user ) {
+						$created_hotel = (object) array(
+							'hotel_name'       => get_user_meta( $created_id, 'hotel_name', true ) ?: $user->display_name,
+							'hotel_code'       => get_user_meta( $created_id, 'hotel_code', true ),
+							'registration_url' => get_user_meta( $created_id, 'hotel_registration', true ),
+							'landing_url'      => get_user_meta( $created_id, 'hotel_landing', true ),
+						);
+					}
+				}
+
+				if ( $created_hotel ) :
+					$hotel_name = $created_hotel->hotel_name ?? '';
+					$hotel_code = $created_hotel->hotel_code ?? '';
+					$reg_url    = $created_hotel->registration_url ?? '';
+					$land_url   = $created_hotel->landing_url ?? '';
 				?>
 				<div class="bg-white rounded p-4 mb-6 border border-solid border-gray-400">
 					<div class="mb-4 pb-3 border-b-2 border-gray-300">
@@ -485,6 +486,7 @@ class HotelsPage implements ServiceProviderInterface {
 						</div>
 					</div>
 				</div>
+				<?php endif; ?>
 			<?php endif; ?>
 			<?php if ( $error_type ) : ?>
 				<div class="notice notice-error">
@@ -639,19 +641,17 @@ class HotelsPage implements ServiceProviderInterface {
 							</div>
 							<?php foreach ( $hotels as $hotel ) : ?>
 								<?php
-								$code            = get_user_meta( $hotel->ID, 'hotel_code', true );
-								$name            = get_user_meta( $hotel->ID, 'hotel_name', true );
-								$reg             = get_user_meta( $hotel->ID, 'hotel_registration', true );
-								$land            = get_user_meta( $hotel->ID, 'hotel_landing', true );
-								$access_duration = (int) get_user_meta( $hotel->ID, 'access_duration', true );
+								$code            = $hotel->hotel_code ?? '';
+								$name            = $hotel->hotel_name ?? '';
+								$access_duration = (int) ( $hotel->access_duration ?? 0 );
 
-								$start_timestamp = strtotime( $hotel->user_registered );
+								$start_timestamp = $hotel->license_start ? strtotime( $hotel->license_start ) : null;
 								if ( ! $start_timestamp ) {
-									$start_timestamp = current_time( 'timestamp' );
+									$start_timestamp = strtotime( $hotel->created_at ?? current_time( 'mysql' ) );
 								}
 
-								if ( $access_duration > 0 ) {
-									$end_timestamp   = $start_timestamp + ( $access_duration * DAY_IN_SECONDS );
+								if ( $access_duration > 0 && $hotel->license_end ) {
+									$end_timestamp   = strtotime( $hotel->license_end );
 									$now_timestamp   = current_time( 'timestamp' );
 									$days_diff       = (int) ceil( ( $end_timestamp - $now_timestamp ) / DAY_IN_SECONDS );
 									$license_period  = date_i18n( 'M j, Y', $start_timestamp ) . "\n" . esc_html__( 'to', 'hotel-chain' ) . ' ' . date_i18n( 'M j, Y', $end_timestamp );
@@ -663,7 +663,7 @@ class HotelsPage implements ServiceProviderInterface {
 								$detail_url = add_query_arg(
 									array(
 										'page'     => 'hotel-details',
-										'hotel_id' => $hotel->ID,
+										'hotel_id' => $hotel->id,
 									),
 									admin_url( 'admin.php' )
 								);
@@ -677,7 +677,7 @@ class HotelsPage implements ServiceProviderInterface {
 											<path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"></path>
 											<path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"></path>
 										</svg>
-										<span><?php echo esc_html( $name ? $name : $hotel->display_name ); ?></span>
+										<span><?php echo esc_html( $name ); ?></span>
 									</div>
 									<div class="col-span-2 flex items-center">
 										<span class="px-2 py-1 bg-gray-100 border border-gray-300 rounded font-mono text-xs"><?php echo esc_html( $code ); ?></span>
@@ -714,19 +714,17 @@ class HotelsPage implements ServiceProviderInterface {
 						<div class="md:hidden divide-y-2 divide-gray-300">
 							<?php foreach ( $hotels as $hotel ) : ?>
 								<?php
-								$code            = get_user_meta( $hotel->ID, 'hotel_code', true );
-								$name            = get_user_meta( $hotel->ID, 'hotel_name', true );
-								$reg             = get_user_meta( $hotel->ID, 'hotel_registration', true );
-								$land            = get_user_meta( $hotel->ID, 'hotel_landing', true );
-								$access_duration = (int) get_user_meta( $hotel->ID, 'access_duration', true );
+								$code            = $hotel->hotel_code ?? '';
+								$name            = $hotel->hotel_name ?? '';
+								$access_duration = (int) ( $hotel->access_duration ?? 0 );
 
-								$start_timestamp = strtotime( $hotel->user_registered );
+								$start_timestamp = $hotel->license_start ? strtotime( $hotel->license_start ) : null;
 								if ( ! $start_timestamp ) {
-									$start_timestamp = current_time( 'timestamp' );
+									$start_timestamp = strtotime( $hotel->created_at ?? current_time( 'mysql' ) );
 								}
 
-								if ( $access_duration > 0 ) {
-									$end_timestamp   = $start_timestamp + ( $access_duration * DAY_IN_SECONDS );
+								if ( $access_duration > 0 && $hotel->license_end ) {
+									$end_timestamp   = strtotime( $hotel->license_end );
 									$now_timestamp   = current_time( 'timestamp' );
 									$days_diff       = (int) ceil( ( $end_timestamp - $now_timestamp ) / DAY_IN_SECONDS );
 									$license_period  = date_i18n( 'M j, Y', $start_timestamp ) . "\n" . esc_html__( 'to', 'hotel-chain' ) . ' ' . date_i18n( 'M j, Y', $end_timestamp );
@@ -738,7 +736,7 @@ class HotelsPage implements ServiceProviderInterface {
 								$detail_url = add_query_arg(
 									array(
 										'page'     => 'hotel-details',
-										'hotel_id' => $hotel->ID,
+										'hotel_id' => $hotel->id,
 									),
 									admin_url( 'admin.php' )
 								);
@@ -754,7 +752,7 @@ class HotelsPage implements ServiceProviderInterface {
 												<path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"></path>
 											</svg>
 											<div>
-												<div class="mb-1"><?php echo esc_html( $name ? $name : $hotel->display_name ); ?></div>
+												<div class="mb-1"><?php echo esc_html( $name ); ?></div>
 												<span class="px-2 py-1 bg-gray-100 border border-gray-300 rounded font-mono text-xs"><?php echo esc_html( $code ); ?></span>
 											</div>
 										</div>

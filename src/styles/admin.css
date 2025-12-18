@@ -154,3 +154,10 @@
 .wrap .mt-0 {
 	margin-top: 0 !important;
 }
+#wpbody-content{
+	min-height: 100vh;
+}
+
+.max-w-full{
+	max-width: 100% !important;
+}
