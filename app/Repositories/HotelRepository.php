@@ -127,6 +127,16 @@ class HotelRepository {
 			$format[] = '%s';
 		}
 
+		if ( isset( $data['website'] ) ) {
+			$update_data['website'] = esc_url_raw( $data['website'] );
+			$format[] = '%s';
+		}
+
+		if ( isset( $data['welcome_section'] ) ) {
+			$update_data['welcome_section'] = $data['welcome_section']; // Already JSON encoded.
+			$format[] = '%s';
+		}
+
 		if ( isset( $data['access_duration'] ) ) {
 			$update_data['access_duration'] = absint( $data['access_duration'] );
 			$format[] = '%d';

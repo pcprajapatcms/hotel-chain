@@ -21,7 +21,7 @@ class Migration implements ServiceProviderInterface {
 	/**
 	 * Current database version.
 	 */
-	const DB_VERSION = '1.2.1';
+	const DB_VERSION = '1.3.6';
 
 	/**
 	 * Register service hooks.
@@ -98,7 +98,78 @@ class Migration implements ServiceProviderInterface {
 				ADD KEY status_by_hotel (status_by_hotel)"
 			);
 		}
-	}
+
+		// Add verification columns to guests table.
+		$guests_table = Schema::get_table_name( 'guests' );
+
+		// Add verification_token column.
+		$token_exists = $wpdb->get_results(
+			$wpdb->prepare(
+				"SHOW COLUMNS FROM {$guests_table} LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				'verification_token'
+			)
+		);
+
+		if ( empty( $token_exists ) ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query(
+				"ALTER TABLE {$guests_table} 
+				ADD COLUMN verification_token varchar(64) DEFAULT NULL AFTER registration_code,
+				ADD COLUMN email_verified_at datetime DEFAULT NULL AFTER verification_token,
+				ADD KEY verification_token (verification_token)"
+			);
+		}
+
+		// Add website column to hotels table.
+		$hotels_table = Schema::get_table_name( 'hotels' );
+
+		$website_exists = $wpdb->get_results(
+			$wpdb->prepare(
+				"SHOW COLUMNS FROM {$hotels_table} LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				'website'
+			)
+		);
+
+		if ( empty( $website_exists ) ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query(
+				"ALTER TABLE {$hotels_table} ADD COLUMN website varchar(500) DEFAULT NULL AFTER country"
+			);
+		}
+
+		// Add welcome_section column to hotels table.
+		$welcome_exists = $wpdb->get_results(
+			$wpdb->prepare(
+				"SHOW COLUMNS FROM {$hotels_table} LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				'welcome_section'
+			)
+		);
+
+		if ( empty( $welcome_exists ) ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query(
+				"ALTER TABLE {$hotels_table} ADD COLUMN welcome_section longtext DEFAULT NULL COMMENT 'JSON: welcome video, message, steps' AFTER website"
+			);
+		}
+
+		// Add practice_tip column to video_metadata table.
+		$video_metadata_table = Schema::get_table_name( 'video_metadata' );
+
+		$practice_tip_exists = $wpdb->get_results(
+			$wpdb->prepare(
+				"SHOW COLUMNS FROM {$video_metadata_table} LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				'practice_tip'
+			)
+		);
+
+		if ( empty( $practice_tip_exists ) ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query(
+				"ALTER TABLE {$video_metadata_table} ADD COLUMN practice_tip longtext DEFAULT NULL COMMENT 'Practice tip for this video' AFTER description"
+			);
+		}
+
+		}
 
 	/**
 	 * Drop all custom tables (for uninstall).
