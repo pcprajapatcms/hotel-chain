@@ -361,6 +361,10 @@ class VideoLibraryPage implements ServiceProviderInterface {
 								<textarea id="video_description_inline" name="video_description" rows="4" class="w-full border border-solid border-slate-300 rounded p-3 bg-white min-h-20 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500"><?php echo esc_textarea( $description ); ?></textarea>
 							</div>
 							<div class="mb-4">
+								<label class="mb-1 text-sm font-semibold text-slate-800 block" for="video_practice_tip_inline"><?php esc_html_e( 'Practice Tip', 'hotel-chain' ); ?></label>
+								<textarea id="video_practice_tip_inline" name="video_practice_tip" rows="3" class="w-full border border-solid border-slate-300 rounded p-3 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500"><?php echo esc_textarea( $video->practice_tip ?? '' ); ?></textarea>
+							</div>
+							<div class="mb-4">
 								<label class="mb-1 text-sm font-semibold text-slate-800 block" for="video_language_inline"><?php esc_html_e( 'Default Language', 'hotel-chain' ); ?></label>
 								<input type="text" id="video_language_inline" name="video_language" value="<?php echo esc_attr( $video->default_language ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
 							</div>
@@ -761,9 +765,10 @@ class VideoLibraryPage implements ServiceProviderInterface {
 			exit;
 		}
 
-		$title       = isset( $_POST['video_title'] ) ? sanitize_text_field( wp_unslash( $_POST['video_title'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$description = isset( $_POST['video_description'] ) ? wp_kses_post( wp_unslash( $_POST['video_description'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$category    = isset( $_POST['video_category'] ) ? sanitize_text_field( wp_unslash( $_POST['video_category'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$title        = isset( $_POST['video_title'] ) ? sanitize_text_field( wp_unslash( $_POST['video_title'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$description  = isset( $_POST['video_description'] ) ? wp_kses_post( wp_unslash( $_POST['video_description'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$practice_tip = isset( $_POST['video_practice_tip'] ) ? wp_kses_post( wp_unslash( $_POST['video_practice_tip'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$category     = isset( $_POST['video_category'] ) ? sanitize_text_field( wp_unslash( $_POST['video_category'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		// Tags are selected one-by-one (checkboxes); normalise to comma-separated string for storage.
 		$tags_raw = '';
@@ -782,10 +787,11 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		$language = isset( $_POST['video_language'] ) ? sanitize_text_field( wp_unslash( $_POST['video_language'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		$update_data = array(
-			'title'        => $title,
-			'description'  => $description,
-			'category'     => $category,
-			'tags'         => $tags_raw,
+			'title'            => $title,
+			'description'      => $description,
+			'practice_tip'     => $practice_tip,
+			'category'         => $category,
+			'tags'             => $tags_raw,
 			'default_language' => $language,
 		);
 

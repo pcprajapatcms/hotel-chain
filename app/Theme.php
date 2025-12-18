@@ -20,10 +20,11 @@ use HotelChain\Admin\HotelsPage;
 use HotelChain\Admin\HotelView;
 use HotelChain\Admin\VideosPage;
 use HotelChain\Admin\VideoLibraryPage;
-use HotelChain\Admin\DatabaseToolsPage;
 use HotelChain\Admin\VideoTaxonomyPage;
 use HotelChain\Admin\VideoRequestsPage;
 use HotelChain\Frontend\HotelDashboard;
+use HotelChain\Frontend\HotelProfilePage;
+use HotelChain\Frontend\GuestRegistration;
 
 /**
  * Main theme class.
@@ -59,10 +60,11 @@ class Theme {
 			new HotelView(),
 			new VideosPage(),
 			new VideoLibraryPage(),
-			new DatabaseToolsPage(),
 			new VideoTaxonomyPage(),
 			new VideoRequestsPage(),
 			new HotelDashboard(),
+			new HotelProfilePage(),
+			new GuestRegistration(),
 			new Assets( $assets ),
 			new Videos(),
 			new Roles(),

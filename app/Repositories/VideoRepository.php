@@ -47,6 +47,7 @@ class VideoRepository {
 			'video_file_id'      => 0,
 			'title'              => '',
 			'description'        => '',
+			'practice_tip'       => '',
 			'category'           => '',
 			'tags'               => '',
 			'thumbnail_id'       => 0,
@@ -83,6 +84,7 @@ class VideoRepository {
 				'video_file_id'      => absint( $data['video_file_id'] ),
 				'title'              => sanitize_text_field( $data['title'] ),
 				'description'        => wp_kses_post( $data['description'] ),
+				'practice_tip'       => wp_kses_post( $data['practice_tip'] ),
 				'category'           => sanitize_text_field( $data['category'] ),
 				'tags'               => sanitize_text_field( $data['tags'] ),
 				'thumbnail_id'       => $data['thumbnail_id'] ? absint( $data['thumbnail_id'] ) : null,
@@ -98,7 +100,7 @@ class VideoRepository {
 				'total_completions'  => absint( $data['total_completions'] ),
 				'avg_completion_rate'=> floatval( $data['avg_completion_rate'] ),
 			),
-			array( '%d', '%s', '%d', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%d', '%s', '%d', '%d', '%s', '%d', '%d', '%f' )
+			array( '%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%d', '%s', '%d', '%d', '%s', '%d', '%d', '%f' )
 		);
 
 		if ( false === $result ) {
@@ -140,6 +142,11 @@ class VideoRepository {
 
 		if ( isset( $data['description'] ) ) {
 			$update_data['description'] = wp_kses_post( $data['description'] );
+			$format[] = '%s';
+		}
+
+		if ( isset( $data['practice_tip'] ) ) {
+			$update_data['practice_tip'] = wp_kses_post( $data['practice_tip'] );
 			$format[] = '%s';
 		}
 

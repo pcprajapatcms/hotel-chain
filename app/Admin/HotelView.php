@@ -30,8 +30,9 @@ class HotelView implements ServiceProviderInterface {
 	 * @return void
 	 */
 	public function register_menu(): void {
+		// Use null as parent to hide from menu but keep page accessible.
 		add_submenu_page(
-			'hotel-chain-accounts',
+			null,
 			__( 'Hotel Details', 'hotel-chain' ),
 			__( 'Hotel Details', 'hotel-chain' ),
 			'manage_options',
