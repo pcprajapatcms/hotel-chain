@@ -10,7 +10,10 @@ namespace HotelChain;
 use HotelChain\Contracts\ServiceProviderInterface;
 use HotelChain\Database\Migration;
 use HotelChain\Setup\Assets;
+use HotelChain\Setup\CustomLogin;
+use HotelChain\Setup\GuestExpiration;
 use HotelChain\Setup\HotelRoutes;
+use HotelChain\Setup\MenuVisibility;
 use HotelChain\Setup\Roles;
 use HotelChain\Setup\Sidebars;
 use HotelChain\Setup\ThemeSupport;
@@ -55,6 +58,8 @@ class Theme {
 		$this->providers = array(
 			new Migration(),
 			new ThemeSupport(),
+			new CustomLogin(),
+			new GuestExpiration(),
 			new HotelRoutes(),
 			new HotelsPage(),
 			new HotelView(),
@@ -69,6 +74,7 @@ class Theme {
 			new Videos(),
 			new Roles(),
 			new Sidebars(),
+			new MenuVisibility(),
 		);
 	}
 
