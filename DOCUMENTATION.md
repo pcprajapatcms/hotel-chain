@@ -12,11 +12,12 @@
 8. [Admin Pages](#admin-pages)
 9. [Frontend Pages](#frontend-pages)
 10. [Custom Roles](#custom-roles)
-11. [URL Routing](#url-routing)
-12. [AJAX Endpoints](#ajax-endpoints)
-13. [Asset Management](#asset-management)
-14. [Video Request Workflow](#video-request-workflow)
-15. [File Structure](#file-structure)
+11. [Guest Expiration System](#guest-expiration-system)
+12. [URL Routing](#url-routing)
+13. [AJAX Endpoints](#ajax-endpoints)
+14. [Asset Management](#asset-management)
+15. [Video Request Workflow](#video-request-workflow)
+16. [File Structure](#file-structure)
 
 ---
 
@@ -186,10 +187,13 @@ All service providers implement `ServiceProviderInterface` with a `register()` m
 |----------|------|---------|
 | ThemeSupport | app/Setup/ThemeSupport.php | Register WordPress theme supports |
 | Assets | app/Setup/Assets.php | Enqueue CSS/JS assets |
+| CustomLogin | app/Setup/CustomLogin.php | Custom login pages for admin, hotel, and guest |
+| GuestExpiration | app/Setup/GuestExpiration.php | Automatic guest account expiration and access validation |
 | HotelRoutes | app/Setup/HotelRoutes.php | Hotel URL routing (/hotel/{slug}) |
 | Videos | app/Setup/Videos.php | Video URL routing (/videos/{slug}) |
 | Roles | app/Setup/Roles.php | Custom user roles (Hotel, Guest) |
 | Sidebars | app/Setup/Sidebars.php | Widget areas |
+| MenuVisibility | app/Setup/MenuVisibility.php | Hide admin menu items based on user roles |
 
 ### Database Providers
 
@@ -259,6 +263,27 @@ Repositories provide a data access layer for database operations.
 - `get_hotel_pending_requests($hotel_id)` - Get hotel's pending requests
 - `has_pending_request($hotel_id, $video_id)` - Check for pending request
 - `get_hotel_active_videos($hotel_id)` - Get fully active videos
+
+### GuestRepository
+
+**File**: `app/Repositories/GuestRepository.php`
+
+**Methods**:
+- `create($data)` - Create new guest record
+- `update($id, $data)` - Update guest record (used for expiration status updates)
+- `delete($id)` - Delete guest record
+- `get_by_id($id)` - Get guest by ID
+- `get_by_user_id($user_id)` - Get guest by WordPress user ID
+- `get_by_hotel_and_user($hotel_id, $user_id)` - Get guest by hotel and user
+- `get_by_email_and_hotel($email, $hotel_id)` - Get guest by email and hotel
+- `get_by_token($token)` - Get guest by verification token
+- `verify_email($guest_id)` - Mark guest email as verified and activate account
+- `get_hotel_guests($hotel_id, $args)` - Get all guests for a hotel (with filters)
+- `count_hotel_guests($hotel_id, $status)` - Count guests for a hotel (optionally filtered by status)
+
+**Usage for Expiration**:
+- `update($guest_id, array('status' => 'expired'))` - Manually expire a guest
+- `count_hotel_guests($hotel_id, 'expired')` - Count expired guests for a hotel
 
 ---
 
@@ -370,6 +395,136 @@ Available to users with the "hotel" role.
 - **Slug**: guest
 - **Capabilities**: read only
 - **Restricted**: Cannot edit posts or upload files
+
+---
+
+## Guest Expiration System
+
+The theme includes an automatic guest account expiration system that manages guest access based on their `access_end` date.
+
+### Overview
+
+Guest accounts have a time-limited access period defined by the hotel's `access_duration` setting. When a guest registers, their `access_end` date is calculated based on the hotel's configured access duration (default: 30 days). The system automatically expires guest accounts when their access period ends.
+
+### Service Provider
+
+**File**: `app/Setup/GuestExpiration.php`
+
+The `GuestExpiration` service provider handles all expiration-related functionality:
+
+- **Automatic Status Updates**: Updates guest status from 'active' to 'expired' when `access_end` passes
+- **Real-time Access Validation**: Checks guest access validity on every page load
+- **Cron Job**: Runs daily to batch-update expired guests
+
+### How It Works
+
+#### 1. Access Duration Configuration
+
+Each hotel has an `access_duration` field (in days) that determines how long guest accounts remain active:
+
+- **Location**: Hotels table (`wp_hotel_chain_hotels.access_duration`)
+- **Default**: 30 days (if not set)
+- **Set By**: Administrators when creating/editing hotel accounts
+
+#### 2. Access End Calculation
+
+When a guest registers:
+
+- `access_start` is set to the current date/time
+- `access_end` is calculated as: `access_start + access_duration days`
+- **Location**: `app/Frontend/GuestRegistration.php` (lines 493-495)
+
+#### 3. Automatic Expiration
+
+The system uses multiple methods to ensure guests are expired promptly:
+
+**Daily Cron Job**:
+- Runs once per day via WordPress cron
+- Updates all guests where `status = 'active'` AND `access_end < NOW()` to `status = 'expired'`
+- Hook: `hotel_chain_check_guest_expiration`
+- **Location**: `app/Setup/GuestExpiration.php::check_and_expire_guests()`
+
+**Admin Init Check**:
+- Runs when any admin page is loaded
+- Provides immediate updates when administrators visit the dashboard
+- **Location**: `app/Setup/GuestExpiration.php::check_and_expire_guests()`
+
+**Real-time Template Check**:
+- Validates guest access on every page load
+- Updates status immediately if `access_end` has passed
+- **Location**: `app/Setup/GuestExpiration.php::check_guest_access()`
+
+#### 4. Access Validation
+
+The `is_guest_access_valid()` static method checks if a guest has valid access:
+
+**Validation Rules**:
+1. Guest record must exist
+2. Guest status must be 'active'
+3. If `access_end` is set, it must be in the future
+
+**Usage**:
+```php
+use HotelChain\Setup\GuestExpiration;
+
+$is_valid = GuestExpiration::is_guest_access_valid( $guest );
+```
+
+**Location**: `template-hotel.php` (line 36) - Used to determine if guest can access hotel content
+
+### Guest Status Values
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Guest registered but email not verified |
+| `active` | Guest verified and has valid access (access_end not passed) |
+| `expired` | Guest's access_end date has passed |
+| `revoked` | Access manually revoked by admin/hotel |
+
+### Expiration Behavior
+
+**When a guest expires**:
+- Status automatically changes from 'active' to 'expired'
+- Guest can no longer access hotel videos or content
+- Guest can still log in but will see access denied messages
+- Hotel dashboard shows expired guest count
+- Hotel dashboard shows expiring guests (within 3 days) in recent activity
+
+**Expired Guest Access**:
+- Expired guests cannot view hotel landing pages
+- Expired guests cannot access video content
+- Template checks: `GuestExpiration::is_guest_access_valid( $guest )` returns `false`
+
+### Dashboard Integration
+
+**Hotel Dashboard** (`app/Frontend/HotelDashboard.php`):
+- Shows count of expired guests in statistics
+- Displays expiring guests (within 3 days) in "Recent Activity" section
+- Alerts hotel administrators about upcoming expirations
+
+### Database Fields
+
+**Guests Table** (`wp_hotel_chain_guests`):
+- `access_start` (datetime): When guest access began
+- `access_end` (datetime): When guest access expires
+- `status` (varchar): Current status (pending, active, expired, revoked)
+
+**Hotels Table** (`wp_hotel_chain_hotels`):
+- `access_duration` (int): Number of days guest access lasts (default: 30)
+
+### Manual Expiration
+
+Administrators can manually expire guests by:
+- Updating guest status to 'expired' via database
+- Using the GuestRepository::update() method
+- Setting status through admin interface (if implemented)
+
+### Extending Expiration
+
+To extend a guest's access:
+1. Update the `access_end` date in the guests table
+2. Ensure status is set to 'active'
+3. The system will automatically respect the new expiration date
 
 ---
 

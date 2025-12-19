@@ -105,9 +105,18 @@
 }
 
 #wpcontent{
-	background-color: rgb(240, 231, 215);
+	background-color: rgb(240, 231, 215) !important;
 }
 
+#adminmenu, #adminmenu .wp-submenu, #adminmenuback, #adminmenuwrap {
+    width: 175px;
+}
+li.wp-menu-separator {
+    display: none !important;
+}
+#adminmenu .wp-submenu{
+	left: 175px;
+}
 /* Success box styling */
 .wrap .flex-shrink-0 {
 	flex-shrink: 0 !important;

@@ -8,6 +8,7 @@
 use HotelChain\Repositories\HotelRepository;
 use HotelChain\Repositories\GuestRepository;
 use HotelChain\Repositories\HotelVideoAssignmentRepository;
+use HotelChain\Setup\GuestExpiration;
 
 $hotel_user = get_query_var( 'hotel_user' );
 
@@ -33,7 +34,8 @@ $current_user_id = get_current_user_id();
 if ( $current_user_id ) {
 	$guest_repo = new GuestRepository();
 	$guest      = $guest_repo->get_by_hotel_and_user( $hotel->id, $current_user_id );
-	$is_guest   = $guest && 'active' === $guest->status;
+	// Check if guest has valid access (status is active AND access_end hasn't passed).
+	$is_guest   = GuestExpiration::is_guest_access_valid( $guest );
 }
 
 // Get current page/tab.
