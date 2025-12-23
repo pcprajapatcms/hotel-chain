@@ -34,7 +34,7 @@ class HotelVideoLibraryPage {
 		}
 
 		$video_repository = new VideoRepository();
-		$assignment_repo = new HotelVideoAssignmentRepository();
+		$assignment_repo  = new HotelVideoAssignmentRepository();
 
 		// Get filter/search parameters.
 		$search_query = isset( $_GET['search'] ) ? sanitize_text_field( wp_unslash( $_GET['search'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -46,13 +46,35 @@ class HotelVideoLibraryPage {
 		// Get ALL videos from the system (not just assigned to this hotel).
 		$all_videos = $video_repository->get_all( array( 'limit' => -1 ) );
 
+		// Get all assignments for this hotel indexed by video_id for quick lookups.
+		$hotel_assignments = $assignment_repo->get_hotel_videos(
+			$hotel->id,
+			array(
+				'status' => '',
+			)
+		);
+		$assignment_map = array();
+		foreach ( $hotel_assignments as $assignment ) {
+			$assignment_map[ (string) $assignment->video_id ] = $assignment;
+		}
+
 		// Apply filters and calculate statistics.
 		$videos = array();
 		$total_duration_seconds = 0;
-		$total_completions = 0;
-		$total_views = 0;
+		$total_completions      = 0;
+		$total_views            = 0;
+		$active_videos          = 0;
 
 		foreach ( $all_videos as $video_meta ) {
+			$video_id_key = (string) $video_meta->video_id;
+
+			// Get assignment info for this hotel.
+			$assignment        = isset( $assignment_map[ $video_id_key ] ) ? $assignment_map[ $video_id_key ] : null;
+			$assignment_status = $assignment ? $assignment->status : 'none';
+			$status_by_hotel   = ( $assignment && isset( $assignment->status_by_hotel ) ) ? $assignment->status_by_hotel : 'inactive';
+
+			$effectively_active = ( 'active' === $assignment_status && 'active' === $status_by_hotel );
+
 			// Apply search filter.
 			if ( ! empty( $search_query ) && stripos( $video_meta->title, $search_query ) === false && stripos( $video_meta->description ?? '', $search_query ) === false ) {
 				continue;
@@ -63,20 +85,28 @@ class HotelVideoLibraryPage {
 				continue;
 			}
 
-			// For now, all videos are "active" (we can add status later if needed).
-			if ( ! empty( $status_filter ) && $status_filter !== 'active' ) {
-				continue;
+			// Apply status filter based on effective visibility for the hotel.
+			if ( ! empty( $status_filter ) ) {
+				if ( 'active' === $status_filter && ! $effectively_active ) {
+					continue;
+				}
+				if ( 'inactive' === $status_filter && $effectively_active ) {
+					continue;
+				}
 			}
 
 			$videos[] = $video_meta;
 			$total_duration_seconds += (int) $video_meta->duration_seconds;
 			$total_completions += (int) $video_meta->total_completions;
 			$total_views += (int) $video_meta->total_views;
+
+			if ( $effectively_active ) {
+				++$active_videos;
+			}
 		}
 
 		// Calculate statistics.
-		$total_videos = count( $videos );
-		$active_videos = $total_videos; // All assigned videos are active.
+		$total_videos         = count( $videos );
 		$total_duration_hours = round( $total_duration_seconds / 3600, 1 );
 		$avg_completion = $total_videos > 0 && $total_views > 0 ? round( ( $total_completions / $total_views ) * 100, 0 ) : 0;
 
@@ -102,6 +132,8 @@ class HotelVideoLibraryPage {
 		// Prepare video data for JavaScript (for dynamic panel display).
 		$videos_data = array();
 		foreach ( $all_videos as $vid ) {
+			$video_id_key = (string) $vid->video_id;
+
 			$thumb_url = '';
 			if ( $vid->thumbnail_id ) {
 				$thumb_url = wp_get_attachment_image_url( $vid->thumbnail_id, 'medium' );
@@ -111,33 +143,62 @@ class HotelVideoLibraryPage {
 			$completion = $vid->total_views > 0 ? round( ( $vid->total_completions / $vid->total_views ) * 100, 0 ) : 0;
 
 			// Get assignment status for this hotel.
-			$assignment = $assignment_repo->get_assignment( $hotel->id, $vid->video_id );
+			$assignment        = isset( $assignment_map[ $video_id_key ] ) ? $assignment_map[ $video_id_key ] : null;
 			$assignment_status = $assignment ? $assignment->status : 'none';
-			
-			$status_by_hotel = $assignment && isset( $assignment->status_by_hotel ) ? $assignment->status_by_hotel : 'active';
+			$status_by_hotel   = ( $assignment && isset( $assignment->status_by_hotel ) ) ? $assignment->status_by_hotel : 'inactive';
 
-			$videos_data[ $vid->video_id ] = array(
+			$videos_data[ $video_id_key ] = array(
 				'video_id' => $vid->video_id,
-				'title' => $vid->title,
-				'description' => $vid->description ?: __( 'No description available.', 'hotel-chain' ),
-				'category' => $vid->category ?: __( 'Uncategorized', 'hotel-chain' ),
-				'duration' => $format_duration( $vid->duration_seconds ),
-				'thumbnail_url' => $thumb_url,
-				'total_completions' => number_format_i18n( $vid->total_completions ),
-				'avg_completion' => $completion . '%',
-				'assignment_status' => $assignment_status,
-				'status_by_hotel' => $status_by_hotel,
+				'title'    => $vid->title,
+				'description'        => $vid->description ?: __( 'No description available.', 'hotel-chain' ),
+				'category'           => $vid->category ?: __( 'Uncategorized', 'hotel-chain' ),
+				'duration'           => $format_duration( $vid->duration_seconds ),
+				'thumbnail_url'      => $thumb_url,
+				'total_completions'  => number_format_i18n( $vid->total_completions ),
+				'avg_completion'     => $completion . '%',
+				'assignment_status'  => $assignment_status,
+				'status_by_hotel'    => $status_by_hotel,
 			);
 		}
 
+		// Helper to compute status label and class for badges.
+		$get_status_badge = function( string $assignment_status, string $status_by_hotel ): array {
+			if ( 'active' === $assignment_status && 'active' === $status_by_hotel ) {
+				return array(
+					'label' => __( 'Active', 'hotel-chain' ),
+					'class' => 'hotel-video-library-badge border bg-green-200 border-green-400 rounded text-green-900',
+				);
+			}
+
+			if ( 'pending' === $assignment_status ) {
+				return array(
+					'label' => __( 'Pending', 'hotel-chain' ),
+					'class' => 'hotel-video-library-badge border bg-orange-200 border-orange-400 rounded text-orange-900',
+				);
+			}
+
+			if ( 'active' === $assignment_status && 'inactive' === $status_by_hotel ) {
+				return array(
+					'label' => __( 'Inactive', 'hotel-chain' ),
+					'class' => 'hotel-video-library-badge bg-red-200 border-red-400 rounded text-red-900',
+				);
+			}
+
+			// Default: not assigned.
+			return array(
+				'label' => __( 'Not Assigned', 'hotel-chain' ),
+				'class' => 'hotel-video-library-badge bg-red-200 border-red-400 rounded text-red-900',
+			);
+		};
+
 		?>
-		<div class="flex-1 overflow-auto p-4 lg:p-8 wrap w-8/12 mx-auto">
+		<div class="flex-1 overflow-auto p-4 lg:p-8 wrap w-8/12 mx-auto hotel-video-library">
 			<div class="max-w-7xl mx-auto">
 				<div class="space-y-6">
 					<!-- Header -->
 					<div class="mb-6 border-b border-solid border-gray-300 pb-3">
-						<h1 class="mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-serif);"><?php esc_html_e( 'HOTEL – Video Library', 'hotel-chain' ); ?></h1>
-						<p style="color: rgb(122, 122, 122); font-family: var(--font-sans);"><?php esc_html_e( 'Browse all videos available in the system', 'hotel-chain' ); ?></p>
+						<h1 class="mb-1 hotel-video-library-heading-primary"><?php esc_html_e( 'HOTEL – Video Library', 'hotel-chain' ); ?></h1>
+						<p class="hotel-video-library-text-muted"><?php esc_html_e( 'Browse all videos available in the system', 'hotel-chain' ); ?></p>
 					</div>
 
 					<!-- Filters -->
@@ -145,7 +206,7 @@ class HotelVideoLibraryPage {
 						<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
 							<!-- Search -->
 							<div class="w-full lg:flex-1 flex items-center gap-3 border border-solid border-gray-300 rounded px-4 py-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-5 h-5" aria-hidden="true" style="color: rgb(196, 196, 196);">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-5 h-5 hotel-video-library-icon-muted" aria-hidden="true">
 									<path d="m21 21-4.34-4.34"></path>
 									<circle cx="11" cy="11" r="8"></circle>
 								</svg>
@@ -154,23 +215,22 @@ class HotelVideoLibraryPage {
 									id="hotel-video-search" 
 									placeholder="<?php esc_attr_e( 'Search videos...', 'hotel-chain' ); ?>" 
 									value="<?php echo esc_attr( $search_query ); ?>"
-									class="flex-1 border-none outline-none bg-transparent"
-									style="color: rgb(122, 122, 122); font-family: var(--font-sans);"
+									class="flex-1 border-none outline-none bg-transparent hotel-video-library-text-muted"
 								/>
 							</div>
 
 							<!-- Filter Button -->
 							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2 cursor-pointer" id="hotel-filter-toggle">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel w-5 h-5" aria-hidden="true" style="color: rgb(122, 122, 122);">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel w-5 h-5 hotel-video-library-text-muted" aria-hidden="true">
 									<path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"></path>
 								</svg>
-								<span style="font-family: var(--font-sans); color: rgb(61, 61, 68);"><?php esc_html_e( 'Filter', 'hotel-chain' ); ?></span>
+								<span class="hotel-video-library-text-primary"><?php esc_html_e( 'Filter', 'hotel-chain' ); ?></span>
 							</div>
 
 							<!-- Category Dropdown -->
 							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2">
-								<span style="color: rgb(122, 122, 122); font-family: var(--font-sans);"><?php esc_html_e( 'Category:', 'hotel-chain' ); ?></span>
-								<select id="hotel-category-filter" class="border-none outline-none bg-transparent cursor-pointer" style="font-family: var(--font-sans); color: rgb(61, 61, 68);">
+								<span class="hotel-video-library-text-muted"><?php esc_html_e( 'Category:', 'hotel-chain' ); ?></span>
+								<select id="hotel-category-filter" class="border-none outline-none bg-transparent cursor-pointer hotel-video-library-text-primary">
 									<option value=""><?php esc_html_e( 'All', 'hotel-chain' ); ?></option>
 									<?php foreach ( $categories as $cat ) : ?>
 										<option value="<?php echo esc_attr( $cat ); ?>" <?php selected( $category_filter, $cat ); ?>>
@@ -182,8 +242,8 @@ class HotelVideoLibraryPage {
 
 							<!-- Status Dropdown -->
 							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2">
-								<span style="color: rgb(122, 122, 122); font-family: var(--font-sans);"><?php esc_html_e( 'Status:', 'hotel-chain' ); ?></span>
-								<select id="hotel-status-filter" class="border-none outline-none bg-transparent cursor-pointer" style="font-family: var(--font-sans); color: rgb(61, 61, 68);">
+								<span class="hotel-video-library-text-muted"><?php esc_html_e( 'Status:', 'hotel-chain' ); ?></span>
+								<select id="hotel-status-filter" class="border-none outline-none bg-transparent cursor-pointer hotel-video-library-text-primary">
 									<option value=""><?php esc_html_e( 'All', 'hotel-chain' ); ?></option>
 									<option value="active" <?php selected( $status_filter, 'active' ); ?>><?php esc_html_e( 'Active', 'hotel-chain' ); ?></option>
 									<option value="inactive" <?php selected( $status_filter, 'inactive' ); ?>><?php esc_html_e( 'Inactive', 'hotel-chain' ); ?></option>
@@ -194,11 +254,10 @@ class HotelVideoLibraryPage {
 							<div class="flex gap-2">
 								<button 
 									type="button" 
-									class="p-2 border border-solid border-gray-300 rounded hotel-view-btn <?php echo 'grid' === $view_mode ? 'active' : ''; ?>" 
+									class="p-2 border border-solid border-gray-300 rounded hotel-view-btn <?php echo 'grid' === $view_mode ? 'active hotel-video-library-bg-cream' : ''; ?>" 
 									data-view="grid"
-									style="<?php echo 'grid' === $view_mode ? 'background-color: rgb(240, 231, 215);' : ''; ?>"
 								>
-									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grid3x3 lucide-grid-3x3 w-5 h-5" aria-hidden="true" style="color: rgb(61, 61, 68);">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grid3x3 lucide-grid-3x3 w-5 h-5 hotel-video-library-icon-primary" aria-hidden="true">
 										<rect width="18" height="18" x="3" y="3" rx="2"></rect>
 										<path d="M3 9h18"></path>
 										<path d="M3 15h18"></path>
@@ -208,11 +267,10 @@ class HotelVideoLibraryPage {
 								</button>
 								<button 
 									type="button" 
-									class="p-2 border rounded hotel-view-btn <?php echo 'list' === $view_mode ? 'active' : ''; ?>" 
+									class="p-2 border rounded hotel-view-btn <?php echo 'list' === $view_mode ? 'active hotel-video-library-bg-cream hotel-video-library-border-light' : 'border-gray-300'; ?>" 
 									data-view="list"
-									style="<?php echo 'list' === $view_mode ? 'border-color: rgb(61, 61, 68); background-color: rgb(240, 231, 215);' : 'border-color: rgb(196, 196, 196);'; ?>"
 								>
-									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list w-5 h-5" aria-hidden="true" style="color: rgb(122, 122, 122);">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list w-5 h-5 hotel-video-library-text-muted" aria-hidden="true">
 										<path d="M3 5h.01"></path>
 										<path d="M3 12h.01"></path>
 										<path d="M3 19h.01"></path>
@@ -229,30 +287,30 @@ class HotelVideoLibraryPage {
 					<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 						<div class="bg-white rounded p-4 border border-solid border-gray-300">
 							<div class="flex items-center gap-3 mb-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-6 h-6" aria-hidden="true" style="color: rgb(196, 196, 196);">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-6 h-6 hotel-video-library-icon-muted" aria-hidden="true">
 									<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
 									<circle cx="12" cy="8" r="2"></circle>
 									<path d="M12 10v12"></path>
 									<path d="M12 22c4.2 0 7-1.667 7-5-4.2 0-7 1.667-7 5Z"></path>
 									<path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z"></path>
 								</svg>
-								<div style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;"><?php esc_html_e( 'Total Videos', 'hotel-chain' ); ?></div>
+								<div class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Total Videos', 'hotel-chain' ); ?></div>
 							</div>
-							<div style="color: rgb(61, 61, 68); font-family: var(--font-serif); font-size: 2rem;"><?php echo esc_html( $total_videos ); ?></div>
+							<div class="hotel-video-library-heading-primary text-3xl"><?php echo esc_html( $total_videos ); ?></div>
 						</div>
 						<div class="bg-white rounded p-4 border border-solid border-gray-300">
 							<div class="flex items-center gap-3 mb-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-6 h-6" aria-hidden="true" style="color: rgb(196, 196, 196);">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-6 h-6 hotel-video-library-icon-muted" aria-hidden="true">
 									<circle cx="12" cy="12" r="10"></circle>
 									<path d="m9 12 2 2 4-4"></path>
 								</svg>
-								<div style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></div>
+								<div class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></div>
 							</div>
-							<div style="color: rgb(61, 61, 68); font-family: var(--font-serif); font-size: 2rem;"><?php echo esc_html( $active_videos ); ?></div>
+							<div class="hotel-video-library-heading-primary text-3xl"><?php echo esc_html( $active_videos ); ?></div>
 						</div>
 						<div class="bg-white rounded p-4 border border-solid border-gray-300">
 							<div class="flex items-center gap-3 mb-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sunrise w-6 h-6" aria-hidden="true" style="color: rgb(196, 196, 196);">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sunrise w-6 h-6 hotel-video-library-icon-muted" aria-hidden="true">
 									<path d="M12 2v8"></path>
 									<path d="m4.93 10.93 1.41 1.41"></path>
 									<path d="M2 18h2"></path>
@@ -262,52 +320,56 @@ class HotelVideoLibraryPage {
 									<path d="m8 6 4-4 4 4"></path>
 									<path d="M16 18a4 4 0 0 0-8 0"></path>
 								</svg>
-								<div style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;"><?php esc_html_e( 'Total Duration', 'hotel-chain' ); ?></div>
+								<div class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Total Duration', 'hotel-chain' ); ?></div>
 							</div>
-							<div style="color: rgb(61, 61, 68); font-family: var(--font-serif); font-size: 2rem;"><?php echo esc_html( $total_duration_hours ); ?> <?php esc_html_e( 'hrs', 'hotel-chain' ); ?></div>
+							<div class="hotel-video-library-heading-primary text-3xl"><?php echo esc_html( $total_duration_hours ); ?> <?php esc_html_e( 'hrs', 'hotel-chain' ); ?></div>
 						</div>
 						<div class="bg-white rounded p-4 border border-solid border-gray-300">
 							<div class="flex items-center gap-3 mb-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles w-6 h-6" aria-hidden="true" style="color: rgb(196, 196, 196);">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles w-6 h-6 hotel-video-library-icon-muted" aria-hidden="true">
 									<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path>
 									<path d="M20 2v4"></path>
 									<path d="M22 4h-4"></path>
 									<circle cx="4" cy="20" r="2"></circle>
 								</svg>
-								<div style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;"><?php esc_html_e( 'Avg. Completion', 'hotel-chain' ); ?></div>
+								<div class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Avg. Completion', 'hotel-chain' ); ?></div>
 							</div>
-							<div style="color: rgb(61, 61, 68); font-family: var(--font-serif); font-size: 2rem;"><?php echo esc_html( $avg_completion ); ?>%</div>
+							<div class="hotel-video-library-heading-primary text-3xl"><?php echo esc_html( $avg_completion ); ?>%</div>
 						</div>
 					</div>
 
 					<?php if ( 'list' === $view_mode ) : ?>
 						<!-- List View -->
 						<div class="bg-white rounded p-4 border border-solid border-gray-300">
-							<div class="mb-4 pb-3 border-b-2" style="border-color: rgb(196, 196, 196);">
-								<h3 style="font-family: var(--font-sans); color: rgb(61, 61, 68);"><?php esc_html_e( 'List View (Alternative)', 'hotel-chain' ); ?></h3>
+							<div class="mb-4 pb-3 border-b-2 hotel-video-library-border-light">
+								<h3 class="hotel-video-library-text-primary"><?php esc_html_e( 'List View (Alternative)', 'hotel-chain' ); ?></h3>
 							</div>
 							<div class="bg-white border border-solid border-gray-300 rounded overflow-hidden">
-								<div class="grid grid-cols-6 gap-4 p-3 border-b-2" style="background-color: rgb(240, 231, 215); border-color: rgb(196, 196, 196);">
-									<div class="col-span-2" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-weight: 600;"><?php esc_html_e( 'Video Title', 'hotel-chain' ); ?></div>
-									<div style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-weight: 600;"><?php esc_html_e( 'Category', 'hotel-chain' ); ?></div>
-									<div style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-weight: 600;"><?php esc_html_e( 'Duration', 'hotel-chain' ); ?></div>
-									<div style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-weight: 600;"><?php esc_html_e( 'Status', 'hotel-chain' ); ?></div>
-									<div style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-weight: 600;"><?php esc_html_e( 'Actions', 'hotel-chain' ); ?></div>
+								<div class="grid grid-cols-6 gap-4 p-3 border-b-2 hotel-video-library-bg-cream hotel-video-library-border-light">
+									<div class="col-span-2 hotel-video-library-text-primary font-semibold"><?php esc_html_e( 'Video Title', 'hotel-chain' ); ?></div>
+									<div class="hotel-video-library-text-primary font-semibold"><?php esc_html_e( 'Category', 'hotel-chain' ); ?></div>
+									<div class="hotel-video-library-text-primary font-semibold"><?php esc_html_e( 'Duration', 'hotel-chain' ); ?></div>
+									<div class="hotel-video-library-text-primary font-semibold"><?php esc_html_e( 'Status', 'hotel-chain' ); ?></div>
+									<div class="hotel-video-library-text-primary font-semibold"><?php esc_html_e( 'Actions', 'hotel-chain' ); ?></div>
 								</div>
 								<?php if ( empty( $videos ) ) : ?>
-									<div class="p-8 text-center" style="font-family: var(--font-sans); color: rgb(122, 122, 122);">
+									<div class="p-8 text-center hotel-video-library-text-muted">
 										<?php esc_html_e( 'No videos found.', 'hotel-chain' ); ?>
 									</div>
 								<?php else : ?>
 								<?php foreach ( $videos as $video ) : ?>
 									<?php
-									$video_id_key = (string) $video->video_id;
+									$video_id_key    = (string) $video->video_id;
 									$video_json_data = isset( $videos_data[ $video_id_key ] ) ? $videos_data[ $video_id_key ] : array();
+
+									$assignment_status = isset( $video_json_data['assignment_status'] ) ? (string) $video_json_data['assignment_status'] : 'none';
+									$status_by_hotel   = isset( $video_json_data['status_by_hotel'] ) ? (string) $video_json_data['status_by_hotel'] : 'inactive';
+									$status_badge      = $get_status_badge( $assignment_status, $status_by_hotel );
 									?>
 									<div class="grid grid-cols-6 gap-4 p-3 border-b-2 last:border-b-0 hotel-video-row" 
 										data-video-id="<?php echo esc_attr( $video->video_id ); ?>" 
 										data-video-data="<?php echo esc_attr( wp_json_encode( $video_json_data ) ); ?>"
-										style="border-color: rgb(196, 196, 196); cursor: pointer;">
+										style="cursor: pointer; border-color: rgb(196, 196, 196);">
 											<div class="col-span-2 flex items-center gap-3">
 												<?php
 												$thumbnail_url = '';
@@ -317,11 +379,11 @@ class HotelVideoLibraryPage {
 													$thumbnail_url = $video->thumbnail_url;
 												}
 												?>
-												<div class="w-16 h-12 border-2 rounded flex items-center justify-center" style="background-color: rgb(240, 231, 215); border-color: rgb(196, 196, 196);">
+												<div class="w-16 h-12 border-2 rounded flex items-center justify-center hotel-video-library-bg-cream hotel-video-library-border-light">
 													<?php if ( $thumbnail_url ) : ?>
 														<img src="<?php echo esc_url( $thumbnail_url ); ?>" alt="" class="w-full h-full object-cover rounded" />
 													<?php else : ?>
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-6 h-6" aria-hidden="true" style="color: rgb(61, 61, 68);">
+														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-6 h-6 hotel-video-library-icon-primary" aria-hidden="true">
 															<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
 															<circle cx="12" cy="8" r="2"></circle>
 															<path d="M12 10v12"></path>
@@ -330,15 +392,15 @@ class HotelVideoLibraryPage {
 														</svg>
 													<?php endif; ?>
 												</div>
-												<div style="font-family: var(--font-sans); color: rgb(61, 61, 68);"><?php echo esc_html( $video->title ); ?></div>
+												<div class="hotel-video-library-text-primary"><?php echo esc_html( $video->title ); ?></div>
 											</div>
-											<div class="flex items-center" style="font-family: var(--font-sans); color: rgb(122, 122, 122);"><?php echo esc_html( $video->category ?: __( 'Uncategorized', 'hotel-chain' ) ); ?></div>
-											<div class="flex items-center" style="font-family: var(--font-sans); color: rgb(61, 61, 68);"><?php echo esc_html( $format_duration( $video->duration_seconds ) ); ?></div>
+											<div class="flex items-center hotel-video-library-text-muted"><?php echo esc_html( $video->category ?: __( 'Uncategorized', 'hotel-chain' ) ); ?></div>
+											<div class="flex items-center hotel-video-library-text-primary"><?php echo esc_html( $format_duration( $video->duration_seconds ) ); ?></div>
 											<div class="flex items-center">
-												<span class="px-3 py-1 rounded" style="background-color: rgb(240, 231, 215); border: 2px solid rgb(61, 61, 68); font-family: var(--font-sans); font-size: 0.75rem; color: rgb(61, 61, 68); font-weight: 600;"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></span>
+												<span class="px-3 py-1 rounded <?php echo esc_attr( $status_badge['class'] ); ?>"><?php echo esc_html( $status_badge['label'] ); ?></span>
 											</div>
 											<div class="flex items-center">
-												<button class="px-3 py-1 rounded transition-all hover:opacity-80 hotel-edit-btn" data-video-id="<?php echo esc_attr( $video->video_id ); ?>" style="background-color: rgb(61, 61, 68); color: rgb(240, 231, 215); font-family: var(--font-sans); border: none;"><?php esc_html_e( 'Edit', 'hotel-chain' ); ?></button>
+												<button class="px-3 py-1 rounded transition-all hover:opacity-80 hotel-edit-btn hotel-video-library-request-button" data-video-id="<?php echo esc_attr( $video->video_id ); ?>"><?php esc_html_e( 'Edit', 'hotel-chain' ); ?></button>
 											</div>
 										</div>
 									<?php endforeach; ?>
@@ -349,19 +411,23 @@ class HotelVideoLibraryPage {
 						<!-- Grid View -->
 						<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
 							<?php if ( empty( $videos ) ) : ?>
-								<div class="col-span-full p-8 text-center" style="font-family: var(--font-sans); color: rgb(122, 122, 122);">
+								<div class="col-span-full p-8 text-center hotel-video-library-text-muted">
 									<?php esc_html_e( 'No videos found.', 'hotel-chain' ); ?>
 								</div>
 							<?php else : ?>
 								<?php foreach ( $videos as $video ) : ?>
 									<?php
-									$video_id_key = (string) $video->video_id;
+									$video_id_key    = (string) $video->video_id;
 									$video_json_data = isset( $videos_data[ $video_id_key ] ) ? $videos_data[ $video_id_key ] : array();
+
+									$assignment_status = isset( $video_json_data['assignment_status'] ) ? (string) $video_json_data['assignment_status'] : 'none';
+									$status_by_hotel   = isset( $video_json_data['status_by_hotel'] ) ? (string) $video_json_data['status_by_hotel'] : 'inactive';
+									$status_badge      = $get_status_badge( $assignment_status, $status_by_hotel );
 									?>
 									<div class="bg-white border border-solid border-gray-300 rounded overflow-hidden cursor-pointer transition-all hover:shadow-lg hotel-video-card" 
 										data-video-id="<?php echo esc_attr( $video->video_id ); ?>"
 										data-video-data="<?php echo esc_attr( wp_json_encode( $video_json_data ) ); ?>">
-										<div class="border-b border-solid border-gray-300 h-32 flex items-center justify-center relative" style="background-color: rgb(240, 231, 215);">
+										<div class="border-b border-solid border-gray-300 h-32 flex items-center justify-center relative hotel-video-library-bg-cream">
 											<?php
 											$thumbnail_url = '';
 											if ( $video->thumbnail_id ) {
@@ -373,7 +439,7 @@ class HotelVideoLibraryPage {
 												?>
 												<img src="<?php echo esc_url( $thumbnail_url ); ?>" alt="<?php echo esc_attr( $video->title ); ?>" class="w-full h-full object-cover" />
 											<?php else : ?>
-												<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-12 h-12" aria-hidden="true" style="color: rgb(61, 61, 68);">
+												<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-12 h-12 hotel-video-library-icon-primary" aria-hidden="true">
 													<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
 													<circle cx="12" cy="8" r="2"></circle>
 													<path d="M12 10v12"></path>
@@ -381,12 +447,12 @@ class HotelVideoLibraryPage {
 													<path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z"></path>
 												</svg>
 											<?php endif; ?>
-											<div class="absolute top-2 right-2 px-2 py-1 rounded" style="background-color: rgb(255, 255, 255); border: 1px solid rgb(196, 196, 196); font-family: var(--font-sans); font-size: 0.75rem; color: rgb(61, 61, 68);"><?php echo esc_html( $format_duration( $video->duration_seconds ) ); ?></div>
-											<div class="absolute top-2 left-2 px-2 py-1 rounded" style="background-color: rgb(240, 231, 215); border: 2px solid rgb(61, 61, 68); font-family: var(--font-sans); font-size: 0.75rem; color: rgb(61, 61, 68); font-weight: 600;"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></div>
+											<div class="absolute top-2 right-2 px-2 py-1 rounded bg-white border hotel-video-library-border-light hotel-video-library-text-primary text-xs"><?php echo esc_html( $format_duration( $video->duration_seconds ) ); ?></div>
+											<div class="absolute top-2 left-2 px-2 py-1 rounded <?php echo esc_attr( $status_badge['class'] ); ?>"><?php echo esc_html( $status_badge['label'] ); ?></div>
 										</div>
 										<div class="p-3">
-											<div class="mb-1" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-weight: 600;"><?php echo esc_html( $video->title ); ?></div>
-											<div style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;"><?php echo esc_html( $video->category ?: __( 'Uncategorized', 'hotel-chain' ) ); ?></div>
+											<div class="mb-1 hotel-video-library-text-primary font-semibold"><?php echo esc_html( $video->title ); ?></div>
+											<div class="hotel-video-library-text-muted text-sm"><?php echo esc_html( $video->category ?: __( 'Uncategorized', 'hotel-chain' ) ); ?></div>
 										</div>
 									</div>
 								<?php endforeach; ?>
@@ -395,16 +461,16 @@ class HotelVideoLibraryPage {
 					<?php endif; ?>
 
 					<!-- Detail Panel (hidden by default, shown via JavaScript) -->
-					<div id="hotel-video-detail-panel" class="bg-white rounded p-4 border border-solid border-gray-300" style="display: none; margin-top: 1.5rem;">
+					<div id="hotel-video-detail-panel" class="bg-white rounded p-4 border border-solid border-gray-300 mt-6 hotel-video-library-panel-hidden">
 						<div class="mb-4 pb-3 border-b border-solid border-gray-300">
-							<h3 style="font-family: var(--font-sans); color: rgb(61, 61, 68);"><?php esc_html_e( 'Video Detail Panel (on click)', 'hotel-chain' ); ?></h3>
+							<h3 class="hotel-video-library-text-primary"><?php esc_html_e( 'Video Detail Panel (on click)', 'hotel-chain' ); ?></h3>
 						</div>
 						<div class="bg-white border border-solid border-gray-300 rounded p-6">
 							<div class="grid grid-cols-2 gap-6">
 								<div>
-									<div class="border border-solid border-gray-300 rounded h-80 flex items-center justify-center mb-4" style="background-color: rgb(240, 231, 215);">
+									<div class="border border-solid border-gray-300 rounded h-80 flex items-center justify-center mb-4 hotel-video-library-bg-cream">
 										<img id="detail-thumbnail" src="" alt="" class="w-full h-full object-cover rounded hidden" />
-										<svg id="detail-placeholder" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-16 h-16" aria-hidden="true" style="color: rgb(61, 61, 68);">
+										<svg id="detail-placeholder" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-16 h-16 hotel-video-library-icon-primary" aria-hidden="true">
 											<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
 											<circle cx="12" cy="8" r="2"></circle>
 											<path d="M12 10v12"></path>
@@ -414,43 +480,41 @@ class HotelVideoLibraryPage {
 									</div>
 									<div class="space-y-2">
 										<div class="flex justify-between">
-											<span style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;"><?php esc_html_e( 'Duration:', 'hotel-chain' ); ?></span>
-											<span id="detail-duration" style="font-family: var(--font-sans); color: rgb(61, 61, 68);"></span>
+											<span class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Duration:', 'hotel-chain' ); ?></span>
+											<span id="detail-duration" class="hotel-video-library-text-primary"></span>
 										</div>
 										<div class="flex justify-between">
-											<span style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;"><?php esc_html_e( 'Category:', 'hotel-chain' ); ?></span>
-											<span id="detail-category" style="font-family: var(--font-sans); color: rgb(61, 61, 68);"></span>
+											<span class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Category:', 'hotel-chain' ); ?></span>
+											<span id="detail-category" class="hotel-video-library-text-primary"></span>
 										</div>
 										<div class="flex justify-between">
-											<span style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;"><?php esc_html_e( 'Total Completions:', 'hotel-chain' ); ?></span>
-											<span id="detail-completions" style="font-family: var(--font-sans); color: rgb(61, 61, 68);"></span>
+											<span class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Total Completions:', 'hotel-chain' ); ?></span>
+											<span id="detail-completions" class="hotel-video-library-text-primary"></span>
 										</div>
 										<div class="flex justify-between">
-											<span style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;"><?php esc_html_e( 'Avg. Completion:', 'hotel-chain' ); ?></span>
-											<span id="detail-avg-completion" style="font-family: var(--font-sans); color: rgb(61, 61, 68);"></span>
+											<span class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Avg. Completion:', 'hotel-chain' ); ?></span>
+											<span id="detail-avg-completion" class="hotel-video-library-text-primary"></span>
 										</div>
 									</div>
 								</div>
 								<div>
-									<h3 id="detail-title" class="mb-3" style="font-family: var(--font-serif); color: rgb(61, 61, 68); font-size: 1.5rem;"></h3>
-									<div id="detail-description" class="mb-4" style="font-family: var(--font-sans); color: rgb(122, 122, 122); line-height: 1.6;"></div>
+									<h3 id="detail-title" class="mb-3 hotel-video-library-heading-primary text-2xl"></h3>
+									<div id="detail-description" class="mb-4 hotel-video-library-text-muted leading-relaxed"></div>
 								<div class="mb-4">
-									<div class="mb-2" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-weight: 600;"><?php esc_html_e( 'Assignment Status:', 'hotel-chain' ); ?></div>
+									<div class="mb-2 hotel-video-library-text-primary font-semibold"><?php esc_html_e( 'Assignment Status:', 'hotel-chain' ); ?></div>
 									<div id="detail-status-badge"></div>
 								</div>
-								<div class="mb-4" id="detail-hotel-status-section" style="display: none;">
-									<div class="mb-2" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-weight: 600;"><?php esc_html_e( 'My Video Status:', 'hotel-chain' ); ?></div>
+								<div class="mb-4 hidden" id="detail-hotel-status-section">
+									<div class="mb-2 hotel-video-library-text-primary font-semibold"><?php esc_html_e( 'My Video Status:', 'hotel-chain' ); ?></div>
 									<div class="flex gap-2">
 										<button 
 											id="detail-set-active-btn"
-											class="px-4 py-2 rounded transition-all hover:opacity-80" 
-											style="background-color: rgb(240, 231, 215); border: 2px solid rgb(61, 61, 68); font-family: var(--font-sans); color: rgb(61, 61, 68);"
+											class="px-4 py-2 rounded transition-all hover:opacity-80 hotel-video-library-toggle-active" 
 											data-video-id=""
 										><?php esc_html_e( 'Active', 'hotel-chain' ); ?></button>
 										<button 
 											id="detail-set-inactive-btn"
-											class="px-4 py-2 rounded transition-all hover:opacity-80" 
-											style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); font-family: var(--font-sans); color: rgb(122, 122, 122);"
+											class="px-4 py-2 rounded transition-all hover:opacity-80 hotel-video-library-toggle-inactive" 
 											data-video-id=""
 										><?php esc_html_e( 'Set Inactive', 'hotel-chain' ); ?></button>
 									</div>
@@ -459,11 +523,10 @@ class HotelVideoLibraryPage {
 								<div class="flex gap-2">
 									<button 
 										id="detail-request-btn"
-										class="flex-1 px-4 py-2 rounded border border-solid border-gray-300 transition-all hover:opacity-90" 
-										style="background-color: rgb(61, 61, 68); color: rgb(240, 231, 215); font-family: var(--font-sans); border: none;"
+										class="flex-1 px-4 py-2 rounded border border-solid border-gray-300 transition-all hover:opacity-90 hotel-video-library-request-button" 
 										data-video-id=""
 									><?php esc_html_e( 'Send Request to Admin', 'hotel-chain' ); ?></button>
-									<button class="flex-1 px-4 py-2 rounded border border-solid border-gray-300 transition-all hover:opacity-80" style="background-color: rgb(255, 255, 255); font-family: var(--font-sans); color: rgb(61, 61, 68);"><?php esc_html_e( 'View Analytics', 'hotel-chain' ); ?></button>
+									<button class="flex-1 px-4 py-2 bg-blue-200 border-blue-400 rounded text-blue-900 transition-all hover:opacity-80 hotel-video-library-analytics-button"><?php esc_html_e( 'View Analytics', 'hotel-chain' ); ?></button>
 								</div>
 								<div id="detail-request-message" class="mt-3 hidden"></div>
 								</div>
@@ -549,28 +612,22 @@ class HotelVideoLibraryPage {
 				if (inactiveBtn) inactiveBtn.dataset.videoId = videoId;
 
 				if (statusByHotel === 'active') {
-					// Active state
 					if (activeBtn) {
-						activeBtn.style.backgroundColor = 'rgb(240, 231, 215)';
-						activeBtn.style.border = '2px solid rgb(61, 61, 68)';
-						activeBtn.style.color = 'rgb(61, 61, 68)';
+						activeBtn.classList.add('hotel-video-library-toggle-active');
+						activeBtn.classList.remove('hotel-video-library-toggle-inactive');
 					}
 					if (inactiveBtn) {
-						inactiveBtn.style.backgroundColor = 'rgb(255, 255, 255)';
-						inactiveBtn.style.border = '2px solid rgb(196, 196, 196)';
-						inactiveBtn.style.color = 'rgb(122, 122, 122)';
+						inactiveBtn.classList.add('hotel-video-library-toggle-inactive');
+						inactiveBtn.classList.remove('hotel-video-library-toggle-active');
 					}
 				} else {
-					// Inactive state
 					if (activeBtn) {
-						activeBtn.style.backgroundColor = 'rgb(255, 255, 255)';
-						activeBtn.style.border = '2px solid rgb(196, 196, 196)';
-						activeBtn.style.color = 'rgb(122, 122, 122)';
+						activeBtn.classList.add('hotel-video-library-toggle-inactive');
+						activeBtn.classList.remove('hotel-video-library-toggle-active');
 					}
 					if (inactiveBtn) {
-						inactiveBtn.style.backgroundColor = 'rgb(240, 231, 215)';
-						inactiveBtn.style.border = '2px solid rgb(61, 61, 68)';
-						inactiveBtn.style.color = 'rgb(61, 61, 68)';
+						inactiveBtn.classList.add('hotel-video-library-toggle-active');
+						inactiveBtn.classList.remove('hotel-video-library-toggle-inactive');
 					}
 				}
 			}
@@ -590,20 +647,20 @@ class HotelVideoLibraryPage {
 				// Show/hide hotel status section (only for assigned videos)
 				if (hotelStatusSection) {
 					if (status === 'active') {
-						hotelStatusSection.style.display = 'block';
+						hotelStatusSection.classList.remove('hidden');
 						updateHotelStatusUI(statusByHotel || 'active', videoId);
 					} else {
-						hotelStatusSection.style.display = 'none';
+						hotelStatusSection.classList.add('hidden');
 					}
 				}
 
 				if (statusBadge) {
 					if (status === 'active') {
-						statusBadge.innerHTML = '<span class="px-3 py-1 rounded" style="background-color: rgb(187, 247, 208); border: 2px solid rgb(34, 197, 94); font-family: var(--font-sans); font-size: 0.875rem; color: rgb(22, 101, 52); font-weight: 600;"><?php echo esc_js( __( 'Assigned', 'hotel-chain' ) ); ?></span>';
+						statusBadge.innerHTML = '<span class="px-3 py-1 rounded hotel-video-library-badge border bg-green-200 border-green-400 rounded text-green-900"><?php echo esc_js( __( 'Assigned', 'hotel-chain' ) ); ?></span>';
 					} else if (status === 'pending') {
-						statusBadge.innerHTML = '<span class="px-3 py-1 rounded" style="background-color: rgb(254, 249, 195); border: 2px solid rgb(234, 179, 8); font-family: var(--font-sans); font-size: 0.875rem; color: rgb(133, 77, 14); font-weight: 600;"><?php echo esc_js( __( 'Pending Approval', 'hotel-chain' ) ); ?></span>';
+						statusBadge.innerHTML = '<span class="px-3 py-1 rounded hotel-video-library-badge border-orange-400 rounded text-orange-900"><?php echo esc_js( __( 'Pending Approval', 'hotel-chain' ) ); ?></span>';
 					} else {
-						statusBadge.innerHTML = '<span class="px-3 py-1 rounded" style="background-color: rgb(226, 232, 240); border: 2px solid rgb(148, 163, 184); font-family: var(--font-sans); font-size: 0.875rem; color: rgb(71, 85, 105); font-weight: 600;"><?php echo esc_js( __( 'Not Assigned', 'hotel-chain' ) ); ?></span>';
+						statusBadge.innerHTML = '<span class="px-3 py-1 rounded hotel-video-library-badge border-red-400 rounded text-red-900"><?php echo esc_js( __( 'Not Assigned', 'hotel-chain' ) ); ?></span>';
 					}
 				}
 
@@ -612,18 +669,15 @@ class HotelVideoLibraryPage {
 					if (status === 'active') {
 						requestBtn.textContent = '<?php echo esc_js( __( 'Already Assigned', 'hotel-chain' ) ); ?>';
 						requestBtn.disabled = true;
-						requestBtn.style.opacity = '0.5';
-						requestBtn.style.cursor = 'not-allowed';
+						requestBtn.classList.add('opacity-50', 'cursor-not-allowed');
 					} else if (status === 'pending') {
 						requestBtn.textContent = '<?php echo esc_js( __( 'Request Pending', 'hotel-chain' ) ); ?>';
 						requestBtn.disabled = true;
-						requestBtn.style.opacity = '0.5';
-						requestBtn.style.cursor = 'not-allowed';
+						requestBtn.classList.add('opacity-50', 'cursor-not-allowed');
 					} else {
 						requestBtn.textContent = '<?php echo esc_js( __( 'Send Request to Admin', 'hotel-chain' ) ); ?>';
 						requestBtn.disabled = false;
-						requestBtn.style.opacity = '1';
-						requestBtn.style.cursor = 'pointer';
+						requestBtn.classList.remove('opacity-50', 'cursor-not-allowed');
 					}
 				}
 			}
@@ -667,7 +721,7 @@ class HotelVideoLibraryPage {
 				}
 
 				// Show panel and scroll to it
-				panel.style.display = 'block';
+				panel.classList.remove('hotel-video-library-panel-hidden');
 				setTimeout(function() {
 					panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 				}, 50);
@@ -700,10 +754,7 @@ class HotelVideoLibraryPage {
 						if (data.success) {
 							updateStatusUI('pending', videoId);
 							if (messageEl) {
-								messageEl.className = 'mt-3 p-3 rounded text-sm';
-								messageEl.style.backgroundColor = 'rgb(187, 247, 208)';
-								messageEl.style.border = '1px solid rgb(34, 197, 94)';
-								messageEl.style.color = 'rgb(22, 101, 52)';
+								messageEl.className = 'mt-3 p-3 rounded text-sm hotel-video-library-message-success';
 								messageEl.textContent = data.data.message;
 								messageEl.classList.remove('hidden');
 							}
@@ -711,10 +762,7 @@ class HotelVideoLibraryPage {
 							this.disabled = false;
 							this.textContent = '<?php echo esc_js( __( 'Send Request to Admin', 'hotel-chain' ) ); ?>';
 							if (messageEl) {
-								messageEl.className = 'mt-3 p-3 rounded text-sm';
-								messageEl.style.backgroundColor = 'rgb(254, 202, 202)';
-								messageEl.style.border = '1px solid rgb(239, 68, 68)';
-								messageEl.style.color = 'rgb(153, 27, 27)';
+								messageEl.className = 'mt-3 p-3 rounded text-sm hotel-video-library-message-error';
 								messageEl.textContent = data.data.message;
 								messageEl.classList.remove('hidden');
 							}
@@ -751,20 +799,14 @@ class HotelVideoLibraryPage {
 					if (data.success) {
 						updateHotelStatusUI(newStatus, videoId);
 						if (messageEl) {
-							messageEl.className = 'mt-2 p-2 rounded text-sm';
-							messageEl.style.backgroundColor = 'rgb(187, 247, 208)';
-							messageEl.style.border = '1px solid rgb(34, 197, 94)';
-							messageEl.style.color = 'rgb(22, 101, 52)';
+							messageEl.className = 'mt-2 p-2 rounded text-sm hotel-video-library-message-success';
 							messageEl.textContent = data.data.message;
 							messageEl.classList.remove('hidden');
 							setTimeout(() => messageEl.classList.add('hidden'), 3000);
 						}
 					} else {
 						if (messageEl) {
-							messageEl.className = 'mt-2 p-2 rounded text-sm';
-							messageEl.style.backgroundColor = 'rgb(254, 202, 202)';
-							messageEl.style.border = '1px solid rgb(239, 68, 68)';
-							messageEl.style.color = 'rgb(153, 27, 27)';
+							messageEl.className = 'mt-2 p-2 rounded text-sm hotel-video-library-message-error';
 							messageEl.textContent = data.data.message;
 							messageEl.classList.remove('hidden');
 						}

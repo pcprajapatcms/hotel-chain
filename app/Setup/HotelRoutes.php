@@ -73,6 +73,32 @@ class HotelRoutes implements ServiceProviderInterface {
 			return;
 		}
 
+		// Require guest login before accessing hotel pages.
+		if ( ! is_user_logged_in() ) {
+			$redirect_to = home_url( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
+			wp_safe_redirect(
+				add_query_arg(
+					'redirect_to',
+					rawurlencode( $redirect_to ),
+					home_url( '/guest-login' )
+				)
+			);
+			exit;
+		}
+
+		$current_user = wp_get_current_user();
+		if ( ! in_array( 'guest', (array) $current_user->roles, true ) ) {
+			$redirect_to = home_url( wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
+			wp_safe_redirect(
+				add_query_arg(
+					'redirect_to',
+					rawurlencode( $redirect_to ),
+					home_url( '/guest-login' )
+				)
+			);
+			exit;
+		}
+
 		$hotel_user = $this->get_hotel_by_slug( $hotel_slug );
 
 		if ( ! $hotel_user ) {

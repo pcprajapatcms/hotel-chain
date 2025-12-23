@@ -38,9 +38,10 @@ if ( ! $video ) {
 // Get video file URL.
 $video_url = $video->video_file_id ? wp_get_attachment_url( $video->video_file_id ) : '';
 
-// Get all assigned videos for "Continue Your Journey" section.
+// Get all fully active videos for "Continue Your Journey" section
+// (admin approved AND hotel has this video set to active).
 $assignment_repo = new HotelVideoAssignmentRepository();
-$all_videos      = $assignment_repo->get_hotel_videos( $hotel->id, array( 'status' => 'active' ) );
+$all_videos      = $assignment_repo->get_hotel_active_videos( $hotel->id );
 
 // Find current video index and next videos.
 $current_index = 0;
@@ -178,7 +179,7 @@ wp_enqueue_style(
 											<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path>
 										</svg>
 									</div>
-									<p class="text-lg mb-2" style="color: rgb(240, 231, 215); font-family: var(--font-serif);"><?php echo esc_html( $video->title ); ?></p>
+									<p class="text-lg mb-2" style="color: rgb(240, 231, 215); font-family: var(--font-serif); text-transform: uppercase; letter-spacing: 0.06em;"><?php echo esc_html( $video->title ); ?></p>
 									<?php if ( $video->duration_label ) : ?>
 										<p class="text-sm" style="color: rgb(196, 196, 196);"><?php esc_html_e( 'Duration:', 'hotel-chain' ); ?> <?php echo esc_html( $video->duration_label ); ?></p>
 									<?php endif; ?>
@@ -197,7 +198,7 @@ wp_enqueue_style(
 										<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path>
 									</svg>
 								</div>
-								<p class="text-lg mb-2" style="color: rgb(240, 231, 215); font-family: var(--font-serif);"><?php echo esc_html( $video->title ); ?></p>
+								<p class="text-lg mb-2" style="color: rgb(240, 231, 215); font-family: var(--font-serif); text-transform: uppercase; letter-spacing: 0.06em;"><?php echo esc_html( $video->title ); ?></p>
 								<?php if ( $video->duration_label ) : ?>
 									<p class="text-sm" style="color: rgb(196, 196, 196);"><?php esc_html_e( 'Duration:', 'hotel-chain' ); ?> <?php echo esc_html( $video->duration_label ); ?></p>
 								<?php endif; ?>

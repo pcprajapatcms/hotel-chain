@@ -576,9 +576,9 @@ class HotelDashboard implements ServiceProviderInterface {
 		</div>
 		<style>
 			:root {
-				--font-serif: 'Georgia', 'Times New Roman', serif;
-				--font-script: 'Brush Script MT', cursive;
-				--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+				--font-serif: 'TAN Aegean', serif;
+				--font-script: 'TAN Aegean', serif;
+				--font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
 			}
 		</style>
 		<?php
