@@ -41,17 +41,61 @@ if ( $current_user_id ) {
 // Get current page/tab.
 $current_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'home'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-// Get assigned videos count.
+// Get assigned videos (only fully active videos for this hotel).
 $assignment_repo = new HotelVideoAssignmentRepository();
-$videos          = $assignment_repo->get_hotel_videos( $hotel->id, array( 'status' => 'active' ) );
+$videos          = $assignment_repo->get_hotel_active_videos( $hotel->id );
 $video_count     = count( $videos );
 
-// Calculate overall progress for the current user.
-$completed_count    = 0;
-$total_progress_pct = 0;
+// Calculate total duration of all active videos for this hotel.
+$total_series_seconds = 0;
+if ( $video_count > 0 ) {
+	$video_repo = new \HotelChain\Repositories\VideoRepository();
+	foreach ( $videos as $assignment ) {
+		$video = $video_repo->get_by_video_id( (int) $assignment->video_id );
+		if ( $video && ! empty( $video->duration_seconds ) ) {
+			$total_series_seconds += (int) $video->duration_seconds;
+		}
+	}
+}
+
+$total_series_label = '';
+if ( $total_series_seconds > 0 ) {
+	$total_hours   = floor( $total_series_seconds / 3600 );
+	$remaining_sec = $total_series_seconds % 3600;
+	$total_minutes = floor( $remaining_sec / 60 );
+
+	if ( $total_hours > 0 ) {
+		// Translators: 1: hours, 2: minutes.
+		$total_series_label = sprintf(
+			/* translators: 1: hours, 2: minutes */
+			__( '%1$d hour %2$d minutes', 'hotel-chain' ),
+			$total_hours,
+			$total_minutes
+		);
+	} else {
+		// Only minutes.
+		$total_series_label = sprintf(
+			/* translators: %d: minutes */
+			__( '%d minutes', 'hotel-chain' ),
+			$total_minutes
+		);
+	}
+}
+
+// Calculate overall progress and analytics for the current user.
+$completed_count        = 0;
+$total_progress_pct     = 0;
+$guest_total_watch_sec  = 0;
+$guest_videos_watched   = 0;
+$guest_videos_completed = 0;
+$guest_streak_days      = 0;
+$guest_recent_activity  = array();
+
 if ( $current_user_id && $video_count > 0 ) {
 	global $wpdb;
 	$video_views_table = $wpdb->prefix . 'hotel_chain_video_views';
+
+	// Per-video progress and completion count.
 	foreach ( $videos as $v ) {
 		$view = $wpdb->get_row(
 			$wpdb->prepare(
@@ -69,6 +113,73 @@ if ( $current_user_id && $video_count > 0 ) {
 		}
 	}
 	$total_progress_pct = round( $total_progress_pct / $video_count );
+
+	// Total watch time, watched videos, completed videos.
+	$guest_total_watch_sec = (int) $wpdb->get_var(
+		$wpdb->prepare(
+			"SELECT COALESCE(SUM(view_duration), 0) FROM {$video_views_table} WHERE hotel_id = %d AND user_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$hotel->id,
+			$current_user_id
+		)
+	);
+
+	$guest_videos_watched = (int) $wpdb->get_var(
+		$wpdb->prepare(
+			"SELECT COUNT(DISTINCT video_id) FROM {$video_views_table} WHERE hotel_id = %d AND user_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$hotel->id,
+			$current_user_id
+		)
+	);
+
+	$guest_videos_completed = (int) $wpdb->get_var(
+		$wpdb->prepare(
+			"SELECT COUNT(DISTINCT video_id) FROM {$video_views_table} WHERE hotel_id = %d AND user_id = %d AND completed = 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$hotel->id,
+			$current_user_id
+		)
+	);
+
+	// Streak: consecutive days (including today) with at least one view.
+	$days_with_activity = $wpdb->get_col(
+		$wpdb->prepare(
+			"SELECT DISTINCT DATE(viewed_at) AS activity_day
+			 FROM {$video_views_table}
+			 WHERE hotel_id = %d AND user_id = %d
+			 ORDER BY activity_day DESC",
+			$hotel->id,
+			$current_user_id
+		)
+	);
+
+	if ( ! empty( $days_with_activity ) ) {
+		$days_set         = array_flip( $days_with_activity );
+		$today            = new DateTimeImmutable( current_time( 'mysql' ) );
+		$guest_streak_days = 0;
+
+		for ( $i = 0; ; $i++ ) {
+			$day = $today->sub( new DateInterval( 'P' . $i . 'D' ) )->format( 'Y-m-d' );
+			if ( isset( $days_set[ $day ] ) ) {
+				$guest_streak_days++;
+			} else {
+				break;
+			}
+		}
+	}
+
+	// Recent activity: last 5 views with title and time.
+	$video_metadata_table = $wpdb->prefix . 'hotel_chain_video_metadata';
+	$guest_recent_activity = $wpdb->get_results(
+		$wpdb->prepare(
+			"SELECT vv.viewed_at, vv.completed, v.title
+			 FROM {$video_views_table} vv
+			 LEFT JOIN {$video_metadata_table} v ON vv.video_id = v.video_id
+			 WHERE vv.hotel_id = %d AND vv.user_id = %d
+			 ORDER BY vv.viewed_at DESC
+			 LIMIT 5",
+			$hotel->id,
+			$current_user_id
+		)
+	);
 }
 
 // Get welcome section data.
@@ -193,7 +304,7 @@ wp_enqueue_style(
 		<div class="max-w-5xl mx-auto">
 			<div class="text-center mb-12">
 				<h1 class="mb-6 font-serif text-[#f0e7d7] text-3xl md:text-4xl lg:text-5xl tracking-wider uppercase"><?php echo esc_html( $welcome_heading ); ?></h1>
-				<p class="text-[#f0e7d7] text-2xl md:text-3xl mb-6" style="font-family: 'Brush Script MT', cursive;"><?php echo esc_html( $welcome_subheading ); ?></p>
+				<p class="text-[#f0e7d7] text-2xl md:text-3xl mb-6" style="font-family: var(--font-serif); font-style: italic; text-transform: none; letter-spacing: 0.05em;"><?php echo esc_html( $welcome_subheading ); ?></p>
 				<p class="max-w-3xl mx-auto text-[#c4c4c4] text-lg leading-relaxed"><?php echo esc_html( $welcome_description ); ?></p>
 			</div>
 			<div class="relative aspect-video rounded-lg overflow-hidden shadow-2xl mb-8 bg-black">
@@ -281,8 +392,18 @@ wp_enqueue_style(
 		<div class="max-w-4xl mx-auto">
 			<div class="text-center mb-12">
 				<h2 class="mb-4 font-serif text-2xl md:text-3xl lg:text-4xl tracking-wider uppercase" style="color: rgb(61, 61, 68);"><?php esc_html_e( 'YOUR MEDITATION SERIES', 'hotel-chain' ); ?></h2>
-				<p class="text-xl md:text-2xl mb-4" style="font-family: 'Brush Script MT', cursive; color: rgb(61, 61, 68);"><?php esc_html_e( 'Seven guided journeys to inner peace', 'hotel-chain' ); ?></p>
-				<p class="text-gray-500"><?php esc_html_e( 'Total Duration: 1 hour 55 minutes', 'hotel-chain' ); ?></p>
+				<p class="text-xl md:text-2xl mb-4" style="font-family: var(--font-serif); font-style: italic; color: rgb(61, 61, 68); text-transform: none; letter-spacing: 0.05em;"><?php esc_html_e( 'Seven guided journeys to inner peace', 'hotel-chain' ); ?></p>
+				<?php if ( $total_series_label ) : ?>
+					<p class="text-gray-500">
+						<?php
+						printf(
+							/* translators: %s: total duration label. */
+							esc_html__( 'Total Duration: %s', 'hotel-chain' ),
+							esc_html( $total_series_label )
+						);
+						?>
+					</p>
+				<?php endif; ?>
 			</div>
 
 			<!-- Progress Bar -->
@@ -436,7 +557,7 @@ wp_enqueue_style(
 
 			<!-- Take Your Time Box -->
 			<div class="mt-12 p-8 rounded-lg text-center" style="background-color: rgb(61, 61, 68);">
-				<p class="mb-2 text-[#f0e7d7] text-3xl" style="font-family: 'Brush Script MT', cursive;"><?php esc_html_e( 'Take your time', 'hotel-chain' ); ?></p>
+				<p class="mb-2 text-[#f0e7d7] text-3xl" style="font-family: var(--font-serif); font-style: italic; text-transform: none; letter-spacing: 0.05em;"><?php esc_html_e( 'Take your time', 'hotel-chain' ); ?></p>
 				<p class="text-[#c4c4c4] leading-relaxed"><?php esc_html_e( "You have one year of access from your registration date. There's no rush—move through the series at your own pace.", 'hotel-chain' ); ?></p>
 			</div>
 		</div>
@@ -478,8 +599,10 @@ wp_enqueue_style(
 						if ( ! $video ) {
 							continue;
 						}
+
+						$video_url = home_url( '/hotel/' . $hotel->hotel_slug . '/meditation/' . $video->video_id . '/' );
 						?>
-						<div class="bg-white rounded-lg border border-solid border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+						<a href="<?php echo esc_url( $video_url ); ?>" class="block bg-white rounded-lg border border-solid border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer no-underline">
 							<div class="aspect-video bg-gray-200 flex items-center justify-center relative">
 								<?php if ( $video->thumbnail_url ) : ?>
 									<img src="<?php echo esc_url( $video->thumbnail_url ); ?>" alt="<?php echo esc_attr( $video->title ); ?>" class="w-full h-full object-cover">
@@ -507,7 +630,7 @@ wp_enqueue_style(
 									<?php endif; ?>
 								</div>
 							</div>
-						</div>
+						</a>
 					<?php endforeach; ?>
 				</div>
 			<?php else : ?>
@@ -528,27 +651,67 @@ wp_enqueue_style(
 			<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
 				<div class="bg-white rounded-lg border border-solid border-gray-200 p-6">
 					<p class="text-sm text-gray-500 mb-1"><?php esc_html_e( 'Total Watch Time', 'hotel-chain' ); ?></p>
-					<p class="text-3xl font-bold text-gray-900">0<span class="text-lg font-normal text-gray-500"> min</span></p>
+					<?php
+					$guest_total_watch_min = (int) floor( $guest_total_watch_sec / 60 );
+					?>
+					<p class="text-3xl font-bold text-gray-900">
+						<?php echo esc_html( $guest_total_watch_min ); ?>
+						<span class="text-lg font-normal text-gray-500"><?php esc_html_e( 'min', 'hotel-chain' ); ?></span>
+					</p>
 				</div>
 				<div class="bg-white rounded-lg border border-solid border-gray-200 p-6">
 					<p class="text-sm text-gray-500 mb-1"><?php esc_html_e( 'Videos Watched', 'hotel-chain' ); ?></p>
-					<p class="text-3xl font-bold text-gray-900">0</p>
+					<p class="text-3xl font-bold text-gray-900"><?php echo esc_html( $guest_videos_watched ); ?></p>
 				</div>
 				<div class="bg-white rounded-lg border border-solid border-gray-200 p-6">
 					<p class="text-sm text-gray-500 mb-1"><?php esc_html_e( 'Completed', 'hotel-chain' ); ?></p>
-					<p class="text-3xl font-bold text-green-600">0</p>
+					<p class="text-3xl font-bold text-green-600"><?php echo esc_html( $guest_videos_completed ); ?></p>
 				</div>
 				<div class="bg-white rounded-lg border border-solid border-gray-200 p-6">
 					<p class="text-sm text-gray-500 mb-1"><?php esc_html_e( 'Streak', 'hotel-chain' ); ?></p>
-					<p class="text-3xl font-bold text-orange-500">0<span class="text-lg font-normal text-gray-500"> days</span></p>
+					<p class="text-3xl font-bold text-orange-500">
+						<?php echo esc_html( $guest_streak_days ); ?>
+						<span class="text-lg font-normal text-gray-500"><?php esc_html_e( 'days', 'hotel-chain' ); ?></span>
+					</p>
 				</div>
 			</div>
 
 			<div class="bg-white rounded-lg border border-solid border-gray-200 p-6">
 				<h3 class="text-lg font-semibold mb-4"><?php esc_html_e( 'Recent Activity', 'hotel-chain' ); ?></h3>
-				<div class="text-center py-8 text-gray-500">
-					<p><?php esc_html_e( 'No activity yet. Start watching videos to see your progress here.', 'hotel-chain' ); ?></p>
-				</div>
+				<?php if ( ! empty( $guest_recent_activity ) ) : ?>
+					<ul class="divide-y divide-gray-200">
+						<?php foreach ( $guest_recent_activity as $activity ) : ?>
+							<li class="py-3 flex items-center justify-between">
+								<div>
+									<p class="text-sm font-medium text-gray-900">
+										<?php echo esc_html( $activity->title ?: __( 'Meditation', 'hotel-chain' ) ); ?>
+									</p>
+									<p class="text-xs text-gray-500">
+										<?php
+										echo esc_html(
+											human_time_diff(
+												strtotime( $activity->viewed_at ),
+												current_time( 'timestamp' )
+											)
+										);
+										echo ' ';
+										esc_html_e( 'ago', 'hotel-chain' );
+										?>
+									</p>
+								</div>
+								<?php if ( (int) $activity->completed === 1 ) : ?>
+									<span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+										<?php esc_html_e( 'Completed', 'hotel-chain' ); ?>
+									</span>
+								<?php endif; ?>
+							</li>
+						<?php endforeach; ?>
+					</ul>
+				<?php else : ?>
+					<div class="text-center py-8 text-gray-500">
+						<p><?php esc_html_e( 'No activity yet. Start watching videos to see your progress here.', 'hotel-chain' ); ?></p>
+					</div>
+				<?php endif; ?>
 			</div>
 
 		<?php elseif ( 'account' === $current_tab ) : ?>

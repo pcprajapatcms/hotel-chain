@@ -287,18 +287,35 @@ class VideosPage implements ServiceProviderInterface {
 				<div class="bg-white border border-solid border-gray-400 rounded p-6">
 					<div class="mb-6">
 						<div class="mb-2 text-gray-700"><?php esc_html_e( 'Video File', 'hotel-chain' ); ?></div>
-						<label class="border border-solid border-gray-400 border-dashed rounded-lg p-12 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer block">
-							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-16 h-16 text-gray-400 mx-auto mb-4" aria-hidden="true">
-								<path d="M12 3v12"></path>
-								<path d="m17 8-5-5-5 5"></path>
-								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-							</svg>
-							<div class="mb-2"><?php esc_html_e( 'Drag and drop video file here', 'hotel-chain' ); ?></div>
-							<div class="text-gray-600 mb-4"><?php esc_html_e( 'or click to browse', 'hotel-chain' ); ?></div>
-							<span class="px-6 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 inline-block"><?php esc_html_e( 'Select Video File', 'hotel-chain' ); ?></span>
-							<input type="file" name="video_file" class="hidden" accept="video/mp4,video/quicktime,video/x-msvideo" required />
-							<div class="text-gray-600 mt-3 text-sm">
-								<?php esc_html_e( 'Supported formats: MP4, MOV, AVI • Max size depends on server limits', 'hotel-chain' ); ?>
+						<label id="hotel-video-drop-zone" class="border border-solid border-gray-400 border-dashed rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer block">
+							<input type="file" name="video_file" id="hotel-video-file-input" class="hidden" accept="video/mp4,video/quicktime,video/x-msvideo" required />
+							
+							<!-- Preview (hidden by default) -->
+							<div id="hotel-video-upload-preview-wrapper" class="hidden mb-4">
+								<video
+									id="hotel-video-upload-player"
+									class="w-full rounded bg-black"
+									style="max-height: 200px;"
+									controls
+								></video>
+								<button type="button" id="hotel-video-upload-remove" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
+									<?php esc_html_e( 'Remove Video', 'hotel-chain' ); ?>
+								</button>
+							</div>
+
+							<!-- Placeholder (shown by default) -->
+							<div id="hotel-video-upload-placeholder">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-16 h-16 text-gray-400 mx-auto mb-4" aria-hidden="true">
+									<path d="M12 3v12"></path>
+									<path d="m17 8-5-5-5 5"></path>
+									<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+								</svg>
+								<div class="mb-2"><?php esc_html_e( 'Drag and drop video file here', 'hotel-chain' ); ?></div>
+								<div class="text-gray-600 mb-4"><?php esc_html_e( 'or click to browse', 'hotel-chain' ); ?></div>
+								<span class="px-6 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 inline-block"><?php esc_html_e( 'Select Video File', 'hotel-chain' ); ?></span>
+								<div class="text-gray-600 mt-3 text-sm">
+									<?php esc_html_e( 'Supported formats: MP4, MOV, AVI • Max size depends on server limits', 'hotel-chain' ); ?>
+								</div>
 							</div>
 						</label>
 					</div>
@@ -353,16 +370,32 @@ class VideosPage implements ServiceProviderInterface {
 					<div class="mb-6 pt-6 border-t border-solid border-gray-300">
 						<div class="mb-3 text-gray-700 font-semibold text-sm"><?php esc_html_e( 'Video Thumbnail (Optional)', 'hotel-chain' ); ?></div>
 						<div class="grid grid-cols-4 gap-4">
-							<label class="border border-solid border-gray-400 border-dashed rounded p-4 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer">
-								<div class="w-full aspect-video bg-gray-200 border-2 border-gray-300 rounded mb-2 flex items-center justify-center">
-									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-8 h-8 text-gray-400" aria-hidden="true">
-										<path d="M12 3v12"></path>
-										<path d="m17 8-5-5-5 5"></path>
-										<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-									</svg>
+							<label id="hotel-thumbnail-drop-zone" class="border border-solid border-gray-400 border-dashed rounded p-4 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer">
+								<input type="file" name="video_thumbnail" id="hotel-thumbnail-file-input" class="hidden" accept="image/*" />
+								
+								<!-- Preview (hidden by default) -->
+								<div id="hotel-thumbnail-upload-preview-wrapper" class="hidden mb-2">
+									<img
+										id="hotel-thumbnail-upload-preview"
+										class="w-full aspect-video rounded object-cover"
+										alt="Thumbnail preview"
+									/>
+									<button type="button" id="hotel-thumbnail-upload-remove" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
+										<?php esc_html_e( 'Remove Thumbnail', 'hotel-chain' ); ?>
+									</button>
 								</div>
-								<div class="text-gray-600 text-sm"><?php esc_html_e( 'Upload thumbnail', 'hotel-chain' ); ?></div>
-								<input type="file" name="video_thumbnail" class="hidden" accept="image/*" />
+
+								<!-- Placeholder (shown by default) -->
+								<div id="hotel-thumbnail-upload-placeholder">
+									<div class="w-full aspect-video bg-gray-200 border-2 border-gray-300 rounded mb-2 flex items-center justify-center">
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-8 h-8 text-gray-400" aria-hidden="true">
+											<path d="M12 3v12"></path>
+											<path d="m17 8-5-5-5 5"></path>
+											<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+										</svg>
+									</div>
+									<div class="text-gray-600 text-sm"><?php esc_html_e( 'Upload thumbnail', 'hotel-chain' ); ?></div>
+								</div>
 							</label>
 						</div>
 					</div>

@@ -2,18 +2,142 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-	color-scheme: light;
+@layer base {
+	@font-face {
+		font-family: 'TAN Aegean';
+		src: url('../fonts/TAN AEGEAN Regular.woff2') format('woff2');
+		font-weight: 400;
+		font-style: normal;
+		font-display: swap;
+	}
+
+	:root {
+		color-scheme: light;
+		--font-serif: 'TAN Aegean', serif;
+		--font-sans: 'Helvetica Neue',sans-serif,system-ui, -apple-system, BlinkMacSystemFont,  Arial;
+	}
+	body {
+		@apply bg-white text-slate-900 antialiased;
+		font-family: var(--font-sans);
+		line-height: 1.6;
+		text-transform: none;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		font-family: var(--font-serif);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+	}
+	a {
+		@apply text-brand-700 hover:text-brand-800 transition-colors;
+	}
+	.btn {
+		@apply inline-flex items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500;
+	}
 }
 
-body {
-	@apply bg-white text-slate-900 antialiased;
-}
+@layer components {
+	/* Hotel Video Library – shared tokens */
+	.hotel-video-library-heading-primary {
+		color: rgb(60, 56, 55);
+		font-family: var(--font-serif);
+	}
 
-a {
-	@apply text-brand-700 hover:text-brand-800 transition-colors;
-}
+	.hotel-video-library-text-muted {
+		color: rgb(122, 122, 122);
+		font-family: var(--font-sans);
+	}
 
-.btn {
-	@apply inline-flex items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500;
+	.hotel-video-library-text-primary {
+		color: rgb(61, 61, 68);
+		font-family: var(--font-sans);
+	}
+
+	.hotel-video-library-icon-muted {
+		color: rgb(196, 196, 196);
+	}
+
+	.hotel-video-library-icon-primary {
+		color: rgb(61, 61, 68);
+	}
+
+	.hotel-video-library-border-light {
+		border-color: rgb(196, 196, 196);
+	}
+
+	.hotel-video-library-bg-cream {
+		background-color: rgb(240, 231, 215);
+	}
+
+	.hotel-video-library-badge {
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 600;
+	}
+
+	/* .hotel-video-library-badge-active {
+		background-color: rgb(187, 247, 208);
+		border: 1px solid rgb(34, 197, 94);
+		color: rgb(22, 101, 52);
+	}
+
+	.hotel-video-library-badge-pending {
+		background-color: rgb(254, 249, 195);
+		border: 1px solid rgb(234, 179, 8);
+		color: rgb(133, 77, 14);
+	}
+
+	.hotel-video-library-badge-inactive {
+		background-color: rgb(226, 232, 240);
+		border: 1px solid rgb(148, 163, 184);
+		color: rgb(71, 85, 105);
+	} */
+
+	.hotel-video-library-toggle-active {
+		background-color: rgb(240, 231, 215);
+		border: 2px solid rgb(61, 61, 68);
+		font-family: var(--font-sans);
+		color: rgb(61, 61, 68);
+	}
+
+	.hotel-video-library-toggle-inactive {
+		background-color: rgb(255, 255, 255);
+		border: 2px solid rgb(196, 196, 196);
+		font-family: var(--font-sans);
+		color: rgb(122, 122, 122);
+	}
+
+	.hotel-video-library-request-button {
+		background-color: rgb(61, 61, 68);
+		color: rgb(240, 231, 215);
+		font-family: var(--font-sans);
+		border: none;
+	}
+
+	.hotel-video-library-analytics-button {
+		background-color: rgb(255, 255, 255);
+		font-family: var(--font-sans);
+		color: rgb(61, 61, 68);
+	}
+
+	.hotel-video-library-message-success {
+		background-color: rgb(187, 247, 208);
+		border: 1px solid rgb(34, 197, 94);
+		color: rgb(22, 101, 52);
+	}
+
+	.hotel-video-library-message-error {
+		background-color: rgb(254, 202, 202);
+		border: 1px solid rgb(239, 68, 68);
+		color: rgb(153, 27, 27);
+	}
+
+	.hotel-video-library-panel-hidden {
+		display: none;
+	}
 }

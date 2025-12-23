@@ -225,11 +225,11 @@ class CustomLogin implements ServiceProviderInterface {
 			<title><?php esc_html_e( 'Hotel Login', 'hotel-chain' ); ?> - <?php bloginfo( 'name' ); ?></title>
 			<?php wp_head(); ?>
 			<style>
-				:root {
-					--font-serif: 'Georgia', 'Times New Roman', serif;
-					--font-script: 'Brush Script MT', cursive;
-					--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-				}
+					:root {
+				--font-serif: 'TAN Aegean', serif;
+				--font-script: 'TAN Aegean', serif;
+				--font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+			}
 				body {
 					background-color: rgb(240, 231, 215);
 					margin: 0;
@@ -535,11 +535,11 @@ class CustomLogin implements ServiceProviderInterface {
 			<title><?php esc_html_e( 'Guest Login', 'hotel-chain' ); ?> - <?php bloginfo( 'name' ); ?></title>
 			<?php wp_head(); ?>
 			<style>
-				:root {
-					--font-serif: 'Georgia', 'Times New Roman', serif;
-					--font-script: 'Brush Script MT', cursive;
-					--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-				}
+					:root {
+				--font-serif: 'TAN Aegean', serif;
+				--font-script: 'TAN Aegean', serif;
+				--font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+			}
 				body {
 					background-color: rgb(240, 231, 215);
 					margin: 0;
@@ -830,11 +830,11 @@ class CustomLogin implements ServiceProviderInterface {
 			<title><?php esc_html_e( 'Admin Login', 'hotel-chain' ); ?> - <?php bloginfo( 'name' ); ?></title>
 			<?php wp_head(); ?>
 			<style>
-				:root {
-					--font-serif: 'Georgia', 'Times New Roman', serif;
-					--font-script: 'Brush Script MT', cursive;
-					--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-				}
+					:root {
+				--font-serif: 'TAN Aegean', serif;
+				--font-script: 'TAN Aegean', serif;
+				--font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+			}
 				body.login {
 					background-color: rgb(240, 231, 215);
 					margin: 0;

@@ -161,13 +161,35 @@ class HotelProfilePage {
 			wp_send_json_error( __( 'Hotel not found', 'hotel-chain' ) );
 		}
 
-		// Build welcome section JSON.
+		// Decode existing welcome section so we can preserve values when nothing is changed.
+		$existing_welcome = array();
+		if ( ! empty( $hotel->welcome_section ) ) {
+			$decoded = json_decode( $hotel->welcome_section, true );
+			if ( is_array( $decoded ) ) {
+				$existing_welcome = $decoded;
+			}
+		}
+
+		// Helper to fetch a value from POST or fall back to existing welcome_section.
+		$get_welcome_field = static function ( string $key, $default = '' ) use ( $existing_welcome ) {
+			if ( isset( $_POST[ $key ] ) && $_POST[ $key ] !== '' ) {
+				return wp_unslash( $_POST[ $key ] );
+			}
+
+			if ( isset( $existing_welcome[ $key ] ) ) {
+				return $existing_welcome[ $key ];
+			}
+
+			return $default;
+		};
+
+		// Build welcome section JSON, preserving existing values when POST is empty.
 		$welcome_section = array(
-			'welcome_video_id'     => isset( $_POST['welcome_video_id'] ) ? absint( $_POST['welcome_video_id'] ) : 0,
-			'welcome_thumbnail_id' => isset( $_POST['welcome_thumbnail_id'] ) ? absint( $_POST['welcome_thumbnail_id'] ) : 0,
-			'welcome_heading'      => isset( $_POST['welcome_heading'] ) ? sanitize_text_field( wp_unslash( $_POST['welcome_heading'] ) ) : '',
-			'welcome_subheading'   => isset( $_POST['welcome_subheading'] ) ? sanitize_text_field( wp_unslash( $_POST['welcome_subheading'] ) ) : '',
-			'welcome_description'  => isset( $_POST['welcome_description'] ) ? sanitize_textarea_field( wp_unslash( $_POST['welcome_description'] ) ) : '',
+			'welcome_video_id'     => absint( $get_welcome_field( 'welcome_video_id', 0 ) ),
+			'welcome_thumbnail_id' => absint( $get_welcome_field( 'welcome_thumbnail_id', 0 ) ),
+			'welcome_heading'      => sanitize_text_field( (string) $get_welcome_field( 'welcome_heading', '' ) ),
+			'welcome_subheading'   => sanitize_text_field( (string) $get_welcome_field( 'welcome_subheading', '' ) ),
+			'welcome_description'  => sanitize_textarea_field( (string) $get_welcome_field( 'welcome_description', '' ) ),
 			'steps'                => array(),
 		);
 
@@ -241,76 +263,91 @@ class HotelProfilePage {
 			wp_die( esc_html__( 'Hotel account not found.', 'hotel-chain' ) );
 		}
 
+		// Decode existing welcome section data for initial form state.
+		$welcome_section = array();
+		if ( ! empty( $hotel->welcome_section ) ) {
+			$decoded = json_decode( $hotel->welcome_section, true );
+			if ( is_array( $decoded ) ) {
+				$welcome_section = $decoded;
+			}
+		}
+
+		$welcome_video_id     = isset( $welcome_section['welcome_video_id'] ) ? absint( $welcome_section['welcome_video_id'] ) : 0;
+		$welcome_thumbnail_id = isset( $welcome_section['welcome_thumbnail_id'] ) ? absint( $welcome_section['welcome_thumbnail_id'] ) : 0;
+		$welcome_video_url    = $welcome_video_id ? wp_get_attachment_url( $welcome_video_id ) : '';
+		$welcome_thumb_url    = $welcome_thumbnail_id ? wp_get_attachment_url( $welcome_thumbnail_id ) : '';
+
 		// Enqueue media uploader.
 		wp_enqueue_media();
 		?>
-		<div class="flex-1 overflow-auto p-4 lg:p-8" style="background-color: rgb(240, 231, 215);">
-			<div class="max-w-7xl mx-auto">
-				<div class="space-y-6">
-					<div class="mb-6 pb-4" style="border-bottom: 2px solid rgb(196, 196, 196);">
-						<h1 class="mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-serif);"><?php esc_html_e( 'HOTEL – Hotel Profile', 'hotel-chain' ); ?></h1>
-						<p style="color: rgb(122, 122, 122); font-family: var(--font-sans);"><?php esc_html_e( "Customize your hotel's branding and settings", 'hotel-chain' ); ?></p>
+		<div class="wrap max-w-full">
+			<div class="flex-1 overflow-auto p-4 lg:p-8 border border-solid border-gray-400">
+				<div class="max-w-7xl mx-auto">
+					<div class="space-y-6">
+					<div class="mb-6 pb-4 border-b border-solid border-gray-400">
+						<h1 class="mb-1"><?php esc_html_e( 'HOTEL – Hotel Profile', 'hotel-chain' ); ?></h1>
+						<p><?php esc_html_e( "Customize your hotel's branding and settings", 'hotel-chain' ); ?></p>
 					</div>
 
 					<!-- Hotel Information -->
-					<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
 						<h3 class="mb-4 pb-3 border-b-2 border-gray-300"><?php esc_html_e( 'Hotel Information', 'hotel-chain' ); ?></h3>
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 							<div>
 								<div class="mb-4">
-									<label class="block mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-sans);"><?php esc_html_e( 'Hotel Name', 'hotel-chain' ); ?></label>
-									<input type="text" name="hotel_name" value="<?php echo esc_attr( $hotel->hotel_name ); ?>" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" />
+									<label class="block mb-1"><?php esc_html_e( 'Hotel Name', 'hotel-chain' ); ?></label>
+									<input type="text" name="hotel_name" value="<?php echo esc_attr( $hotel->hotel_name ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
 								</div>
 								<div class="mb-4">
-									<label class="block mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-sans);"><?php esc_html_e( 'Hotel Code', 'hotel-chain' ); ?></label>
-									<div class="rounded p-2 bg-gray-100" style="border: 2px solid rgb(196, 196, 196); color: rgb(122, 122, 122);"><?php echo esc_html( $hotel->hotel_code ); ?></div>
+									<label class="block mb-1"><?php esc_html_e( 'Hotel Code', 'hotel-chain' ); ?></label>
+									<input type="text" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" value="<?php echo esc_html( $hotel->hotel_code ); ?>" readonly />
 								</div>
 								<div class="mb-4">
-									<label class="block mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-sans);"><?php esc_html_e( 'Contact Email', 'hotel-chain' ); ?></label>
-									<div class="rounded p-2 bg-gray-100" style="border: 2px solid rgb(196, 196, 196); color: rgb(122, 122, 122);"><?php echo esc_html( $hotel->contact_email ?: '-' ); ?></div>
+									<label class="block mb-1"><?php esc_html_e( 'Contact Email', 'hotel-chain' ); ?></label>
+									<input type="text" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" value="<?php echo esc_html( $hotel->contact_email ?: '-' ); ?>" readonly />
 								</div>
 								<div class="mb-4">
-									<label class="block mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-sans);"><?php esc_html_e( 'Support Phone', 'hotel-chain' ); ?></label>
-									<input type="text" name="contact_phone" value="<?php echo esc_attr( $hotel->contact_phone ?: '' ); ?>" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" placeholder="<?php esc_attr_e( '+1 (555) 123-4567', 'hotel-chain' ); ?>" />
+									<label class="block mb-1"><?php esc_html_e( 'Support Phone', 'hotel-chain' ); ?></label>
+									<input type="text" name="contact_phone" value="<?php echo esc_attr( $hotel->contact_phone ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( '+1 (555) 123-4567', 'hotel-chain' ); ?>" />
 								</div>
 							</div>
 							<div>
 								<div class="mb-4">
-									<label class="block mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-sans);"><?php esc_html_e( 'Address', 'hotel-chain' ); ?></label>
-									<input type="text" name="address" value="<?php echo esc_attr( $hotel->address ?: '' ); ?>" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" placeholder="<?php esc_attr_e( '123 Main Street', 'hotel-chain' ); ?>" />
+									<label class="block mb-1"><?php esc_html_e( 'Address', 'hotel-chain' ); ?></label>
+									<input type="text" name="address" value="<?php echo esc_attr( $hotel->address ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( '123 Main Street', 'hotel-chain' ); ?>" />
 								</div>
 								<div class="mb-4">
-									<label class="block mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-sans);"><?php esc_html_e( 'City', 'hotel-chain' ); ?></label>
-									<input type="text" name="city" value="<?php echo esc_attr( $hotel->city ?: '' ); ?>" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" placeholder="<?php esc_attr_e( 'New York', 'hotel-chain' ); ?>" />
+									<label class="block mb-1"><?php esc_html_e( 'City', 'hotel-chain' ); ?></label>
+									<input type="text" name="city" value="<?php echo esc_attr( $hotel->city ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( 'New York', 'hotel-chain' ); ?>" />
 								</div>
 								<div class="mb-4">
-									<label class="block mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-sans);"><?php esc_html_e( 'Country', 'hotel-chain' ); ?></label>
-									<input type="text" name="country" value="<?php echo esc_attr( $hotel->country ?: '' ); ?>" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" placeholder="<?php esc_attr_e( 'United States', 'hotel-chain' ); ?>" />
+									<label class="block mb-1"><?php esc_html_e( 'Country', 'hotel-chain' ); ?></label>
+									<input type="text" name="country" value="<?php echo esc_attr( $hotel->country ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( 'United States', 'hotel-chain' ); ?>" />
 								</div>
 								<div class="mb-4">
-									<label class="block mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-sans);"><?php esc_html_e( 'Website', 'hotel-chain' ); ?></label>
-									<input type="url" name="website" value="<?php echo esc_attr( $hotel->website ?: '' ); ?>" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" placeholder="https://example.com" />
+									<label class="block mb-1"><?php esc_html_e( 'Website', 'hotel-chain' ); ?></label>
+									<input type="url" name="website" value="<?php echo esc_attr( $hotel->website ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="https://example.com" />
 								</div>
 							</div>
 						</div>
 					</div>
 
 					<!-- Welcome Section Customization -->
-					<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
-						<h3 class="mb-4 pb-3 border-b-2 border-gray-300"><?php esc_html_e( 'Welcome Section', 'hotel-chain' ); ?></h3>
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
+						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400"><?php esc_html_e( 'Welcome Section', 'hotel-chain' ); ?></h3>
 						
 						<!-- Welcome Video -->
 						<div class="mb-6">
-							<div class="font-medium mb-4" style="color: rgb(60, 56, 55);"><?php esc_html_e( 'Welcome Video', 'hotel-chain' ); ?></div>
+							<div class="font-medium mb-4"><?php esc_html_e( 'Welcome Video', 'hotel-chain' ); ?></div>
 							<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 								<!-- Video Upload -->
 								<div>
 									<label class="block mb-2 text-gray-700"><?php esc_html_e( 'Video File', 'hotel-chain' ); ?></label>
-									<div id="video-drop-zone" class="border-2 border-gray-300 border-dashed rounded p-6 text-center bg-gray-50 transition-colors cursor-pointer hover:border-blue-400 hover:bg-blue-50">
-										<input type="hidden" name="welcome_video_id" id="welcome_video_id" value="" />
+									<div id="video-drop-zone" class="border border-solid border-gray-400 border-dashed rounded p-6 text-center bg-gray-50 transition-colors cursor-pointer hover:border-blue-400 hover:bg-blue-50">
+										<input type="hidden" name="welcome_video_id" id="welcome_video_id" value="<?php echo esc_attr( $welcome_video_id ); ?>" />
 										<input type="file" id="welcome-video-file" accept="video/mp4,video/webm,video/quicktime" class="hidden" />
-										<div id="welcome-video-preview" class="hidden mb-4">
-											<video id="welcome-video-player" class="w-full rounded" controls style="max-height: 200px;"></video>
+										<div id="welcome-video-preview" class="<?php echo $welcome_video_id ? '' : 'hidden '; ?>mb-4">
+											<video id="welcome-video-player" class="w-full rounded" controls style="max-height: 200px;" <?php echo $welcome_video_url ? 'src="' . esc_url( $welcome_video_url ) . '"' : ''; ?>></video>
 											<button type="button" id="remove-video-btn" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
 												<?php esc_html_e( 'Remove Video', 'hotel-chain' ); ?>
 											</button>
@@ -328,8 +365,8 @@ class HotelProfilePage {
 											</div>
 											<p id="video-progress-text" class="text-gray-500 text-xs mt-1">0%</p>
 										</div>
-										<div id="welcome-video-placeholder" class="mb-4">
-											<div class="w-16 h-16 mx-auto bg-gray-200 border-2 border-gray-300 rounded-full flex items-center justify-center mb-3">
+										<div id="welcome-video-placeholder" class="<?php echo $welcome_video_id ? 'hidden ' : ''; ?>mb-4">
+											<div class="w-16 h-16 mx-auto bg-gray-200 border border-solid border-gray-400 rounded-full flex items-center justify-center mb-3">
 												<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 													<polygon points="5 3 19 12 5 21 5 3"></polygon>
 												</svg>
@@ -342,11 +379,11 @@ class HotelProfilePage {
 								<!-- Thumbnail Upload -->
 								<div>
 									<label class="block mb-2 text-gray-700"><?php esc_html_e( 'Video Thumbnail', 'hotel-chain' ); ?></label>
-									<div id="thumbnail-drop-zone" class="border-2 border-gray-300 border-dashed rounded p-6 text-center bg-gray-50 transition-colors cursor-pointer hover:border-blue-400 hover:bg-blue-50">
-										<input type="hidden" name="welcome_thumbnail_id" id="welcome_thumbnail_id" value="" />
+									<div id="thumbnail-drop-zone" class="border border-solid border-gray-400 border-dashed rounded p-6 text-center bg-gray-50 transition-colors cursor-pointer hover:border-blue-400 hover:bg-blue-50">
+										<input type="hidden" name="welcome_thumbnail_id" id="welcome_thumbnail_id" value="<?php echo esc_attr( $welcome_thumbnail_id ); ?>" />
 										<input type="file" id="welcome-thumbnail-file" accept="image/png,image/jpeg,image/jpg" class="hidden" />
-										<div id="welcome-thumbnail-preview" class="hidden mb-4">
-											<img id="welcome-thumbnail-img" src="" alt="Thumbnail" class="w-full rounded object-cover mx-auto" style="max-height: 200px;" />
+										<div id="welcome-thumbnail-preview" class="<?php echo $welcome_thumbnail_id ? '' : 'hidden '; ?>mb-4">
+											<img id="welcome-thumbnail-img" src="<?php echo esc_url( $welcome_thumb_url ); ?>" alt="Thumbnail" class="w-full rounded object-cover mx-auto" style="max-height: 200px;" />
 											<button type="button" id="remove-thumbnail-btn" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
 												<?php esc_html_e( 'Remove Thumbnail', 'hotel-chain' ); ?>
 											</button>
@@ -364,8 +401,8 @@ class HotelProfilePage {
 											</div>
 											<p id="thumbnail-progress-text" class="text-gray-500 text-xs mt-1">0%</p>
 										</div>
-										<div id="welcome-thumbnail-placeholder" class="mb-4">
-											<div class="w-16 h-16 mx-auto bg-gray-200 border-2 border-gray-300 rounded flex items-center justify-center mb-3">
+										<div id="welcome-thumbnail-placeholder" class="<?php echo $welcome_thumbnail_id ? 'hidden ' : ''; ?>mb-4">
+											<div class="w-16 h-16 mx-auto bg-gray-200 border border-solid border-gray-400 rounded flex items-center justify-center mb-3">
 												<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 													<rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
 													<circle cx="9" cy="9" r="2"></circle>
@@ -381,28 +418,28 @@ class HotelProfilePage {
 						</div>
 
 						<!-- Welcome Message -->
-						<div class="border-t-2 border-gray-300 pt-6 mb-6">
-							<div class="mb-4 font-medium" style="color: rgb(60, 56, 55);"><?php esc_html_e( 'Welcome Message', 'hotel-chain' ); ?></div>
+						<div class="border-t border-gray-400 pt-6 mb-6">
+							<div class="mb-4 font-medium"><?php esc_html_e( 'Welcome Message', 'hotel-chain' ); ?></div>
 							<div class="space-y-4">
 								<div>
 									<label class="block mb-1 text-gray-700"><?php esc_html_e( 'Heading', 'hotel-chain' ); ?></label>
-									<input type="text" name="welcome_heading" value="WELCOME TO YOUR SANCTUARY" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" />
+									<input type="text" name="welcome_heading" value="WELCOME TO YOUR SANCTUARY" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
 								</div>
 								<div>
 									<label class="block mb-1 text-gray-700"><?php esc_html_e( 'Subheading', 'hotel-chain' ); ?></label>
-									<input type="text" name="welcome_subheading" value="The Inner Peace Series" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" />
+									<input type="text" name="welcome_subheading" value="The Inner Peace Series" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
 								</div>
 								<div>
 									<label class="block mb-1 text-gray-700"><?php esc_html_e( 'Description', 'hotel-chain' ); ?></label>
-									<textarea name="welcome_description" rows="3" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);"><?php esc_html_e( 'Watch this brief introduction to learn how to get the most from your meditation practice', 'hotel-chain' ); ?></textarea>
+									<textarea name="welcome_description" rows="3" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500"><?php esc_html_e( 'Watch this brief introduction to learn how to get the most from your meditation practice', 'hotel-chain' ); ?></textarea>
 								</div>
 							</div>
 						</div>
 
 						<!-- Steps Repeater -->
-						<div class="border-t-2 border-gray-300 pt-6">
+						<div class="border-t border-gray-400 pt-6">
 							<div class="flex items-center justify-between mb-4">
-								<div class="font-medium" style="color: rgb(60, 56, 55);"><?php esc_html_e( 'Steps', 'hotel-chain' ); ?></div>
+								<div class="font-medium"><?php esc_html_e( 'Steps', 'hotel-chain' ); ?></div>
 								<button type="button" id="add-step-btn" class="px-3 py-1 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 text-sm flex items-center gap-1">
 									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 										<path d="M12 5v14"></path>
@@ -413,10 +450,10 @@ class HotelProfilePage {
 							</div>
 							<div id="steps-container" class="space-y-4">
 								<!-- Step 1 -->
-								<div class="step-item p-4 border-2 border-gray-300 rounded bg-gray-50" data-step="1">
+								<div class="step-item p-4 border border-solid border-gray-400 rounded bg-gray-50" data-step="1">
 									<div class="flex items-center justify-between mb-3">
 										<div class="flex items-center gap-2">
-											<span class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold" style="background-color: rgb(61, 61, 68);">1</span>
+											<span class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold bg-gray-600">1</span>
 											<span class="font-medium text-gray-700"><?php esc_html_e( 'Step 1', 'hotel-chain' ); ?></span>
 										</div>
 										<button type="button" class="remove-step-btn text-red-600 hover:text-red-800">
@@ -430,19 +467,19 @@ class HotelProfilePage {
 									<div class="space-y-3">
 										<div>
 											<label class="block mb-1 text-gray-600 text-sm"><?php esc_html_e( 'Heading', 'hotel-chain' ); ?></label>
-											<input type="text" name="steps[0][heading]" value="Practice in Order" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" />
+											<input type="text" name="steps[0][heading]" value="Practice in Order" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
 										</div>
 										<div>
 											<label class="block mb-1 text-gray-600 text-sm"><?php esc_html_e( 'Description', 'hotel-chain' ); ?></label>
-											<textarea name="steps[0][description]" rows="2" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);">Each meditation builds on the previous one for maximum benefit</textarea>
+											<textarea name="steps[0][description]" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500">Each meditation builds on the previous one for maximum benefit</textarea>
 										</div>
 									</div>
 								</div>
 								<!-- Step 2 -->
-								<div class="step-item p-4 border-2 border-gray-300 rounded bg-gray-50" data-step="2">
+								<div class="step-item p-4 border border-solid border-gray-400 rounded bg-gray-50" data-step="2">
 									<div class="flex items-center justify-between mb-3">
 										<div class="flex items-center gap-2">
-											<span class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold" style="background-color: rgb(61, 61, 68);">2</span>
+											<span class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold bg-gray-600">2</span>
 											<span class="font-medium text-gray-700"><?php esc_html_e( 'Step 2', 'hotel-chain' ); ?></span>
 										</div>
 										<button type="button" class="remove-step-btn text-red-600 hover:text-red-800">
@@ -456,19 +493,19 @@ class HotelProfilePage {
 									<div class="space-y-3">
 										<div>
 											<label class="block mb-1 text-gray-600 text-sm"><?php esc_html_e( 'Heading', 'hotel-chain' ); ?></label>
-											<input type="text" name="steps[1][heading]" value="Find Your Space" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" />
+											<input type="text" name="steps[1][heading]" value="Find Your Space" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
 										</div>
 										<div>
 											<label class="block mb-1 text-gray-600 text-sm"><?php esc_html_e( 'Description', 'hotel-chain' ); ?></label>
-											<textarea name="steps[1][description]" rows="2" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);">Choose a quiet place where you won't be disturbed</textarea>
+											<textarea name="steps[1][description]" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500">Choose a quiet place where you won't be disturbed</textarea>
 										</div>
 									</div>
 								</div>
 								<!-- Step 3 -->
-								<div class="step-item p-4 border-2 border-gray-300 rounded bg-gray-50" data-step="3">
+								<div class="step-item p-4 border border-solid border-gray-400 rounded bg-gray-50" data-step="3">
 									<div class="flex items-center justify-between mb-3">
 										<div class="flex items-center gap-2">
-											<span class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold" style="background-color: rgb(61, 61, 68);">3</span>
+											<span class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold bg-gray-600">3</span>
 											<span class="font-medium text-gray-700"><?php esc_html_e( 'Step 3', 'hotel-chain' ); ?></span>
 										</div>
 										<button type="button" class="remove-step-btn text-red-600 hover:text-red-800">
@@ -482,11 +519,11 @@ class HotelProfilePage {
 									<div class="space-y-3">
 										<div>
 											<label class="block mb-1 text-gray-600 text-sm"><?php esc_html_e( 'Heading', 'hotel-chain' ); ?></label>
-											<input type="text" name="steps[2][heading]" value="No Pressure" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" />
+											<input type="text" name="steps[2][heading]" value="No Pressure" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
 										</div>
 										<div>
 											<label class="block mb-1 text-gray-600 text-sm"><?php esc_html_e( 'Description', 'hotel-chain' ); ?></label>
-											<textarea name="steps[2][description]" rows="2" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);">There's no wrong way. Simply show up and be present</textarea>
+											<textarea name="steps[2][description]" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500">There's no wrong way. Simply show up and be present</textarea>
 										</div>
 									</div>
 								</div>
@@ -733,7 +770,7 @@ class HotelProfilePage {
 						addBtn.addEventListener('click', function() {
 							const stepCount = container.querySelectorAll('.step-item').length;
 							const newStep = document.createElement('div');
-							newStep.className = 'step-item p-4 border-2 border-gray-300 rounded bg-gray-50';
+							newStep.className = 'step-item p-4 border border-solid border-gray-400 rounded bg-gray-50';
 							newStep.dataset.step = stepCount + 1;
 							newStep.innerHTML = `
 								<div class="flex items-center justify-between mb-3">
@@ -840,24 +877,17 @@ class HotelProfilePage {
 					</script>
 
 					<!-- Guest Portal Settings -->
-					<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
-						<h3 class="mb-4 pb-3 border-b-2 border-gray-300"><?php esc_html_e( 'Guest Portal Settings', 'hotel-chain' ); ?></h3>
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
+						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400"><?php esc_html_e( 'Guest Portal Settings', 'hotel-chain' ); ?></h3>
 						<div class="space-y-4">
-							<div class="flex items-center justify-between p-3 border-2 border-gray-300 rounded">
-								<div>
-									<div class="mb-1"><?php esc_html_e( 'Welcome Message', 'hotel-chain' ); ?></div>
-									<div class="text-gray-600"><?php esc_html_e( 'Customize the greeting shown to guests', 'hotel-chain' ); ?></div>
-								</div>
-								<button class="px-4 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900"><?php esc_html_e( 'Edit', 'hotel-chain' ); ?></button>
-							</div>
-							<div class="flex items-center justify-between p-3 border-2 border-gray-300 rounded">
+							<div class="flex items-center justify-between p-3 border border-solid border-gray-400 rounded">
 								<div>
 									<div class="mb-1"><?php esc_html_e( 'Default Access Duration', 'hotel-chain' ); ?></div>
 									<div class="text-gray-600"><?php esc_html_e( 'How long guests have access after approval', 'hotel-chain' ); ?></div>
 								</div>
-								<div class="border-2 border-gray-300 rounded px-4 py-2 bg-white"><?php esc_html_e( '30 days', 'hotel-chain' ); ?></div>
+								<div class="border border-solid border-gray-400 rounded px-4 py-2 bg-white"><?php esc_html_e( '30 days', 'hotel-chain' ); ?></div>
 							</div>
-							<div class="flex items-center justify-between p-3 border-2 border-gray-300 rounded">
+							<div class="flex items-center justify-between p-3 border border-solid border-gray-400 rounded">
 								<div>
 									<div class="mb-1"><?php esc_html_e( 'Email Notifications', 'hotel-chain' ); ?></div>
 									<div class="text-gray-600"><?php esc_html_e( 'Receive alerts for new access requests', 'hotel-chain' ); ?></div>
@@ -866,7 +896,7 @@ class HotelProfilePage {
 									<div class="w-5 h-5 bg-white border-2 border-green-600 rounded-full absolute top-0 right-0"></div>
 								</div>
 							</div>
-							<div class="flex items-center justify-between p-3 border-2 border-gray-300 rounded">
+							<div class="flex items-center justify-between p-3 border border-solid border-gray-400 rounded">
 								<div>
 									<div class="mb-1"><?php esc_html_e( 'Guest Analytics Tracking', 'hotel-chain' ); ?></div>
 									<div class="text-gray-600"><?php esc_html_e( 'Track detailed viewing analytics for guests', 'hotel-chain' ); ?></div>
@@ -879,10 +909,10 @@ class HotelProfilePage {
 					</div>
 
 					<!-- Notifications & Alerts -->
-					<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+					<div class="bg-white rounded p-4 hidden border border-solid border-gray-400">
 						<h3 class="mb-4 pb-3 border-b-2 border-gray-300"><?php esc_html_e( 'Notifications & Alerts', 'hotel-chain' ); ?></h3>
 						<div class="space-y-3">
-							<div class="flex items-center justify-between p-3 border-2 border-gray-300 rounded">
+							<div class="flex items-center justify-between p-3 border border-solid border-gray-400 rounded">
 								<div>
 									<div class="mb-1"><?php esc_html_e( 'Expiry Alerts', 'hotel-chain' ); ?></div>
 									<div class="text-gray-600"><?php esc_html_e( 'Get notified before guest access expires', 'hotel-chain' ); ?></div>
@@ -891,29 +921,21 @@ class HotelProfilePage {
 									<div class="w-5 h-5 bg-white border-2 border-green-600 rounded-full absolute top-0 right-0"></div>
 								</div>
 							</div>
-							<div class="flex items-center justify-between p-3 border-2 border-gray-300 rounded">
+							<div class="flex items-center justify-between p-3 border border-solid border-gray-400 rounded">
 								<div>
 									<div class="mb-1"><?php esc_html_e( 'Alert Timing', 'hotel-chain' ); ?></div>
 									<div class="text-gray-600"><?php esc_html_e( 'When to send expiry notifications', 'hotel-chain' ); ?></div>
 								</div>
-								<div class="border-2 border-gray-300 rounded px-4 py-2 bg-white"><?php esc_html_e( '3 days before', 'hotel-chain' ); ?></div>
+								<div class="border border-solid border-gray-400 rounded px-4 py-2 bg-white"><?php esc_html_e( '3 days before', 'hotel-chain' ); ?></div>
 							</div>
 						</div>
 					</div>
 
 					<!-- Action Buttons -->
-					<div class="bg-white rounded p-4 bg-gray-50" style="border: 2px solid rgb(196, 196, 196);">
+					<div class="rounded p-4 bg-gray-50">
 						<div class="flex items-center justify-between">
-							<button class="px-6 py-2 bg-gray-200 border-2 border-gray-400 rounded text-gray-900 flex items-center gap-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-									<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path>
-									<circle cx="12" cy="12" r="3"></circle>
-								</svg>
-								<?php esc_html_e( 'Preview Guest Portal', 'hotel-chain' ); ?>
-							</button>
 							<div class="flex gap-3">
-								<button id="cancel-profile-btn" type="button" class="px-6 py-2 bg-gray-200 border-2 border-gray-400 rounded text-gray-900"><?php esc_html_e( 'Cancel', 'hotel-chain' ); ?></button>
-								<button id="save-profile-btn" type="button" class="px-6 py-2 bg-green-200 border-2 border-green-400 rounded text-green-900 flex items-center gap-2">
+								<button id="save-profile-btn" type="button" class="flex-1 px-6 py-2 bg-green-200 border-2 border-green-400 rounded text-green-900 flex items-center gap-2">
 									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
 										<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path>
 										<path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"></path>
@@ -921,6 +943,7 @@ class HotelProfilePage {
 									</svg>
 									<?php esc_html_e( 'Save Changes', 'hotel-chain' ); ?>
 								</button>
+								<button id="cancel-profile-btn" type="button" class="px-6 py-2 bg-gray-200 border-2 border-gray-400 rounded text-gray-900"><?php esc_html_e( 'Cancel', 'hotel-chain' ); ?></button>
 							</div>
 						</div>
 					</div>

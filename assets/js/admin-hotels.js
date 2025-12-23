@@ -110,6 +110,14 @@
 		var statusLabel = document.getElementById('hotel-video-upload-status');
 		var fileLabel = document.getElementById('hotel-video-upload-filename');
 
+		// Elements for local video preview (created in VideosPage::render_page()).
+		var previewWrapper = document.getElementById('hotel-video-upload-preview-wrapper');
+		var previewPlayer = document.getElementById('hotel-video-upload-player');
+		var placeholder = document.getElementById('hotel-video-upload-placeholder');
+		var removeButton = document.getElementById('hotel-video-upload-remove');
+		var fileInput = document.getElementById('hotel-video-file-input');
+		var currentObjectUrl = null;
+
 		function resetProgress() {
 			if (!progressWrapper) {
 				return;
@@ -128,8 +136,162 @@
 			progressWrapper.classList.remove('hidden');
 		}
 
+		// Clean up any existing preview URL and show placeholder.
+		function resetPreview() {
+			if (currentObjectUrl && window.URL && URL.revokeObjectURL) {
+				try {
+					URL.revokeObjectURL(currentObjectUrl);
+				} catch (e) {
+					// Ignore revoke errors.
+				}
+				currentObjectUrl = null;
+			}
+			if (previewPlayer) {
+				previewPlayer.removeAttribute('src');
+				try {
+					previewPlayer.load();
+				} catch (e2) {
+					// Ignore.
+				}
+			}
+			if (previewWrapper) {
+				previewWrapper.classList.add('hidden');
+			}
+			if (placeholder) {
+				placeholder.classList.remove('hidden');
+			}
+		}
+
+		// When a file is selected, show a local preview without uploading yet.
+		if (fileInput && window.URL && URL.createObjectURL) {
+			fileInput.addEventListener('change', function () {
+				if (!fileInput.files || !fileInput.files.length) {
+					resetPreview();
+					return;
+				}
+
+				var file = fileInput.files[0];
+
+				// Ignore non-video files just in case.
+				if (!file.type || file.type.indexOf('video/') !== 0) {
+					resetPreview();
+					return;
+				}
+
+				resetPreview();
+
+				if (!previewPlayer || !previewWrapper) {
+					return;
+				}
+
+				currentObjectUrl = URL.createObjectURL(file);
+				previewPlayer.src = currentObjectUrl;
+				previewWrapper.classList.remove('hidden');
+				if (placeholder) {
+					placeholder.classList.add('hidden');
+				}
+			});
+		}
+
+		// Remove selected video (just clears the file input and preview, no server call).
+		if (removeButton && fileInput) {
+			removeButton.addEventListener('click', function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+				fileInput.value = '';
+				resetPreview();
+				// Also clear any progress UI text to avoid confusion.
+				if (fileLabel) {
+					fileLabel.textContent = '';
+				}
+			});
+		}
+
+		// Prevent label from triggering file input when clicking on video player controls
+		if (previewPlayer) {
+			previewPlayer.addEventListener('click', function (e) {
+				e.stopPropagation();
+			});
+		}
+
+		// Thumbnail preview handling
+		var thumbPreviewWrapper = document.getElementById('hotel-thumbnail-upload-preview-wrapper');
+		var thumbPreviewImg = document.getElementById('hotel-thumbnail-upload-preview');
+		var thumbPlaceholder = document.getElementById('hotel-thumbnail-upload-placeholder');
+		var thumbRemoveButton = document.getElementById('hotel-thumbnail-upload-remove');
+		var thumbFileInput = document.getElementById('hotel-thumbnail-file-input');
+		var thumbCurrentObjectUrl = null;
+
+		// Clean up thumbnail preview and show placeholder.
+		function resetThumbnailPreview() {
+			if (thumbCurrentObjectUrl && window.URL && URL.revokeObjectURL) {
+				try {
+					URL.revokeObjectURL(thumbCurrentObjectUrl);
+				} catch (e) {
+					// Ignore revoke errors.
+				}
+				thumbCurrentObjectUrl = null;
+			}
+			if (thumbPreviewImg) {
+				thumbPreviewImg.removeAttribute('src');
+			}
+			if (thumbPreviewWrapper) {
+				thumbPreviewWrapper.classList.add('hidden');
+			}
+			if (thumbPlaceholder) {
+				thumbPlaceholder.classList.remove('hidden');
+			}
+		}
+
+		// When a thumbnail file is selected, show a local preview without uploading yet.
+		if (thumbFileInput && window.URL && URL.createObjectURL) {
+			thumbFileInput.addEventListener('change', function () {
+				if (!thumbFileInput.files || !thumbFileInput.files.length) {
+					resetThumbnailPreview();
+					return;
+				}
+
+				var file = thumbFileInput.files[0];
+
+				// Ignore non-image files just in case.
+				if (!file.type || file.type.indexOf('image/') !== 0) {
+					resetThumbnailPreview();
+					return;
+				}
+
+				resetThumbnailPreview();
+
+				if (!thumbPreviewImg || !thumbPreviewWrapper) {
+					return;
+				}
+
+				thumbCurrentObjectUrl = URL.createObjectURL(file);
+				thumbPreviewImg.src = thumbCurrentObjectUrl;
+				thumbPreviewWrapper.classList.remove('hidden');
+				if (thumbPlaceholder) {
+					thumbPlaceholder.classList.add('hidden');
+				}
+			});
+		}
+
+		// Remove selected thumbnail (just clears the file input and preview, no server call).
+		if (thumbRemoveButton && thumbFileInput) {
+			thumbRemoveButton.addEventListener('click', function (e) {
+				e.preventDefault();
+				e.stopPropagation();
+				thumbFileInput.value = '';
+				resetThumbnailPreview();
+			});
+		}
+
+		// Prevent label from triggering file input when clicking on thumbnail image
+		if (thumbPreviewImg) {
+			thumbPreviewImg.addEventListener('click', function (e) {
+				e.stopPropagation();
+			});
+		}
+
 		form.addEventListener('submit', function(event) {
-			var fileInput = form.querySelector('input[name="video_file"]');
 			if (!fileInput || !fileInput.files || !fileInput.files.length) {
 				// Let normal submit happen; server-side will show error.
 				return;

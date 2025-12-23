@@ -339,6 +339,28 @@ class VideoLibraryPage implements ServiceProviderInterface {
 								</button>
 							<?php endif; ?>
 							<div class="mt-3 text-xs text-blue-900 bg-blue-50 border border-solid border-blue-200 rounded px-3 py-2 hidden" data-hotel-replace-label="1"></div>
+							<div class="mt-6 pt-4 border-t border-solid border-gray-200">
+								<div class="mb-2 text-gray-700 font-semibold text-sm"><?php esc_html_e( 'Video Thumbnail (Optional)', 'hotel-chain' ); ?></div>
+								<div class="grid grid-cols-1 gap-3">
+									<label class="border border-solid border-gray-400 border-dashed rounded p-4 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer">
+										<div class="w-full aspect-video bg-gray-200 border-2 border-gray-300 rounded mb-2 flex items-center justify-center overflow-hidden">
+											<?php if ( $thumbnail_url ) : ?>
+												<img src="<?php echo esc_url( $thumbnail_url ); ?>" alt="" class="w-full h-full object-cover" />
+											<?php else : ?>
+												<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-8 h-8 text-gray-400" aria-hidden="true">
+													<path d="M12 3v12"></path>
+													<path d="m17 8-5-5-5 5"></path>
+													<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+												</svg>
+											<?php endif; ?>
+										</div>
+										<div class="text-gray-600 text-sm">
+											<?php esc_html_e( 'Upload thumbnail', 'hotel-chain' ); ?>
+										</div>
+										<input type="file" name="video_thumbnail" class="hidden" accept="image/*" />
+									</label>
+								</div>
+							</div>
 						</div>
 						<div class="col-span-2">
 							<div class="mb-4 mt-0">
@@ -797,12 +819,15 @@ class VideoLibraryPage implements ServiceProviderInterface {
 
 		$video_replaced = 0;
 
-		// Optional: replace main video file if a new one was uploaded.
-		if ( ! empty( $_FILES['replace_video_file']['name'] ?? '' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslashed
+		// Load media helpers if we might handle uploads.
+		if ( ! empty( $_FILES['replace_video_file']['name'] ?? '' ) || ! empty( $_FILES['video_thumbnail']['name'] ?? '' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslashed
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 			require_once ABSPATH . 'wp-admin/includes/media.php';
 			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
 
+		// Optional: replace main video file if a new one was uploaded.
+		if ( ! empty( $_FILES['replace_video_file']['name'] ?? '' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslashed
 			$video_attachment_id = media_handle_upload( 'replace_video_file', 0 );
 
 			if ( ! is_wp_error( $video_attachment_id ) && $video_attachment_id ) {
@@ -848,6 +873,16 @@ class VideoLibraryPage implements ServiceProviderInterface {
 						$update_data['file_format'] = strtoupper( $ext );
 					}
 				}
+			}
+		}
+
+		// Optional: replace or add thumbnail image.
+		if ( ! empty( $_FILES['video_thumbnail']['name'] ?? '' ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslashed
+			$thumb_attachment_id = media_handle_upload( 'video_thumbnail', 0 );
+
+			if ( ! is_wp_error( $thumb_attachment_id ) && $thumb_attachment_id ) {
+				$update_data['thumbnail_id']  = $thumb_attachment_id;
+				$update_data['thumbnail_url'] = wp_get_attachment_url( $thumb_attachment_id ) ?: '';
 			}
 		}
 
@@ -1130,6 +1165,31 @@ class VideoLibraryPage implements ServiceProviderInterface {
 									replaceLabel.classList.remove('hidden');
 								}
 							}
+						});
+					}
+
+					// Thumbnail upload preview (mirror Upload Video design).
+					const thumbInput = detailContainer.querySelector('input[name="video_thumbnail"]');
+					if (thumbInput) {
+						thumbInput.addEventListener('change', function () {
+							const card = this.closest('label');
+							if (!card || !this.files || !this.files[0]) return;
+
+							const previewContainer = card.querySelector('div.w-full.aspect-video');
+							if (!previewContainer) return;
+
+							const file = this.files[0];
+							const reader = new FileReader();
+							reader.onload = function (e) {
+								// Remove existing children and insert new img preview.
+								previewContainer.innerHTML = '';
+								const img = document.createElement('img');
+								img.src = e.target.result;
+								img.alt = '';
+								img.className = 'w-full h-full object-cover';
+								previewContainer.appendChild(img);
+							};
+							reader.readAsDataURL(file);
 						});
 					}
 

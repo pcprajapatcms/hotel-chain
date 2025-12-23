@@ -147,10 +147,10 @@ class GuestRegistration implements ServiceProviderInterface {
 							<h2 class="font-serif text-[#f0e7d7] text-4xl md:text-6xl tracking-widest leading-tight uppercase mb-8" style="text-shadow: 0px 4px 20px rgba(0,0,0,0.7);">YOUR BAGGAGE</h2>
 						</div>
 						<div class="mb-12">
-							<p class="text-[#f0e7d7] text-4xl md:text-5xl leading-tight mb-6" style="font-family: 'Brush Script MT', cursive; text-shadow: 0px 2px 10px rgba(0,0,0,0.5);">Breathe deeply</p>
+							<p class="text-[#f0e7d7] text-4xl md:text-5xl leading-tight mb-6" style="font-family: var(--font-serif); font-style: italic; text-transform: none; letter-spacing: 0.05em; text-shadow: 0px 2px 10px rgba(0,0,0,0.5);">Breathe deeply</p>
 						</div>
 						<div class="max-w-3xl mx-auto">
-							<p class="text-[#f0e7d7] text-3xl md:text-4xl leading-tight mb-4" style="font-family: 'Brush Script MT', cursive; text-shadow: 0px 2px 10px rgba(0,0,0,0.5);">Find your center</p>
+							<p class="text-[#f0e7d7] text-3xl md:text-4xl leading-tight mb-4" style="font-family: var(--font-serif); font-style: italic; text-transform: none; letter-spacing: 0.05em; text-shadow: 0px 2px 10px rgba(0,0,0,0.5);">Find your center</p>
 							<div class="h-px w-32 bg-[#f0e7d7]/60 mx-auto mb-8"></div>
 							<p class="text-[#f0e7d7] text-lg md:text-xl leading-relaxed font-light tracking-wide">Seven guided meditations await you. A signature experience designed to help you carry peace home with you.</p>
 						</div>
@@ -168,7 +168,7 @@ class GuestRegistration implements ServiceProviderInterface {
 			<div class="max-w-2xl mx-auto">
 				<div class="text-center mb-12 mt-12">
 					<h2 class="font-serif text-gray-700 text-2xl md:text-3xl tracking-wider uppercase mb-4">CREATE YOUR ACCOUNT</h2>
-					<p class="text-gray-700 text-xl md:text-2xl mb-2" style="font-family: 'Brush Script MT', cursive;">Your journey begins today</p>
+					<p class="text-gray-700 text-xl md:text-2xl mb-2" style="font-family: var(--font-serif); font-style: italic; text-transform: none; letter-spacing: 0.05em;">Your journey begins today</p>
 					<p class="text-gray-500 text-base leading-relaxed">Access granted for one year from registration</p>
 				</div>
 				<div class="bg-white rounded-lg p-6 border border-solid border-gray-300">
