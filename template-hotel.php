@@ -486,7 +486,7 @@ wp_enqueue_style(
 						</button>
 						<div class="accordion-content hidden px-6 pb-6 pt-2 border-t-2" style="border-color: rgb(229, 229, 229);">
 							<?php if ( ! empty( $video->description ) ) : ?>
-								<p class="mb-4" style="color: rgb(61, 61, 68); font-size: 1rem; line-height: 1.7;"><?php echo esc_html( $video->description ); ?></p>
+								<div class="mb-4" style="color: rgb(61, 61, 68); font-size: 1rem; line-height: 1.7;"><?php echo wp_kses_post( wpautop( $video->description ) ); ?></div>
 							<?php endif; ?>
 							
 							<?php if ( ! empty( $video->category ) ) : ?>

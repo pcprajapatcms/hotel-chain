@@ -698,7 +698,7 @@ class HotelVideoLibraryPage {
 				const avgCompletionEl = document.getElementById('detail-avg-completion');
 
 				if (titleEl) titleEl.textContent = videoData.title || '';
-				if (descEl) descEl.textContent = videoData.description || '';
+				if (descEl) descEl.innerHTML = videoData.description || '';
 				if (durationEl) durationEl.textContent = videoData.duration || '0:00';
 				if (categoryEl) categoryEl.textContent = videoData.category || '';
 				if (completionsEl) completionsEl.textContent = videoData.total_completions || '0';

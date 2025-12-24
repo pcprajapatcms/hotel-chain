@@ -354,7 +354,19 @@ class VideosPage implements ServiceProviderInterface {
 						<div>
 							<div class="mb-3">
 								<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_description"><?php esc_html_e( 'Description', 'hotel-chain' ); ?></label>
-								<textarea id="video_description" name="video_description" rows="4" placeholder="<?php esc_attr_e( '[Text area for video description]', 'hotel-chain' ); ?>" class="w-full border border-solid border-slate-300 rounded p-3 bg-white text-gray-700 min-h-32 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+								<?php
+								wp_editor(
+									'',
+									'video_description',
+									array(
+										'textarea_name' => 'video_description',
+										'textarea_rows' => 10,
+										'media_buttons' => false,
+										'teeny'         => false,
+										'quicktags'     => true,
+									)
+								);
+								?>
 							</div>
 							<div class="mb-3">
 								<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_practice_tip"><?php esc_html_e( 'Practice Tip', 'hotel-chain' ); ?></label>
