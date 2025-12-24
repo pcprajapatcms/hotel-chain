@@ -94,8 +94,14 @@ class Assets implements ServiceProviderInterface {
 	public function enqueue_admin( string $hook ): void {
 		// Only load on our Hotel and Video admin pages.
 		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( ! in_array( $page, array( 'hotel-chain-accounts', 'hotel-details', 'hotel-video-upload', 'hotel-video-library', 'hotel-video-requests', 'hotel-video-taxonomy', 'hotel-profile', 'hotel-dashboard' ), true ) ) {
+		if ( ! in_array( $page, array( 'hotel-chain-accounts', 'hotel-details', 'hotel-edit', 'hotel-video-upload', 'hotel-video-library', 'hotel-video-requests', 'hotel-video-taxonomy', 'hotel-profile', 'hotel-dashboard' ), true ) ) {
 			return;
+		}
+
+		// Enqueue editor scripts for pages that use wp_editor
+		if ( in_array( $page, array( 'hotel-video-library', 'hotel-video-upload' ), true ) ) {
+			wp_enqueue_editor();
+			wp_enqueue_media();
 		}
 
 		wp_enqueue_style(

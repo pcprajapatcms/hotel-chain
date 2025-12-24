@@ -669,7 +669,33 @@ class CustomLogin implements ServiceProviderInterface {
 	public function handle_custom_login(): void {
 		// Check for actions that WordPress should handle normally.
 		$action = isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$allowed_actions = array( 'logout', 'lostpassword', 'retrievepassword', 'resetpass', 'rp', 'register', 'confirmaction' );
+		$allowed_actions = array( 'logout', 'resetpass', 'rp', 'register', 'confirmaction' );
+		
+		// Handle password reset on custom page.
+		if ( 'lostpassword' === $action || 'retrievepassword' === $action ) {
+			$login_type = $this->get_login_type();
+			if ( 'admin' === $login_type || empty( $login_type ) ) {
+				// Handle password reset form submission.
+				if ( isset( $_POST['user_login'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					$this->process_password_reset();
+				}
+				$this->render_admin_login( 'lostpassword' );
+				exit;
+			}
+		}
+
+		// Handle password reset form (action=rp) on custom page.
+		if ( 'rp' === $action || 'resetpass' === $action ) {
+			$login_type = $this->get_login_type();
+			if ( 'admin' === $login_type || empty( $login_type ) ) {
+				// Handle password reset form submission.
+				if ( isset( $_POST['pass1'] ) && isset( $_POST['pass2'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+					$this->process_password_reset_submission();
+				}
+				$this->render_admin_login( 'rp' );
+				exit;
+			}
+		}
 		
 		if ( in_array( $action, $allowed_actions, true ) ) {
 			// Let WordPress handle these actions normally.
@@ -700,12 +726,12 @@ class CustomLogin implements ServiceProviderInterface {
 
 		// Only intercept for admin login type or default wp-login.php.
 		if ( 'admin' === $login_type || empty( $login_type ) ) {
-			// If this is a form submission, let WordPress handle it normally.
-			// We'll validate via authenticate filter.
-			if ( ! isset( $_POST['log'] ) || ! isset( $_POST['pwd'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-				$this->render_admin_login();
-				exit;
+			// Handle form submission for admin login.
+			if ( isset( $_POST['log'] ) && isset( $_POST['pwd'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+				$this->process_admin_login();
 			}
+			$this->render_admin_login();
+			exit;
 		}
 	}
 
@@ -735,6 +761,44 @@ class CustomLogin implements ServiceProviderInterface {
 
 		// Default to admin for wp-login.php.
 		return 'admin';
+	}
+
+	/**
+	 * Process admin login form submission.
+	 *
+	 * @return void
+	 */
+	private function process_admin_login(): void {
+		$username = isset( $_POST['log'] ) ? sanitize_user( wp_unslash( $_POST['log'] ) ) : '';
+		$password = isset( $_POST['pwd'] ) ? wp_unslash( $_POST['pwd'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$remember = isset( $_POST['rememberme'] ) ? true : false;
+
+		if ( empty( $username ) || empty( $password ) ) {
+			return;
+		}
+
+		// Attempt login.
+		$user = wp_authenticate( $username, $password );
+
+		if ( is_wp_error( $user ) ) {
+			wp_safe_redirect( add_query_arg( 'login', 'failed', wp_login_url() ) );
+			exit;
+		}
+
+		// Check if user is administrator role.
+		if ( ! in_array( 'administrator', $user->roles, true ) ) {
+			wp_safe_redirect( add_query_arg( 'error', 'admin_only', wp_login_url() ) );
+			exit;
+		}
+
+		// Set auth cookie and redirect.
+		wp_set_current_user( $user->ID );
+		wp_set_auth_cookie( $user->ID, $remember );
+		do_action( 'wp_login', $user->user_login, $user );
+
+		$redirect_to = isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : admin_url(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		wp_safe_redirect( $redirect_to );
+		exit;
 	}
 
 	/**
@@ -789,24 +853,169 @@ class CustomLogin implements ServiceProviderInterface {
 	}
 
 	/**
-	 * Render admin login page.
+	 * Process password reset request.
 	 *
 	 * @return void
 	 */
-	private function render_admin_login(): void {
-		// Get login errors from URL parameters.
-		$errors = new \WP_Error();
-		if ( isset( $_GET['login'] ) && 'failed' === $_GET['login'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$errors->add( 'login_failed', __( 'Invalid username or password.', 'hotel-chain' ) );
-		}
-		if ( isset( $_GET['error'] ) && 'admin_only' === $_GET['error'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$errors->add( 'admin_only', __( 'This login page is restricted to administrators only.', 'hotel-chain' ) );
+	private function process_password_reset(): void {
+		$user_login = isset( $_POST['user_login'] ) ? wp_unslash( $_POST['user_login'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+		if ( empty( $user_login ) ) {
+			wp_safe_redirect( add_query_arg( array( 'action' => 'lostpassword', 'error' => 'empty_username' ), wp_login_url() ) );
+			exit;
 		}
 
-		// Also check for WordPress default error messages.
-		$wp_errors = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( 'incorrect_password' === $wp_errors || 'invalid_username' === $wp_errors || 'invalid_email' === $wp_errors ) {
-			$errors->add( 'login_failed', __( 'Invalid username or password.', 'hotel-chain' ) );
+		// Check if user exists and is administrator.
+		$user = null;
+		if ( is_email( $user_login ) ) {
+			$user = get_user_by( 'email', $user_login );
+		} else {
+			$user = get_user_by( 'login', $user_login );
+		}
+
+		if ( ! $user ) {
+			// Don't reveal if user exists for security.
+			wp_safe_redirect( add_query_arg( array( 'action' => 'lostpassword', 'checkemail' => 'confirm' ), wp_login_url() ) );
+			exit;
+		}
+
+		// Check if user is administrator.
+		if ( ! in_array( 'administrator', $user->roles, true ) ) {
+			// Don't reveal if user exists for security.
+			wp_safe_redirect( add_query_arg( array( 'action' => 'lostpassword', 'checkemail' => 'confirm' ), wp_login_url() ) );
+			exit;
+		}
+
+		// Use WordPress's built-in password reset functionality.
+		$result = retrieve_password( $user->user_login );
+
+		if ( is_wp_error( $result ) ) {
+			wp_safe_redirect( add_query_arg( array( 'action' => 'lostpassword', 'error' => $result->get_error_code() ), wp_login_url() ) );
+			exit;
+		}
+
+		// Success - redirect to show confirmation message.
+		wp_safe_redirect( add_query_arg( array( 'action' => 'lostpassword', 'checkemail' => 'confirm' ), wp_login_url() ) );
+		exit;
+	}
+
+	/**
+	 * Process password reset form submission.
+	 *
+	 * @return void
+	 */
+	private function process_password_reset_submission(): void {
+		$login = isset( $_GET['login'] ) ? sanitize_text_field( wp_unslash( $_GET['login'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$key = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$pass1 = isset( $_POST['pass1'] ) ? wp_unslash( $_POST['pass1'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$pass2 = isset( $_POST['pass2'] ) ? wp_unslash( $_POST['pass2'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+		if ( empty( $login ) || empty( $key ) ) {
+			wp_safe_redirect( add_query_arg( array( 'action' => 'rp', 'error' => 'invalid_key' ), wp_login_url() ) );
+			exit;
+		}
+
+		$user = check_password_reset_key( $key, $login );
+
+		if ( is_wp_error( $user ) ) {
+			wp_safe_redirect( add_query_arg( array( 'action' => 'rp', 'error' => $user->get_error_code() ), wp_login_url() ) );
+			exit;
+		}
+
+		// Check if user is administrator.
+		if ( ! in_array( 'administrator', $user->roles, true ) ) {
+			wp_safe_redirect( add_query_arg( array( 'action' => 'rp', 'error' => 'admin_only' ), wp_login_url() ) );
+			exit;
+		}
+
+		if ( empty( $pass1 ) || empty( $pass2 ) ) {
+			wp_safe_redirect( add_query_arg( array( 'action' => 'rp', 'login' => $login, 'key' => $key, 'error' => 'empty_password' ), wp_login_url() ) );
+			exit;
+		}
+
+		if ( $pass1 !== $pass2 ) {
+			wp_safe_redirect( add_query_arg( array( 'action' => 'rp', 'login' => $login, 'key' => $key, 'error' => 'password_mismatch' ), wp_login_url() ) );
+			exit;
+		}
+
+		// Reset password.
+		reset_password( $user, $pass1 );
+
+		// Success - redirect to login with success message.
+		wp_safe_redirect( add_query_arg( array( 'action' => 'login', 'password' => 'changed' ), wp_login_url() ) );
+		exit;
+	}
+
+	/**
+	 * Render admin login page.
+	 *
+	 * @param string $action Action to display (login, lostpassword, or rp).
+	 * @return void
+	 */
+	private function render_admin_login( string $action = 'login' ): void {
+		// Get login errors from URL parameters.
+		$errors = new \WP_Error();
+		$success_message = '';
+		$login = '';
+		$key = '';
+		
+		if ( 'rp' === $action || 'resetpass' === $action ) {
+			// Handle password reset form errors.
+			$login = isset( $_GET['login'] ) ? sanitize_text_field( wp_unslash( $_GET['login'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$key = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+			// Validate reset key.
+			if ( ! empty( $login ) && ! empty( $key ) ) {
+				$user = check_password_reset_key( $key, $login );
+				if ( is_wp_error( $user ) ) {
+					$errors->add( 'invalid_key', __( 'This password reset link is no longer valid. Please request a new one.', 'hotel-chain' ) );
+				} elseif ( ! in_array( 'administrator', $user->roles, true ) ) {
+					$errors->add( 'admin_only', __( 'This password reset is restricted to administrators only.', 'hotel-chain' ) );
+				}
+			} else {
+				$errors->add( 'invalid_key', __( 'Invalid password reset link.', 'hotel-chain' ) );
+			}
+
+			if ( isset( $_GET['error'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$error_code = sanitize_text_field( wp_unslash( $_GET['error'] ) );
+				if ( 'empty_password' === $error_code ) {
+					$errors->add( 'empty_password', __( 'Please enter a new password.', 'hotel-chain' ) );
+				} elseif ( 'password_mismatch' === $error_code ) {
+					$errors->add( 'password_mismatch', __( 'The passwords do not match.', 'hotel-chain' ) );
+				} elseif ( 'invalid_key' === $error_code ) {
+					$errors->add( 'invalid_key', __( 'This password reset link is no longer valid. Please request a new one.', 'hotel-chain' ) );
+				}
+			}
+		} elseif ( 'lostpassword' === $action ) {
+			// Handle password reset errors and success.
+			if ( isset( $_GET['checkemail'] ) && 'confirm' === $_GET['checkemail'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$success_message = __( 'Check your email for the confirmation link, then visit the login page.', 'hotel-chain' );
+			}
+			if ( isset( $_GET['error'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$error_code = sanitize_text_field( wp_unslash( $_GET['error'] ) );
+				if ( 'empty_username' === $error_code ) {
+					$errors->add( 'empty_username', __( 'Enter a username or email address.', 'hotel-chain' ) );
+				} else {
+					$errors->add( 'password_reset_error', __( 'There was an error processing your request. Please try again.', 'hotel-chain' ) );
+				}
+			}
+		} else {
+			// Handle login errors and success messages.
+			if ( isset( $_GET['password'] ) && 'changed' === $_GET['password'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$success_message = __( 'Your password has been reset successfully. You can now log in with your new password.', 'hotel-chain' );
+			}
+			if ( isset( $_GET['login'] ) && 'failed' === $_GET['login'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$errors->add( 'login_failed', __( 'Invalid username or password.', 'hotel-chain' ) );
+			}
+			if ( isset( $_GET['error'] ) && 'admin_only' === $_GET['error'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$errors->add( 'admin_only', __( 'This login page is restricted to administrators only.', 'hotel-chain' ) );
+			}
+
+			// Also check for WordPress default error messages.
+			$wp_errors = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( 'incorrect_password' === $wp_errors || 'invalid_username' === $wp_errors || 'invalid_email' === $wp_errors ) {
+				$errors->add( 'login_failed', __( 'Invalid username or password.', 'hotel-chain' ) );
+			}
 		}
 
 		// Enqueue CSS.
@@ -816,6 +1025,11 @@ class CustomLogin implements ServiceProviderInterface {
 			array(),
 			filemtime( get_template_directory() . '/assets/css/main.css' )
 		);
+
+		// Enqueue password strength meter scripts for password reset form.
+		if ( 'rp' === $action || 'resetpass' === $action ) {
+			wp_enqueue_script( 'password-strength-meter' );
+		}
 
 		$login_url = site_url( 'wp-login.php', 'login_post' );
 		$redirect_to = isset( $_GET['redirect_to'] ) ? esc_url_raw( wp_unslash( $_GET['redirect_to'] ) ) : admin_url(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -889,9 +1103,24 @@ class CustomLogin implements ServiceProviderInterface {
 
 								<!-- Form Header -->
 								<div class="text-center mb-8">
-									<h2 class="mb-2" style="font-family: var(--font-serif); color: rgb(61, 61, 68); font-size: 2rem; letter-spacing: 0.02em;">ADMINISTRATOR LOGIN</h2>
-									<p style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 1rem;">Secure access for Peaceful Hospitality team</p>
+									<?php if ( 'rp' === $action || 'resetpass' === $action ) : ?>
+										<h2 class="mb-2" style="font-family: var(--font-serif); color: rgb(61, 61, 68); font-size: 2rem; letter-spacing: 0.02em;">RESET PASSWORD</h2>
+										<p style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 1rem;">Enter your new password below</p>
+									<?php elseif ( 'lostpassword' === $action ) : ?>
+										<h2 class="mb-2" style="font-family: var(--font-serif); color: rgb(61, 61, 68); font-size: 2rem; letter-spacing: 0.02em;">RESET PASSWORD</h2>
+										<p style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 1rem;">Enter your username or email to reset your password</p>
+									<?php else : ?>
+										<h2 class="mb-2" style="font-family: var(--font-serif); color: rgb(61, 61, 68); font-size: 2rem; letter-spacing: 0.02em;">ADMINISTRATOR LOGIN</h2>
+										<p style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 1rem;">Secure access for Peaceful Hospitality team</p>
+									<?php endif; ?>
 								</div>
+
+								<!-- Success Messages -->
+								<?php if ( ! empty( $success_message ) ) : ?>
+									<div class="mb-6 p-4 rounded" style="background-color: rgb(240, 253, 244); border: 2px solid rgb(74, 222, 128);">
+										<p style="font-family: var(--font-sans); color: rgb(22, 163, 74); font-size: 0.875rem;"><?php echo esc_html( $success_message ); ?></p>
+									</div>
+								<?php endif; ?>
 
 								<!-- Error Messages -->
 								<?php if ( $errors->has_errors() ) : ?>
@@ -904,8 +1133,115 @@ class CustomLogin implements ServiceProviderInterface {
 									</div>
 								<?php endif; ?>
 
-								<!-- Login Form -->
-								<form name="loginform" id="loginform" action="<?php echo esc_url( $login_url ); ?>" method="post" class="space-y-6">
+								<?php if ( 'rp' === $action || 'resetpass' === $action ) : ?>
+									<!-- Password Reset Form (New Password) -->
+									<form name="resetpassform" id="resetpassform" action="<?php echo esc_url( add_query_arg( array( 'action' => 'rp', 'login' => $login, 'key' => $key ), wp_login_url() ) ); ?>" method="post" class="space-y-6" autocomplete="off">
+										<input type="hidden" name="action" value="resetpass" />
+										<input type="hidden" name="login" value="<?php echo esc_attr( $login ); ?>" />
+										<input type="hidden" name="key" value="<?php echo esc_attr( $key ); ?>" />
+
+										<div>
+											<label for="pass1" class="block mb-2" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 0.875rem; font-weight: 500;">New Password</label>
+											<div class="relative">
+												<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock absolute left-4 top-1/2 transform -translate-y-1/2" aria-hidden="true" style="color: rgb(122, 122, 122);">
+													<rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+													<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+												</svg>
+												<input id="pass1" name="pass1" type="password" class="w-full pl-12 pr-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 1rem;" required autofocus autocomplete="new-password" data-pw="<?php echo esc_attr( wp_generate_password( 16 ) ); ?>">
+											</div>
+											<div id="pass-strength-result" class="mt-2 text-sm" style="font-family: var(--font-sans);"></div>
+										</div>
+
+										<div>
+											<label for="pass2" class="block mb-2" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 0.875rem; font-weight: 500;">Confirm New Password</label>
+											<div class="relative">
+												<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock absolute left-4 top-1/2 transform -translate-y-1/2" aria-hidden="true" style="color: rgb(122, 122, 122);">
+													<rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
+													<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+												</svg>
+												<input id="pass2" name="pass2" type="password" class="w-full pl-12 pr-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 1rem;" required autocomplete="new-password">
+											</div>
+										</div>
+
+										<div class="p-3 rounded" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196);">
+											<p class="mb-2" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 0.875rem; font-weight: 500;">Hint:</p>
+											<p style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.75rem; line-height: 1.5;">The password should be at least twelve characters long. To make it stronger, use upper and lower case letters, numbers, and symbols like ! "?$%^&).</p>
+										</div>
+
+										<div class="flex gap-3">
+											<button type="button" id="wp-generate-pw" class="flex-1 px-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(61, 61, 68); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600; cursor: pointer;">Generate Password</button>
+											<button type="submit" name="wp-submit" id="wp-submit" class="flex-1 px-4 py-3 rounded shadow-lg hover:shadow-xl transition-all" style="background-color: rgb(61, 61, 68); color: rgb(240, 231, 215); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600; cursor: pointer;">Save Password</button>
+										</div>
+
+										<div class="text-center mt-4">
+											<a href="<?php echo esc_url( wp_login_url() ); ?>" class="hover:opacity-70 transition-opacity" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 0.875rem; text-decoration: underline; font-weight: 500;">← Back to Login</a>
+										</div>
+									</form>
+									<script>
+									(function() {
+										const pass1 = document.getElementById('pass1');
+										const pass2 = document.getElementById('pass2');
+										const generateBtn = document.getElementById('wp-generate-pw');
+										const strengthResult = document.getElementById('pass-strength-result');
+
+										if (generateBtn && pass1) {
+											generateBtn.addEventListener('click', function() {
+												const generatedPassword = pass1.getAttribute('data-pw');
+												pass1.value = generatedPassword;
+												pass2.value = generatedPassword;
+												pass1.type = 'text';
+												pass2.type = 'text';
+												if (typeof wp !== 'undefined' && wp.passwordStrength && pass1.value) {
+													const strength = wp.passwordStrength.meter(pass1.value, [], pass1.value);
+													updateStrengthIndicator(strength);
+												}
+											});
+										}
+
+										if (pass1) {
+											pass1.addEventListener('input', function() {
+												if (this.value && typeof wp !== 'undefined' && wp.passwordStrength) {
+													const strength = wp.passwordStrength.meter(this.value, [], this.value);
+													updateStrengthIndicator(strength);
+												} else {
+													strengthResult.textContent = '';
+												}
+											});
+										}
+
+										function updateStrengthIndicator(strength) {
+											if (!strengthResult) return;
+											const labels = ['', 'Very Weak', 'Weak', 'Medium', 'Strong', 'Mismatch'];
+											const colors = ['', 'rgb(220, 38, 38)', 'rgb(239, 68, 68)', 'rgb(234, 179, 8)', 'rgb(34, 197, 94)', 'rgb(220, 38, 38)'];
+											strengthResult.textContent = labels[strength] || '';
+											strengthResult.style.color = colors[strength] || '';
+										}
+									})();
+									</script>
+								<?php elseif ( 'lostpassword' === $action ) : ?>
+									<!-- Password Reset Request Form -->
+									<form name="lostpasswordform" id="lostpasswordform" action="<?php echo esc_url( wp_login_url() ); ?>" method="post" class="space-y-6">
+										<input type="hidden" name="action" value="lostpassword" />
+										<div>
+											<label for="user_login" class="block mb-2" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 0.875rem; font-weight: 500;">Username or Email Address</label>
+											<div class="relative">
+												<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user absolute left-4 top-1/2 transform -translate-y-1/2" aria-hidden="true" style="color: rgb(122, 122, 122);">
+													<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+													<circle cx="12" cy="7" r="4"></circle>
+												</svg>
+												<input id="user_login" name="user_login" type="text" placeholder="Username or email" value="<?php echo isset( $_POST['user_login'] ) ? esc_attr( wp_unslash( $_POST['user_login'] ) ) : ''; ?>" class="w-full pl-12 pr-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 1rem;" required autofocus autocomplete="username">
+											</div>
+										</div>
+
+										<button type="submit" name="wp-submit" id="wp-submit" class="w-full py-4 rounded shadow-lg hover:shadow-xl transition-all" style="background-color: rgb(61, 61, 68); color: rgb(240, 231, 215); font-family: var(--font-sans); font-size: 1rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;">Get New Password</button>
+
+										<div class="text-center mt-4">
+											<a href="<?php echo esc_url( wp_login_url() ); ?>" class="hover:opacity-70 transition-opacity" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 0.875rem; text-decoration: underline; font-weight: 500;">← Back to Login</a>
+										</div>
+									</form>
+								<?php else : ?>
+									<!-- Login Form -->
+									<form name="loginform" id="loginform" action="<?php echo esc_url( $login_url ); ?>" method="post" class="space-y-6">
 									<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to ); ?>" />
 
 									<div>
@@ -935,11 +1271,12 @@ class CustomLogin implements ServiceProviderInterface {
 											<input type="checkbox" name="rememberme" id="rememberme" value="forever" class="w-4 h-4 rounded" style="accent-color: rgb(61, 61, 68);">
 											<span style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 0.875rem;">Remember me</span>
 										</label>
-										<a href="<?php echo esc_url( wp_lostpassword_url() ); ?>" class="hover:opacity-70 transition-opacity" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 0.875rem; text-decoration: underline; font-weight: 500;">Reset password</a>
+										<a href="<?php echo esc_url( add_query_arg( 'action', 'lostpassword', wp_login_url() ) ); ?>" class="hover:opacity-70 transition-opacity" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 0.875rem; text-decoration: underline; font-weight: 500;">Reset password</a>
 									</div>
 
 									<button type="submit" name="wp-submit" id="wp-submit" class="w-full py-4 rounded shadow-lg hover:shadow-xl transition-all" style="background-color: rgb(61, 61, 68); color: rgb(240, 231, 215); font-family: var(--font-sans); font-size: 1rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;">Access Admin Dashboard</button>
 								</form>
+								<?php endif; ?>
 
 								<!-- Security Notice -->
 								<div class="mt-8 p-4 rounded" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196);">

@@ -21,6 +21,7 @@ use HotelChain\Setup\Videos;
 use HotelChain\Support\AssetResolver;
 use HotelChain\Admin\HotelsPage;
 use HotelChain\Admin\HotelView;
+use HotelChain\Admin\HotelEdit;
 use HotelChain\Admin\VideosPage;
 use HotelChain\Admin\VideoLibraryPage;
 use HotelChain\Admin\VideoTaxonomyPage;
@@ -63,6 +64,7 @@ class Theme {
 			new HotelRoutes(),
 			new HotelsPage(),
 			new HotelView(),
+			new HotelEdit(),
 			new VideosPage(),
 			new VideoLibraryPage(),
 			new VideoTaxonomyPage(),

@@ -372,7 +372,6 @@ class HotelsPage implements ServiceProviderInterface {
 		$hotels = $repository->get_all(
 			array(
 				'search'  => $search_term,
-				'status'  => 'active',
 				'orderby' => 'id',
 				'order'   => 'DESC',
 				'limit'   => 20,
@@ -636,13 +635,14 @@ class HotelsPage implements ServiceProviderInterface {
 								<div class="col-span-2"><?php esc_html_e( 'Code', 'hotel-chain' ); ?></div>
 								<div class="col-span-2"><?php esc_html_e( 'License Period', 'hotel-chain' ); ?></div>
 								<div class="col-span-2"><?php esc_html_e( 'Days to Renewal', 'hotel-chain' ); ?></div>
-								<div class="col-span-2"><?php esc_html_e( 'Status', 'hotel-chain' ); ?></div>
-								<div class="col-span-1"><?php esc_html_e( 'Actions', 'hotel-chain' ); ?></div>
+								<div class="col-span-1"><?php esc_html_e( 'Status', 'hotel-chain' ); ?></div>
+								<div class="col-span-2"><?php esc_html_e( 'Actions', 'hotel-chain' ); ?></div>
 							</div>
 							<?php foreach ( $hotels as $hotel ) : ?>
 								<?php
 								$code            = $hotel->hotel_code ?? '';
 								$name            = $hotel->hotel_name ?? '';
+								$status          = $hotel->status ?? 'active';
 								$access_duration = (int) ( $hotel->access_duration ?? 0 );
 
 								$start_timestamp = $hotel->license_start ? strtotime( $hotel->license_start ) : null;
@@ -663,6 +663,13 @@ class HotelsPage implements ServiceProviderInterface {
 								$detail_url = add_query_arg(
 									array(
 										'page'     => 'hotel-details',
+										'hotel_id' => $hotel->id,
+									),
+									admin_url( 'admin.php' )
+								);
+								$edit_url = add_query_arg(
+									array(
+										'page'     => 'hotel-edit',
 										'hotel_id' => $hotel->id,
 									),
 									admin_url( 'admin.php' )
@@ -699,12 +706,19 @@ class HotelsPage implements ServiceProviderInterface {
 									<div class="col-span-2 flex items-center">
 										<span class="font-medium text-green-700"><?php echo esc_html( $days_to_renewal ); ?></span>
 									</div>
-									<div class="col-span-2 flex items-center">
-										<span class="px-2 py-1 bg-green-200 border border-green-400 rounded text-green-900 text-xs"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></span>
+									<div class="col-span-1 flex items-center">
+										<?php if ( 'active' === $status ) : ?>
+											<span class="px-2 py-1 bg-green-200 border border-green-400 rounded text-green-900 text-xs"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></span>
+										<?php else : ?>
+											<span class="px-2 py-1 bg-gray-200 border border-gray-400 rounded text-gray-900 text-xs"><?php esc_html_e( 'Inactive', 'hotel-chain' ); ?></span>
+										<?php endif; ?>
 									</div>
-									<div class="col-span-1 flex items-center gap-1">
+									<div class="col-span-2 flex items-center gap-1">
 										<a class="px-2 py-1 bg-blue-200 border border-blue-400 rounded text-blue-900 hover:bg-blue-300 text-xs inline-block" href="<?php echo esc_url( $detail_url ); ?>">
 											<?php esc_html_e( 'View', 'hotel-chain' ); ?>
+										</a>
+										<a class="px-2 py-1 bg-green-200 border border-green-400 rounded text-green-900 hover:bg-green-300 text-xs inline-block" href="<?php echo esc_url( $edit_url ); ?>">
+											<?php esc_html_e( 'Edit', 'hotel-chain' ); ?>
 										</a>
 									</div>
 								</div>
@@ -716,6 +730,7 @@ class HotelsPage implements ServiceProviderInterface {
 								<?php
 								$code            = $hotel->hotel_code ?? '';
 								$name            = $hotel->hotel_name ?? '';
+								$status          = $hotel->status ?? 'active';
 								$access_duration = (int) ( $hotel->access_duration ?? 0 );
 
 								$start_timestamp = $hotel->license_start ? strtotime( $hotel->license_start ) : null;
@@ -740,6 +755,13 @@ class HotelsPage implements ServiceProviderInterface {
 									),
 									admin_url( 'admin.php' )
 								);
+								$edit_url = add_query_arg(
+									array(
+										'page'     => 'hotel-edit',
+										'hotel_id' => $hotel->id,
+									),
+									admin_url( 'admin.php' )
+								);
 								?>
 								<div class="p-4 space-y-3" data-hotel-card="1">
 									<div class="flex items-start justify-between">
@@ -756,7 +778,11 @@ class HotelsPage implements ServiceProviderInterface {
 												<span class="px-2 py-1 bg-gray-100 border border-gray-300 rounded font-mono text-xs"><?php echo esc_html( $code ); ?></span>
 											</div>
 										</div>
-										<span class="px-2 py-1 bg-green-200 border border-green-400 rounded text-green-900 text-xs"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></span>
+										<?php if ( 'active' === $status ) : ?>
+											<span class="px-2 py-1 bg-green-200 border border-green-400 rounded text-green-900 text-xs"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></span>
+										<?php else : ?>
+											<span class="px-2 py-1 bg-gray-200 border border-gray-400 rounded text-gray-900 text-xs"><?php esc_html_e( 'Inactive', 'hotel-chain' ); ?></span>
+										<?php endif; ?>
 									</div>
 									<div class="grid grid-cols-2 gap-3 text-sm">
 										<div>
@@ -779,7 +805,10 @@ class HotelsPage implements ServiceProviderInterface {
 											<div class="font-medium text-green-700"><?php echo esc_html( $days_to_renewal ); ?></div>
 										</div>
 									</div>
-									<button class="w-full px-3 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 hover:bg-blue-300" onclick="window.location.href='<?php echo esc_url( $detail_url ); ?>'; return false;"><?php esc_html_e( 'View Details', 'hotel-chain' ); ?></button>
+									<div class="flex gap-2">
+										<button class="flex-1 px-3 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 hover:bg-blue-300" onclick="window.location.href='<?php echo esc_url( $detail_url ); ?>'; return false;"><?php esc_html_e( 'View', 'hotel-chain' ); ?></button>
+										<button class="flex-1 px-3 py-2 bg-green-200 border-2 border-green-400 rounded text-green-900 hover:bg-green-300" onclick="window.location.href='<?php echo esc_url( $edit_url ); ?>'; return false;"><?php esc_html_e( 'Edit', 'hotel-chain' ); ?></button>
+									</div>
 								</div>
 							<?php endforeach; ?>
 						</div>

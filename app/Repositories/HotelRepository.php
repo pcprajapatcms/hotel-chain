@@ -107,6 +107,16 @@ class HotelRepository {
 			$format[] = '%s';
 		}
 
+		if ( isset( $data['hotel_code'] ) ) {
+			$update_data['hotel_code'] = sanitize_text_field( $data['hotel_code'] );
+			$format[] = '%s';
+		}
+
+		if ( isset( $data['contact_email'] ) ) {
+			$update_data['contact_email'] = sanitize_email( $data['contact_email'] );
+			$format[] = '%s';
+		}
+
 		if ( isset( $data['contact_phone'] ) ) {
 			$update_data['contact_phone'] = sanitize_text_field( $data['contact_phone'] );
 			$format[] = '%s';
@@ -341,15 +351,82 @@ class HotelRepository {
 	}
 
 	/**
-	 * Delete hotel.
+	 * Delete hotel and all related data.
 	 *
 	 * @param int $hotel_id Hotel ID.
 	 * @return bool True on success, false on failure.
 	 */
 	public function delete( int $hotel_id ): bool {
 		global $wpdb;
-		$table = $this->get_table_name();
 
+		// Get hotel data before deletion to access user_id.
+		$hotel = $this->get_by_id( $hotel_id );
+		if ( ! $hotel ) {
+			return false;
+		}
+
+		$user_id = (int) $hotel->user_id;
+
+		// Delete related data from custom tables.
+		$assignments_table = Schema::get_table_name( 'hotel_video_assignments' );
+		$guests_table = Schema::get_table_name( 'guests' );
+		$video_views_table = Schema::get_table_name( 'video_views' );
+
+		// Delete hotel video assignments.
+		$wpdb->delete(
+			$assignments_table,
+			array( 'hotel_id' => $hotel_id ),
+			array( '%d' )
+		);
+
+		// Get all guests for this hotel before deletion.
+		$guests = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, user_id FROM {$guests_table} WHERE hotel_id = %d AND user_id IS NOT NULL AND user_id > 0", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$hotel_id
+			)
+		);
+
+		// Delete WordPress users associated with guests.
+		if ( ! empty( $guests ) ) {
+			require_once ABSPATH . 'wp-admin/includes/user.php';
+			foreach ( $guests as $guest ) {
+				$guest_user_id = (int) $guest->user_id;
+				if ( $guest_user_id > 0 ) {
+					$guest_user = get_user_by( 'id', $guest_user_id );
+					if ( $guest_user ) {
+						wp_delete_user( $guest_user_id );
+					}
+				}
+			}
+		}
+
+		// Delete guests (this will delete all guests for this hotel, including those without user accounts).
+		$wpdb->delete(
+			$guests_table,
+			array( 'hotel_id' => $hotel_id ),
+			array( '%d' )
+		);
+
+		// Delete video views.
+		$wpdb->delete(
+			$video_views_table,
+			array( 'hotel_id' => $hotel_id ),
+			array( '%d' )
+		);
+
+		// Delete WordPress user if exists.
+		if ( $user_id > 0 ) {
+			$user = get_user_by( 'id', $user_id );
+			if ( $user ) {
+				// Use wp_delete_user which handles user meta cleanup.
+				require_once ABSPATH . 'wp-admin/includes/user.php';
+				wp_delete_user( $user_id );
+			}
+		}
+
+		// Delete hotel record.
+		$table = $this->get_table_name();
 		$result = $wpdb->delete(
 			$table,
 			array( 'id' => $hotel_id ),

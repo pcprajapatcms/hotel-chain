@@ -380,7 +380,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 							</div>
 							<div class="mb-4">
 								<label class="mb-1 text-sm font-semibold text-slate-800 block" for="video_description_inline"><?php esc_html_e( 'Description', 'hotel-chain' ); ?></label>
-								<textarea id="video_description_inline" name="video_description" rows="4" class="w-full border border-solid border-slate-300 rounded p-3 bg-white min-h-20 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500"><?php echo esc_textarea( $description ); ?></textarea>
+								<textarea id="video_description_inline" name="video_description" rows="10" class="w-full border border-solid border-slate-300 rounded p-3 bg-white min-h-20 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand-500"><?php echo esc_textarea( $description ); ?></textarea>
 							</div>
 							<div class="mb-4">
 								<label class="mb-1 text-sm font-semibold text-slate-800 block" for="video_practice_tip_inline"><?php esc_html_e( 'Practice Tip', 'hotel-chain' ); ?></label>
@@ -1102,14 +1102,17 @@ class VideoLibraryPage implements ServiceProviderInterface {
 						.then(response => response.json())
 						.then(data => {
 							if (data.success && data.data.html) {
+								// Insert HTML directly
 								detailContainer.innerHTML = data.data.html;
 								currentVideoId = videoId;
 
 								// Scroll to detail panel
 								detailContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-								// Re-init any JS functionality for the panel
-								initDetailPanelJS();
+								// Initialize panel JS after DOM is ready
+								setTimeout(function() {
+									initDetailPanelJS();
+								}, 100);
 							} else {
 								detailContainer.innerHTML = '<div class="bg-red-50 rounded p-4 mb-6 border border-solid border-red-300 text-red-900">' + (data.data.message || '<?php echo esc_js( __( 'Error loading video details.', 'hotel-chain' ) ); ?>') + '</div>';
 							}
@@ -1268,6 +1271,48 @@ class VideoLibraryPage implements ServiceProviderInterface {
 								});
 						});
 					});
+
+					// Initialize TinyMCE editor for description field after AJAX load
+					const editorId = 'video_description_inline';
+					const textarea = document.getElementById(editorId);
+					
+					if (textarea && !textarea.hasAttribute('data-mce-initialized')) {
+						// Mark as being initialized to prevent double initialization
+						textarea.setAttribute('data-mce-initialized', 'true');
+						
+						// Wait for WordPress editor API to be available
+						const initEditor = function() {
+							if (typeof wp === 'undefined' || !wp.editor || !wp.editor.initialize) {
+								setTimeout(initEditor, 50);
+								return;
+							}
+							
+							// Remove any existing editor instance
+							if (typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
+								tinymce.remove('#' + editorId);
+							}
+							
+							// Initialize using WordPress's editor API
+							wp.editor.initialize(editorId, {
+								tinymce: {
+									wpautop: true,
+									plugins: 'wordpress, wplink, textcolor, colorpicker, paste',
+									toolbar1: 'bold,italic,underline,strikethrough,|,bullist,numlist,|,blockquote,|,alignleft,aligncenter,alignright,|,link,unlink,|,forecolor,|,undo,redo,|,fullscreen',
+									menubar: false,
+									height: 300,
+									setup: function(editor) {
+										editor.on('init', function() {
+											textarea.classList.add('mce-initialized');
+										});
+									}
+								},
+								quicktags: true
+							});
+						};
+						
+						// Start initialization
+						initEditor();
+					}
 				}
 
 				// Load video if ID is in URL (for page reload after form submit)
