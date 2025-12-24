@@ -24,6 +24,7 @@ class CustomLogin implements ServiceProviderInterface {
 		add_action( 'init', array( $this, 'add_rewrite_rules' ) );
 		add_filter( 'query_vars', array( $this, 'add_query_vars' ) );
 		add_action( 'template_redirect', array( $this, 'handle_hotel_login_page' ) );
+		add_action( 'template_redirect', array( $this, 'handle_homepage_login' ), 5 );
 		add_action( 'login_init', array( $this, 'handle_custom_login' ), 1 );
 		add_action( 'login_enqueue_scripts', array( $this, 'enqueue_login_styles' ) );
 		add_filter( 'login_headerurl', array( $this, 'custom_login_logo_url' ) );
@@ -357,6 +358,77 @@ class CustomLogin implements ServiceProviderInterface {
 		</body>
 		</html>
 		<?php
+	}
+
+	/**
+	 * Handle homepage - show admin login page.
+	 *
+	 * @return void
+	 */
+	public function handle_homepage_login(): void {
+		// Only handle homepage (not admin, not hotel routes, not guest routes).
+		if ( is_admin() ) {
+			return;
+		}
+
+		// Skip if this is a hotel login page.
+		if ( get_query_var( 'hotel_login_page' ) ) {
+			return;
+		}
+
+		// Skip if this is a guest login page.
+		if ( get_query_var( 'guest_login_page' ) ) {
+			return;
+		}
+
+		// Skip if this is a hotel route.
+		if ( get_query_var( 'hotel_slug' ) ) {
+			return;
+		}
+
+		// Skip if this is a registration route.
+		if ( get_query_var( 'hotel_guest_register' ) || get_query_var( 'hotel_guest_verify' ) ) {
+			return;
+		}
+
+		// Only handle homepage (front page).
+		if ( ! is_front_page() && ! is_home() ) {
+			return;
+		}
+
+		// Check if user is already logged in.
+		if ( is_user_logged_in() ) {
+			$user = wp_get_current_user();
+			if ( in_array( 'administrator', $user->roles, true ) ) {
+				wp_safe_redirect( admin_url() );
+				exit;
+			} elseif ( in_array( 'hotel', $user->roles, true ) ) {
+				wp_safe_redirect( admin_url( 'admin.php?page=hotel-dashboard' ) );
+				exit;
+			} elseif ( in_array( 'guest', $user->roles, true ) ) {
+				// Redirect to hotel page if guest is associated with a hotel.
+				$guest_repo = new GuestRepository();
+				$guest = $guest_repo->get_by_user_id( $user->ID );
+				if ( $guest && ! empty( $guest->hotel_id ) ) {
+					$hotel_repo = new HotelRepository();
+					$hotel = $hotel_repo->get_by_id( (int) $guest->hotel_id );
+					if ( $hotel && ! empty( $hotel->hotel_slug ) ) {
+						wp_safe_redirect( home_url( '/hotel/' . $hotel->hotel_slug . '/' ) );
+						exit;
+					}
+				}
+				return;
+			}
+		}
+
+		// Handle form submission.
+		if ( isset( $_POST['log'] ) && isset( $_POST['pwd'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$this->process_admin_login();
+		}
+
+		// Render admin login page with buttons.
+		$this->render_admin_login( 'login', true );
+		exit;
 	}
 
 	/**
@@ -777,17 +849,23 @@ class CustomLogin implements ServiceProviderInterface {
 			return;
 		}
 
+		// Check if this is from homepage.
+		$referrer = wp_get_referer();
+		$is_homepage = ( $referrer && ( home_url( '/' ) === $referrer || home_url() === $referrer ) ) || ( ! $referrer && ( is_front_page() || is_home() ) );
+
 		// Attempt login.
 		$user = wp_authenticate( $username, $password );
 
 		if ( is_wp_error( $user ) ) {
-			wp_safe_redirect( add_query_arg( 'login', 'failed', wp_login_url() ) );
+			$error_url = $is_homepage ? home_url( '/' ) : wp_login_url();
+			wp_safe_redirect( add_query_arg( 'login', 'failed', $error_url ) );
 			exit;
 		}
 
 		// Check if user is administrator role.
 		if ( ! in_array( 'administrator', $user->roles, true ) ) {
-			wp_safe_redirect( add_query_arg( 'error', 'admin_only', wp_login_url() ) );
+			$error_url = $is_homepage ? home_url( '/' ) : wp_login_url();
+			wp_safe_redirect( add_query_arg( 'error', 'admin_only', $error_url ) );
 			exit;
 		}
 
@@ -950,9 +1028,10 @@ class CustomLogin implements ServiceProviderInterface {
 	 * Render admin login page.
 	 *
 	 * @param string $action Action to display (login, lostpassword, or rp).
+	 * @param bool   $show_buttons Whether to show 3 buttons above the form.
 	 * @return void
 	 */
-	private function render_admin_login( string $action = 'login' ): void {
+	private function render_admin_login( string $action = 'login', bool $show_buttons = false ): void {
 		// Get login errors from URL parameters.
 		$errors = new \WP_Error();
 		$success_message = '';
@@ -1243,6 +1322,21 @@ class CustomLogin implements ServiceProviderInterface {
 									<!-- Login Form -->
 									<form name="loginform" id="loginform" action="<?php echo esc_url( $login_url ); ?>" method="post" class="space-y-6">
 									<input type="hidden" name="redirect_to" value="<?php echo esc_attr( $redirect_to ); ?>" />
+
+									<?php if ( $show_buttons ) : ?>
+										<!-- Three Buttons Above Form -->
+										<div class="flex gap-3 mb-6">
+											<button type="button" onclick="window.location.href='<?php echo esc_url( home_url( '/' ) ); ?>'" class="flex-1 px-4 py-3 rounded transition-all hover:opacity-80" style="background-color: rgb(61, 61, 68); color: rgb(240, 231, 215); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600; cursor: pointer; border: 2px solid rgb(61, 61, 68);">
+												Admin
+											</button>
+											<button type="button" onclick="window.location.href='<?php echo esc_url( home_url( '/hotel-login' ) ); ?>'" class="flex-1 px-4 py-3 rounded transition-all hover:opacity-80" style="background-color: rgb(255, 255, 255); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600; cursor: pointer; border: 2px solid rgb(61, 61, 68);">
+												Hotel
+											</button>
+											<button type="button" onclick="window.location.href='<?php echo esc_url( home_url( '/guest-login' ) ); ?>'" class="flex-1 px-4 py-3 rounded transition-all hover:opacity-80" style="background-color: rgb(255, 255, 255); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 0.875rem; font-weight: 600; cursor: pointer; border: 2px solid rgb(61, 61, 68);">
+												Guest
+											</button>
+										</div>
+									<?php endif; ?>
 
 									<div>
 										<label for="user_login" class="block mb-2" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 0.875rem; font-weight: 500;">Username or Email Address</label>
