@@ -56,7 +56,7 @@ class HotelRepository {
 		// Calculate license dates if access_duration is set.
 		if ( $data['access_duration'] > 0 && ! $data['license_start'] ) {
 			$data['license_start'] = current_time( 'mysql' );
-			$data['license_end'] = gmdate( 'Y-m-d H:i:s', strtotime( $data['license_start'] ) + ( $data['access_duration'] * DAY_IN_SECONDS ) );
+			$data['license_end']   = gmdate( 'Y-m-d H:i:s', strtotime( $data['license_start'] ) + ( $data['access_duration'] * DAY_IN_SECONDS ) );
 		}
 
 		$result = $wpdb->insert(
@@ -100,73 +100,73 @@ class HotelRepository {
 		$table = $this->get_table_name();
 
 		$update_data = array();
-		$format = array();
+		$format      = array();
 
 		if ( isset( $data['hotel_name'] ) ) {
 			$update_data['hotel_name'] = sanitize_text_field( $data['hotel_name'] );
-			$format[] = '%s';
+			$format[]                  = '%s';
 		}
 
 		if ( isset( $data['hotel_code'] ) ) {
 			$update_data['hotel_code'] = sanitize_text_field( $data['hotel_code'] );
-			$format[] = '%s';
+			$format[]                  = '%s';
 		}
 
 		if ( isset( $data['contact_email'] ) ) {
 			$update_data['contact_email'] = sanitize_email( $data['contact_email'] );
-			$format[] = '%s';
+			$format[]                     = '%s';
 		}
 
 		if ( isset( $data['contact_phone'] ) ) {
 			$update_data['contact_phone'] = sanitize_text_field( $data['contact_phone'] );
-			$format[] = '%s';
+			$format[]                     = '%s';
 		}
 
 		if ( isset( $data['address'] ) ) {
 			$update_data['address'] = sanitize_text_field( $data['address'] );
-			$format[] = '%s';
+			$format[]               = '%s';
 		}
 
 		if ( isset( $data['city'] ) ) {
 			$update_data['city'] = sanitize_text_field( $data['city'] );
-			$format[] = '%s';
+			$format[]            = '%s';
 		}
 
 		if ( isset( $data['country'] ) ) {
 			$update_data['country'] = sanitize_text_field( $data['country'] );
-			$format[] = '%s';
+			$format[]               = '%s';
 		}
 
 		if ( isset( $data['website'] ) ) {
 			$update_data['website'] = esc_url_raw( $data['website'] );
-			$format[] = '%s';
+			$format[]               = '%s';
 		}
 
 		if ( isset( $data['welcome_section'] ) ) {
 			$update_data['welcome_section'] = $data['welcome_section']; // Already JSON encoded.
-			$format[] = '%s';
+			$format[]                       = '%s';
 		}
 
 		if ( isset( $data['access_duration'] ) ) {
 			$update_data['access_duration'] = absint( $data['access_duration'] );
-			$format[] = '%d';
+			$format[]                       = '%d';
 
 			// Recalculate license dates.
 			if ( $update_data['access_duration'] > 0 ) {
 				$hotel = $this->get_by_id( $hotel_id );
 				if ( $hotel ) {
-					$start = $hotel->license_start ? strtotime( $hotel->license_start ) : time();
+					$start                        = $hotel->license_start ? strtotime( $hotel->license_start ) : time();
 					$update_data['license_start'] = gmdate( 'Y-m-d H:i:s', $start );
-					$update_data['license_end'] = gmdate( 'Y-m-d H:i:s', $start + ( $update_data['access_duration'] * DAY_IN_SECONDS ) );
-					$format[] = '%s';
-					$format[] = '%s';
+					$update_data['license_end']   = gmdate( 'Y-m-d H:i:s', $start + ( $update_data['access_duration'] * DAY_IN_SECONDS ) );
+					$format[]                     = '%s';
+					$format[]                     = '%s';
 				}
 			}
 		}
 
 		if ( isset( $data['status'] ) ) {
 			$update_data['status'] = sanitize_text_field( $data['status'] );
-			$format[] = '%s';
+			$format[]              = '%s';
 		}
 
 		if ( empty( $update_data ) ) {
@@ -259,27 +259,27 @@ class HotelRepository {
 		$table = $this->get_table_name();
 
 		$defaults = array(
-			'status'   => '',
-			'search'   => '',
-			'orderby'  => 'id',
-			'order'    => 'DESC',
-			'limit'    => 20,
-			'offset'   => 0,
+			'status'  => '',
+			'search'  => '',
+			'orderby' => 'id',
+			'order'   => 'DESC',
+			'limit'   => 20,
+			'offset'  => 0,
 		);
 
 		$args = wp_parse_args( $args, $defaults );
 
-		$where = array( '1=1' );
+		$where        = array( '1=1' );
 		$where_values = array();
 
 		if ( ! empty( $args['status'] ) ) {
-			$where[] = 'status = %s';
+			$where[]        = 'status = %s';
 			$where_values[] = $args['status'];
 		}
 
 		if ( ! empty( $args['search'] ) ) {
-			$search = '%' . $wpdb->esc_like( $args['search'] ) . '%';
-			$where[] = '(hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s)';
+			$search         = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+			$where[]        = '(hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s)';
 			$where_values[] = $search;
 			$where_values[] = $search;
 			$where_values[] = $search;
@@ -290,20 +290,61 @@ class HotelRepository {
 		$where_clause = implode( ' AND ', $where );
 
 		$orderby = in_array( $args['orderby'], array( 'id', 'hotel_name', 'created_at', 'city', 'country' ), true ) ? $args['orderby'] : 'id';
-		$order = 'DESC' === strtoupper( $args['order'] ) ? 'DESC' : 'ASC';
+		$order   = 'DESC' === strtoupper( $args['order'] ) ? 'DESC' : 'ASC';
 
-		$limit = absint( $args['limit'] );
+		$limit  = absint( $args['limit'] );
 		$offset = absint( $args['offset'] );
 
-		$query = "SELECT * FROM {$table} WHERE {$where_clause} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d";
-
-		if ( ! empty( $where_values ) ) {
-			$prepared_values = array_merge( $where_values, array( $limit, $offset ) );
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-			$results = $wpdb->get_results( $wpdb->prepare( $query, ...$prepared_values ) );
+		if ( ! empty( $args['status'] ) && ! empty( $args['search'] ) ) {
+			// Both status and search filters.
+			$search  = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$table} WHERE status = %s AND (hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s) ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$args['status'],
+					$search,
+					$search,
+					$search,
+					$search,
+					$search,
+					$limit,
+					$offset
+				)
+			);
+		} elseif ( ! empty( $args['status'] ) ) {
+			// Only status filter.
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$table} WHERE status = %s ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$args['status'],
+					$limit,
+					$offset
+				)
+			);
+		} elseif ( ! empty( $args['search'] ) ) {
+			// Only search filter.
+			$search  = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$table} WHERE (hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s) ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$search,
+					$search,
+					$search,
+					$search,
+					$search,
+					$limit,
+					$offset
+				)
+			);
 		} else {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$results = $wpdb->get_results( $wpdb->prepare( $query, $limit, $offset ) );
+			// No filters.
+			$results = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT * FROM {$table} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$limit,
+					$offset
+				)
+			);
 		}
 
 		return $results ? $results : array();
@@ -319,17 +360,17 @@ class HotelRepository {
 		global $wpdb;
 		$table = $this->get_table_name();
 
-		$where = array( '1=1' );
+		$where        = array( '1=1' );
 		$where_values = array();
 
 		if ( ! empty( $args['status'] ) ) {
-			$where[] = 'status = %s';
+			$where[]        = 'status = %s';
 			$where_values[] = $args['status'];
 		}
 
 		if ( ! empty( $args['search'] ) ) {
-			$search = '%' . $wpdb->esc_like( $args['search'] ) . '%';
-			$where[] = '(hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s)';
+			$search         = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+			$where[]        = '(hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s)';
 			$where_values[] = $search;
 			$where_values[] = $search;
 			$where_values[] = $search;
@@ -337,12 +378,43 @@ class HotelRepository {
 			$where_values[] = $search;
 		}
 
-		$where_clause = implode( ' AND ', $where );
-
-		if ( ! empty( $where_values ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE {$where_clause}", ...$where_values ) );
+		if ( ! empty( $args['status'] ) && ! empty( $args['search'] ) ) {
+			// Both status and search filters.
+			$search = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+			$count  = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$table} WHERE status = %s AND (hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$args['status'],
+					$search,
+					$search,
+					$search,
+					$search,
+					$search
+				)
+			);
+		} elseif ( ! empty( $args['status'] ) ) {
+			// Only status filter.
+			$count = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$table} WHERE status = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$args['status']
+				)
+			);
+		} elseif ( ! empty( $args['search'] ) ) {
+			// Only search filter.
+			$search = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+			$count  = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$table} WHERE (hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$search,
+					$search,
+					$search,
+					$search,
+					$search
+				)
+			);
 		} else {
+			// No filters.
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$count = $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
 		}
@@ -369,7 +441,7 @@ class HotelRepository {
 
 		// Delete related data from custom tables.
 		$assignments_table = Schema::get_table_name( 'hotel_video_assignments' );
-		$guests_table = Schema::get_table_name( 'guests' );
+		$guests_table      = Schema::get_table_name( 'guests' );
 		$video_views_table = Schema::get_table_name( 'video_views' );
 
 		// Delete hotel video assignments.
@@ -426,7 +498,7 @@ class HotelRepository {
 		}
 
 		// Delete hotel record.
-		$table = $this->get_table_name();
+		$table  = $this->get_table_name();
 		$result = $wpdb->delete(
 			$table,
 			array( 'id' => $hotel_id ),
@@ -466,8 +538,8 @@ class HotelRepository {
 		}
 
 		$end_timestamp = strtotime( $hotel->license_end );
-		$now_timestamp = current_time( 'timestamp' );
-		$days_diff = (int) ceil( ( $end_timestamp - $now_timestamp ) / DAY_IN_SECONDS );
+		$now_timestamp = time();
+		$days_diff     = (int) ceil( ( $end_timestamp - $now_timestamp ) / DAY_IN_SECONDS );
 
 		return $days_diff;
 	}

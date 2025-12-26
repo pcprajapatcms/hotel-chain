@@ -68,6 +68,7 @@ class Migration implements ServiceProviderInterface {
 
 		// Log if there were any errors.
 		if ( ! empty( $wpdb->last_error ) ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Error logging for debugging database issues.
 			error_log( 'Hotel Chain: Database table creation error - ' . $wpdb->last_error );
 		}
 	}
@@ -91,12 +92,13 @@ class Migration implements ServiceProviderInterface {
 		);
 
 		if ( empty( $column_exists ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names cannot be parameterized in ALTER TABLE statements.
 			$wpdb->query(
 				"ALTER TABLE {$assignments_table} 
 				ADD COLUMN status_by_hotel varchar(20) DEFAULT 'active' COMMENT 'active, inactive - managed by hotel' AFTER status,
 				ADD KEY status_by_hotel (status_by_hotel)"
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 
 		// Add verification columns to guests table.
@@ -111,13 +113,14 @@ class Migration implements ServiceProviderInterface {
 		);
 
 		if ( empty( $token_exists ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names cannot be parameterized in ALTER TABLE statements.
 			$wpdb->query(
 				"ALTER TABLE {$guests_table} 
 				ADD COLUMN verification_token varchar(64) DEFAULT NULL AFTER registration_code,
 				ADD COLUMN email_verified_at datetime DEFAULT NULL AFTER verification_token,
 				ADD KEY verification_token (verification_token)"
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 
 		// Add website column to hotels table.
@@ -131,9 +134,8 @@ class Migration implements ServiceProviderInterface {
 		);
 
 		if ( empty( $website_exists ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$wpdb->query(
-				"ALTER TABLE {$hotels_table} ADD COLUMN website varchar(500) DEFAULT NULL AFTER country"
+				"ALTER TABLE {$hotels_table} ADD COLUMN website varchar(500) DEFAULT NULL AFTER country" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			);
 		}
 
@@ -146,9 +148,8 @@ class Migration implements ServiceProviderInterface {
 		);
 
 		if ( empty( $welcome_exists ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$wpdb->query(
-				"ALTER TABLE {$hotels_table} ADD COLUMN welcome_section longtext DEFAULT NULL COMMENT 'JSON: welcome video, message, steps' AFTER website"
+				"ALTER TABLE {$hotels_table} ADD COLUMN welcome_section longtext DEFAULT NULL COMMENT 'JSON: welcome video, message, steps' AFTER website" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			);
 		}
 
@@ -163,13 +164,11 @@ class Migration implements ServiceProviderInterface {
 		);
 
 		if ( empty( $practice_tip_exists ) ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$wpdb->query(
-				"ALTER TABLE {$video_metadata_table} ADD COLUMN practice_tip longtext DEFAULT NULL COMMENT 'Practice tip for this video' AFTER description"
+				"ALTER TABLE {$video_metadata_table} ADD COLUMN practice_tip longtext DEFAULT NULL COMMENT 'Practice tip for this video' AFTER description" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			);
 		}
-
-		}
+	}
 
 	/**
 	 * Drop all custom tables (for uninstall).
@@ -197,7 +196,7 @@ class Migration implements ServiceProviderInterface {
 	public function tables_exist(): bool {
 		global $wpdb;
 
-		$table_names = Schema::get_table_names();
+		$table_names     = Schema::get_table_names();
 		$existing_tables = $wpdb->get_col( "SHOW TABLES LIKE '{$wpdb->prefix}hotel_chain_%'" );
 
 		foreach ( $table_names as $table_name ) {

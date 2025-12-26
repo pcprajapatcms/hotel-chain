@@ -90,8 +90,8 @@ class GuestRegistration implements ServiceProviderInterface {
 	public function render_page(): void {
 		$hotel_code = isset( $_GET['hotel'] ) ? sanitize_text_field( wp_unslash( $_GET['hotel'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		$hotel      = null;
-		$error      = '';
+		$hotel = null;
+		$error = '';
 
 		if ( $hotel_code ) {
 			$repository = new HotelRepository();
@@ -124,7 +124,12 @@ class GuestRegistration implements ServiceProviderInterface {
 		<head>
 			<meta charset="<?php bloginfo( 'charset' ); ?>">
 			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<title><?php echo esc_html( $hotel ? sprintf( __( 'Register - %s', 'hotel-chain' ), $hotel->hotel_name ) : __( 'Guest Registration', 'hotel-chain' ) ); ?></title>
+			<title>
+			<?php
+			/* translators: %s: Hotel name */
+			echo esc_html( $hotel ? sprintf( __( 'Register - %s', 'hotel-chain' ), $hotel->hotel_name ) : __( 'Guest Registration', 'hotel-chain' ) );
+			?>
+			</title>
 			<?php wp_head(); ?>
 			<style>
 				@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
@@ -191,14 +196,29 @@ class GuestRegistration implements ServiceProviderInterface {
 									<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
 								</svg>
 							</div>
-							<h3 class="text-xl font-semibold mb-2"><?php echo esc_html( sprintf( __( 'Welcome to %s', 'hotel-chain' ), $hotel->hotel_name ) ); ?></h3>
+							<h3 class="text-xl font-semibold mb-2">
+							<?php
+							/* translators: %s: Hotel name */
+							echo esc_html( sprintf( __( 'Welcome to %s', 'hotel-chain' ), $hotel->hotel_name ) );
+							?>
+							</h3>
 							<p class="text-gray-500 m-0"><?php esc_html_e( 'Complete registration to access your meditation series', 'hotel-chain' ); ?></p>
 						</div>
 
 						<!-- Hotel Info Box -->
 						<div class="bg-blue-50 border-2 border-solid border-blue-300 rounded-lg p-4 mb-6">
-							<div class="text-blue-900 font-medium"><?php echo esc_html( sprintf( __( "You're registering for: %s", 'hotel-chain' ), $hotel->hotel_name ) ); ?></div>
-							<div class="text-blue-700 mt-1"><?php echo esc_html( sprintf( __( 'Hotel Code: %s', 'hotel-chain' ), $hotel->hotel_code ) ); ?></div>
+							<div class="text-blue-900 font-medium">
+							<?php
+							/* translators: %s: Hotel name */
+							echo esc_html( sprintf( __( "You're registering for: %s", 'hotel-chain' ), $hotel->hotel_name ) );
+							?>
+							</div>
+							<div class="text-blue-700 mt-1">
+							<?php
+							/* translators: %s: Hotel code */
+							echo esc_html( sprintf( __( 'Hotel Code: %s', 'hotel-chain' ), $hotel->hotel_code ) );
+							?>
+							</div>
 						</div>
 
 						<!-- Message container -->
@@ -244,7 +264,7 @@ class GuestRegistration implements ServiceProviderInterface {
 							<?php if ( ! $is_logged_in ) : ?>
 								<div class="text-center mt-4 text-gray-500">
 									<?php esc_html_e( 'Already have an account?', 'hotel-chain' ); ?>
-									<a href="<?php echo esc_url( wp_login_url( add_query_arg( 'hotel', $hotel->hotel_code, home_url( '/register' ) ) ) ); ?>" class="text-blue-600 hover:underline"><?php esc_html_e( 'Sign In', 'hotel-chain' ); ?></a>
+									<a href="<?php echo esc_url( site_url( '/guest-login' ) ); ?>" class="text-blue-600 hover:underline"><?php esc_html_e( 'Sign In', 'hotel-chain' ); ?></a>
 								</div>
 							<?php endif; ?>
 						</form>
@@ -405,7 +425,7 @@ class GuestRegistration implements ServiceProviderInterface {
 			<?php wp_footer(); ?>
 		</body>
 		</html>
-<?php
+		<?php
 	}
 
 	/**
@@ -444,19 +464,21 @@ class GuestRegistration implements ServiceProviderInterface {
 			// If pending, resend verification email.
 			if ( 'pending' === $existing_guest->status ) {
 				$this->send_verification_email( $existing_guest->id, $email, $existing_guest->verification_token, $hotel );
-				wp_send_json_success( array(
-					'show_confirmation' => true,
-					'email'             => $email,
-					'guest_id'          => $existing_guest->id,
-					'message'           => __( 'Verification email resent.', 'hotel-chain' ),
-				) );
+				wp_send_json_success(
+					array(
+						'show_confirmation' => true,
+						'email'             => $email,
+						'guest_id'          => $existing_guest->id,
+						'message'           => __( 'Verification email resent.', 'hotel-chain' ),
+					)
+				);
 			}
 		}
 
 		// Check if WordPress user exists.
 		$user_id = 0;
 		if ( email_exists( $email ) ) {
-			$user = get_user_by( 'email', $email );
+			$user    = get_user_by( 'email', $email );
 			$user_id = $user->ID;
 		} else {
 			if ( empty( $password ) || strlen( $password ) < 6 ) {
@@ -472,12 +494,14 @@ class GuestRegistration implements ServiceProviderInterface {
 			}
 
 			// Update user display name.
-			wp_update_user( array(
-				'ID'           => $user_id,
-				'display_name' => $full_name,
-				'first_name'   => explode( ' ', $full_name )[0],
-				'last_name'    => implode( ' ', array_slice( explode( ' ', $full_name ), 1 ) ),
-			) );
+			wp_update_user(
+				array(
+					'ID'           => $user_id,
+					'display_name' => $full_name,
+					'first_name'   => explode( ' ', $full_name )[0],
+					'last_name'    => implode( ' ', array_slice( explode( ' ', $full_name ), 1 ) ),
+				)
+			);
 
 			// Assign guest role.
 			$user = new \WP_User( $user_id );
@@ -499,19 +523,21 @@ class GuestRegistration implements ServiceProviderInterface {
 		$verification_token = wp_generate_password( 32, false );
 
 		// Create guest record.
-		$guest_id = $guest_repo->create( array(
-			'hotel_id'           => $hotel->id,
-			'user_id'            => $user_id,
-			'guest_code'         => $guest_code,
-			'first_name'         => $first_name,
-			'last_name'          => $last_name,
-			'email'              => $email,
-			'registration_code'  => $hotel->hotel_code,
-			'verification_token' => $verification_token,
-			'access_start'       => $access_start,
-			'access_end'         => $access_end,
-			'status'             => 'pending',
-		) );
+		$guest_id = $guest_repo->create(
+			array(
+				'hotel_id'           => $hotel->id,
+				'user_id'            => $user_id,
+				'guest_code'         => $guest_code,
+				'first_name'         => $first_name,
+				'last_name'          => $last_name,
+				'email'              => $email,
+				'registration_code'  => $hotel->hotel_code,
+				'verification_token' => $verification_token,
+				'access_start'       => $access_start,
+				'access_end'         => $access_end,
+				'status'             => 'pending',
+			)
+		);
 
 		if ( ! $guest_id ) {
 			wp_send_json_error( array( 'message' => __( 'Failed to create guest record.', 'hotel-chain' ) ) );
@@ -520,12 +546,14 @@ class GuestRegistration implements ServiceProviderInterface {
 		// Send verification email.
 		$this->send_verification_email( $guest_id, $email, $verification_token, $hotel );
 
-		wp_send_json_success( array(
-			'show_confirmation' => true,
-			'email'             => $email,
-			'guest_id'          => $guest_id,
-			'message'           => __( 'Registration successful! Please check your email to verify your account.', 'hotel-chain' ),
-		) );
+		wp_send_json_success(
+			array(
+				'show_confirmation' => true,
+				'email'             => $email,
+				'guest_id'          => $guest_id,
+				'message'           => __( 'Registration successful! Please check your email to verify your account.', 'hotel-chain' ),
+			)
+		);
 	}
 
 	/**
@@ -540,10 +568,11 @@ class GuestRegistration implements ServiceProviderInterface {
 	private function send_verification_email( int $guest_id, string $email, string $token, $hotel ): bool {
 		$verify_url = add_query_arg( 'token', $token, home_url( '/verify-email' ) );
 
+		/* translators: %s: Hotel name */
 		$subject = sprintf( __( 'Verify your email - %s', 'hotel-chain' ), $hotel->hotel_name );
 
 		$message = sprintf(
-			__( "Welcome to %s!\n\nPlease click the link below to verify your email address and activate your account:\n\n%s\n\nThis link will expire in 24 hours.\n\nIf you didn't create this account, you can safely ignore this email.\n\nThank you!", 'hotel-chain' ),
+			__( "Welcome to %1\$s!\n\nPlease click the link below to verify your email address and activate your account:\n\n%2\$s\n\nThis link will expire in 24 hours.\n\nIf you didn't create this account, you can safely ignore this email.\n\nThank you!", 'hotel-chain' ),
 			$hotel->hotel_name,
 			$verify_url
 		);
@@ -579,10 +608,10 @@ class GuestRegistration implements ServiceProviderInterface {
 		if ( ! $token || ! $guest ) {
 			$message = __( 'Invalid or expired verification link.', 'hotel-chain' );
 		} elseif ( 'active' === $guest->status ) {
-			$message = __( 'Your email has already been verified.', 'hotel-chain' );
-			$success = true;
+			$message    = __( 'Your email has already been verified.', 'hotel-chain' );
+			$success    = true;
 			$hotel_repo = new HotelRepository();
-			$hotel = $hotel_repo->get_by_id( $guest->hotel_id );
+			$hotel      = $hotel_repo->get_by_id( $guest->hotel_id );
 		} else {
 			// Verify the email.
 			$guest_repo->verify_email( $guest->id );
@@ -590,7 +619,7 @@ class GuestRegistration implements ServiceProviderInterface {
 			$message = __( 'Your email has been verified successfully!', 'hotel-chain' );
 
 			$hotel_repo = new HotelRepository();
-			$hotel = $hotel_repo->get_by_id( $guest->hotel_id );
+			$hotel      = $hotel_repo->get_by_id( $guest->hotel_id );
 
 			// Auto-login.
 			if ( $guest->user_id && ! is_user_logged_in() ) {

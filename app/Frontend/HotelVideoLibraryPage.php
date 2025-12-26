@@ -27,7 +27,7 @@ class HotelVideoLibraryPage {
 		}
 
 		$hotel_repository = new HotelRepository();
-		$hotel = $hotel_repository->get_by_user_id( $current_user->ID );
+		$hotel            = $hotel_repository->get_by_user_id( $current_user->ID );
 
 		if ( ! $hotel ) {
 			wp_die( esc_html__( 'Hotel account not found.', 'hotel-chain' ) );
@@ -37,10 +37,10 @@ class HotelVideoLibraryPage {
 		$assignment_repo  = new HotelVideoAssignmentRepository();
 
 		// Get filter/search parameters.
-		$search_query = isset( $_GET['search'] ) ? sanitize_text_field( wp_unslash( $_GET['search'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$category_filter = isset( $_GET['category'] ) ? sanitize_text_field( wp_unslash( $_GET['category'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$status_filter = isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$view_mode = isset( $_GET['view'] ) ? sanitize_text_field( wp_unslash( $_GET['view'] ) ) : 'grid'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$search_query      = isset( $_GET['search'] ) ? sanitize_text_field( wp_unslash( $_GET['search'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$category_filter   = isset( $_GET['category'] ) ? sanitize_text_field( wp_unslash( $_GET['category'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$status_filter     = isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$view_mode         = isset( $_GET['view'] ) ? sanitize_text_field( wp_unslash( $_GET['view'] ) ) : 'grid'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$selected_video_id = isset( $_GET['video_id'] ) ? absint( $_GET['video_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		// Get ALL videos from the system (not just assigned to this hotel).
@@ -53,13 +53,13 @@ class HotelVideoLibraryPage {
 				'status' => '',
 			)
 		);
-		$assignment_map = array();
+		$assignment_map    = array();
 		foreach ( $hotel_assignments as $assignment ) {
 			$assignment_map[ (string) $assignment->video_id ] = $assignment;
 		}
 
 		// Apply filters and calculate statistics.
-		$videos = array();
+		$videos                 = array();
 		$total_duration_seconds = 0;
 		$total_completions      = 0;
 		$total_views            = 0;
@@ -95,10 +95,10 @@ class HotelVideoLibraryPage {
 				}
 			}
 
-			$videos[] = $video_meta;
+			$videos[]                = $video_meta;
 			$total_duration_seconds += (int) $video_meta->duration_seconds;
-			$total_completions += (int) $video_meta->total_completions;
-			$total_views += (int) $video_meta->total_views;
+			$total_completions      += (int) $video_meta->total_completions;
+			$total_views            += (int) $video_meta->total_views;
 
 			if ( $effectively_active ) {
 				++$active_videos;
@@ -108,7 +108,7 @@ class HotelVideoLibraryPage {
 		// Calculate statistics.
 		$total_videos         = count( $videos );
 		$total_duration_hours = round( $total_duration_seconds / 3600, 1 );
-		$avg_completion = $total_videos > 0 && $total_views > 0 ? round( ( $total_completions / $total_views ) * 100, 0 ) : 0;
+		$avg_completion       = $total_videos > 0 && $total_views > 0 ? round( ( $total_completions / $total_views ) * 100, 0 ) : 0;
 
 		// Get distinct categories from all videos.
 		$categories = array();
@@ -120,7 +120,7 @@ class HotelVideoLibraryPage {
 		sort( $categories );
 
 		// Format duration helper.
-		$format_duration = function( $seconds ) {
+		$format_duration = function ( $seconds ) {
 			if ( ! $seconds ) {
 				return '0:00';
 			}
@@ -140,6 +140,10 @@ class HotelVideoLibraryPage {
 			} elseif ( $vid->thumbnail_url ) {
 				$thumb_url = $vid->thumbnail_url;
 			}
+			
+			// Get video file URL.
+			$video_url = $vid->video_file_id ? wp_get_attachment_url( $vid->video_file_id ) : '';
+			
 			$completion = $vid->total_views > 0 ? round( ( $vid->total_completions / $vid->total_views ) * 100, 0 ) : 0;
 
 			// Get assignment status for this hotel.
@@ -148,21 +152,22 @@ class HotelVideoLibraryPage {
 			$status_by_hotel   = ( $assignment && isset( $assignment->status_by_hotel ) ) ? $assignment->status_by_hotel : 'inactive';
 
 			$videos_data[ $video_id_key ] = array(
-				'video_id' => $vid->video_id,
-				'title'    => $vid->title,
-				'description'        => $vid->description ?: __( 'No description available.', 'hotel-chain' ),
-				'category'           => $vid->category ?: __( 'Uncategorized', 'hotel-chain' ),
-				'duration'           => $format_duration( $vid->duration_seconds ),
-				'thumbnail_url'      => $thumb_url,
-				'total_completions'  => number_format_i18n( $vid->total_completions ),
-				'avg_completion'     => $completion . '%',
-				'assignment_status'  => $assignment_status,
-				'status_by_hotel'    => $status_by_hotel,
+				'video_id'          => $vid->video_id,
+				'title'             => $vid->title,
+				'description'       => $vid->description ? $vid->description : __( 'No description available.', 'hotel-chain' ),
+				'category'          => $vid->category ? $vid->category : __( 'Uncategorized', 'hotel-chain' ),
+				'duration'          => $format_duration( $vid->duration_seconds ),
+				'thumbnail_url'     => $thumb_url,
+				'video_url'         => $video_url,
+				'total_completions' => number_format_i18n( $vid->total_completions ),
+				'avg_completion'    => $completion . '%',
+				'assignment_status' => $assignment_status,
+				'status_by_hotel'   => $status_by_hotel,
 			);
 		}
 
 		// Helper to compute status label and class for badges.
-		$get_status_badge = function( string $assignment_status, string $status_by_hotel ): array {
+		$get_status_badge = function ( string $assignment_status, string $status_by_hotel ): array {
 			if ( 'active' === $assignment_status && 'active' === $status_by_hotel ) {
 				return array(
 					'label' => __( 'Active', 'hotel-chain' ),
@@ -201,11 +206,13 @@ class HotelVideoLibraryPage {
 						<p class="hotel-video-library-text-muted"><?php esc_html_e( 'Browse all videos available in the system', 'hotel-chain' ); ?></p>
 					</div>
 
-					<!-- Filters -->
-					<div class="bg-white rounded p-4 border border-solid border-gray-300">
-						<div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+				<!-- Filters -->
+				<div class="bg-white rounded p-4 border border-solid border-gray-300">
+					<div class="space-y-4">
+						<!-- Search Row -->
+						<div class="flex flex-col sm:flex-row gap-4">
 							<!-- Search -->
-							<div class="w-full lg:flex-1 flex items-center gap-3 border border-solid border-gray-300 rounded px-4 py-2">
+							<div class="flex-1 flex items-center gap-3 border border-solid border-gray-300 rounded px-4 py-2">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-5 h-5 hotel-video-library-icon-muted" aria-hidden="true">
 									<path d="m21 21-4.34-4.34"></path>
 									<circle cx="11" cy="11" r="8"></circle>
@@ -220,15 +227,18 @@ class HotelVideoLibraryPage {
 							</div>
 
 							<!-- Filter Button -->
-							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2 cursor-pointer" id="hotel-filter-toggle">
+							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2 cursor-pointer whitespace-nowrap" id="hotel-filter-toggle">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel w-5 h-5 hotel-video-library-text-muted" aria-hidden="true">
 									<path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"></path>
 								</svg>
 								<span class="hotel-video-library-text-primary"><?php esc_html_e( 'Filter', 'hotel-chain' ); ?></span>
 							</div>
+						</div>
 
+						<!-- Filters Row -->
+						<div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
 							<!-- Category Dropdown -->
-							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2">
+							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2 whitespace-nowrap">
 								<span class="hotel-video-library-text-muted"><?php esc_html_e( 'Category:', 'hotel-chain' ); ?></span>
 								<select id="hotel-category-filter" class="border-none outline-none bg-transparent cursor-pointer hotel-video-library-text-primary">
 									<option value=""><?php esc_html_e( 'All', 'hotel-chain' ); ?></option>
@@ -241,7 +251,7 @@ class HotelVideoLibraryPage {
 							</div>
 
 							<!-- Status Dropdown -->
-							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2">
+							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2 whitespace-nowrap">
 								<span class="hotel-video-library-text-muted"><?php esc_html_e( 'Status:', 'hotel-chain' ); ?></span>
 								<select id="hotel-status-filter" class="border-none outline-none bg-transparent cursor-pointer hotel-video-library-text-primary">
 									<option value=""><?php esc_html_e( 'All', 'hotel-chain' ); ?></option>
@@ -251,10 +261,10 @@ class HotelVideoLibraryPage {
 							</div>
 
 							<!-- View Toggle -->
-							<div class="flex gap-2">
+							<div class="flex gap-2 ml-auto">
 								<button 
 									type="button" 
-									class="p-2 border border-solid border-gray-300 rounded hotel-view-btn <?php echo 'grid' === $view_mode ? 'active hotel-video-library-bg-cream' : ''; ?>" 
+									class="p-3 border border-solid border-gray-300 rounded hotel-view-btn <?php echo 'grid' === $view_mode ? 'active hotel-video-library-bg-cream' : ''; ?>" 
 									data-view="grid"
 								>
 									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grid3x3 lucide-grid-3x3 w-5 h-5 hotel-video-library-icon-primary" aria-hidden="true">
@@ -267,7 +277,7 @@ class HotelVideoLibraryPage {
 								</button>
 								<button 
 									type="button" 
-									class="p-2 border rounded hotel-view-btn <?php echo 'list' === $view_mode ? 'active hotel-video-library-bg-cream hotel-video-library-border-light' : 'border-gray-300'; ?>" 
+									class="p-3 border rounded hotel-view-btn <?php echo 'list' === $view_mode ? 'active hotel-video-library-bg-cream hotel-video-library-border-light' : 'border-gray-300'; ?>" 
 									data-view="list"
 								>
 									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list w-5 h-5 hotel-video-library-text-muted" aria-hidden="true">
@@ -282,6 +292,7 @@ class HotelVideoLibraryPage {
 							</div>
 						</div>
 					</div>
+				</div>
 
 					<!-- Stats Cards -->
 					<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -357,15 +368,15 @@ class HotelVideoLibraryPage {
 										<?php esc_html_e( 'No videos found.', 'hotel-chain' ); ?>
 									</div>
 								<?php else : ?>
-								<?php foreach ( $videos as $video ) : ?>
-									<?php
-									$video_id_key    = (string) $video->video_id;
-									$video_json_data = isset( $videos_data[ $video_id_key ] ) ? $videos_data[ $video_id_key ] : array();
+									<?php foreach ( $videos as $video ) : ?>
+										<?php
+										$video_id_key    = (string) $video->video_id;
+										$video_json_data = isset( $videos_data[ $video_id_key ] ) ? $videos_data[ $video_id_key ] : array();
 
-									$assignment_status = isset( $video_json_data['assignment_status'] ) ? (string) $video_json_data['assignment_status'] : 'none';
-									$status_by_hotel   = isset( $video_json_data['status_by_hotel'] ) ? (string) $video_json_data['status_by_hotel'] : 'inactive';
-									$status_badge      = $get_status_badge( $assignment_status, $status_by_hotel );
-									?>
+										$assignment_status = isset( $video_json_data['assignment_status'] ) ? (string) $video_json_data['assignment_status'] : 'none';
+										$status_by_hotel   = isset( $video_json_data['status_by_hotel'] ) ? (string) $video_json_data['status_by_hotel'] : 'inactive';
+										$status_badge      = $get_status_badge( $assignment_status, $status_by_hotel );
+										?>
 									<div class="grid grid-cols-6 gap-4 p-3 border-b-2 last:border-b-0 hotel-video-row" 
 										data-video-id="<?php echo esc_attr( $video->video_id ); ?>" 
 										data-video-data="<?php echo esc_attr( wp_json_encode( $video_json_data ) ); ?>"
@@ -394,7 +405,7 @@ class HotelVideoLibraryPage {
 												</div>
 												<div class="hotel-video-library-text-primary"><?php echo esc_html( $video->title ); ?></div>
 											</div>
-											<div class="flex items-center hotel-video-library-text-muted"><?php echo esc_html( $video->category ?: __( 'Uncategorized', 'hotel-chain' ) ); ?></div>
+											<div class="flex items-center hotel-video-library-text-muted"><?php echo esc_html( $video->category ? $video->category : __( 'Uncategorized', 'hotel-chain' ) ); ?></div>
 											<div class="flex items-center hotel-video-library-text-primary"><?php echo esc_html( $format_duration( $video->duration_seconds ) ); ?></div>
 											<div class="flex items-center">
 												<span class="px-3 py-1 rounded <?php echo esc_attr( $status_badge['class'] ); ?>"><?php echo esc_html( $status_badge['label'] ); ?></span>
@@ -452,7 +463,7 @@ class HotelVideoLibraryPage {
 										</div>
 										<div class="p-3">
 											<div class="mb-1 hotel-video-library-text-primary font-semibold"><?php echo esc_html( $video->title ); ?></div>
-											<div class="hotel-video-library-text-muted text-sm"><?php echo esc_html( $video->category ?: __( 'Uncategorized', 'hotel-chain' ) ); ?></div>
+											<div class="hotel-video-library-text-muted text-sm"><?php echo esc_html( $video->category ? $video->category : __( 'Uncategorized', 'hotel-chain' ) ); ?></div>
 										</div>
 									</div>
 								<?php endforeach; ?>
@@ -468,15 +479,30 @@ class HotelVideoLibraryPage {
 						<div class="bg-white border border-solid border-gray-300 rounded p-6">
 							<div class="grid grid-cols-2 gap-6">
 								<div>
-									<div class="border border-solid border-gray-300 rounded h-80 flex items-center justify-center mb-4 hotel-video-library-bg-cream">
-										<img id="detail-thumbnail" src="" alt="" class="w-full h-full object-cover rounded hidden" />
-										<svg id="detail-placeholder" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-16 h-16 hotel-video-library-icon-primary" aria-hidden="true">
-											<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
-											<circle cx="12" cy="8" r="2"></circle>
-											<path d="M12 10v12"></path>
-											<path d="M12 22c4.2 0 7-1.667 7-5-4.2 0-7 1.667-7 5Z"></path>
-											<path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z"></path>
-										</svg>
+									<!-- Video Player -->
+									<div class="border border-solid border-gray-300 rounded h-80 flex items-center justify-center mb-4 hotel-video-library-bg-cream relative overflow-hidden" style="background-color: #000;">
+										<video id="detail-video-player" class="w-full h-full object-contain hidden" controls playsinline>
+											<?php esc_html_e( 'Your browser does not support the video tag.', 'hotel-chain' ); ?>
+										</video>
+										<!-- Fallback thumbnail/placeholder (shown when no video) -->
+										<div id="detail-video-placeholder" class="absolute inset-0 flex items-center justify-center">
+											<img id="detail-thumbnail" src="" alt="" class="w-full h-full object-cover hidden" />
+											<svg id="detail-placeholder" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-16 h-16 hotel-video-library-icon-primary" aria-hidden="true">
+												<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
+												<circle cx="12" cy="8" r="2"></circle>
+												<path d="M12 10v12"></path>
+												<path d="M12 22c4.2 0 7-1.667 7-5-4.2 0-7 1.667-7 5Z"></path>
+												<path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z"></path>
+											</svg>
+											<!-- Play Icon Overlay -->
+											<div id="detail-play-icon" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+												<div class="w-20 h-20 rounded-full flex items-center justify-center transition-all hover:scale-110" style="background-color: rgba(240, 231, 215, 0.9);">
+													<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="ml-1" style="color: rgb(61, 61, 68);">
+														<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"></path>
+													</svg>
+												</div>
+											</div>
+										</div>
 									</div>
 									<div class="space-y-2">
 										<div class="flex justify-between">
@@ -707,17 +733,135 @@ class HotelVideoLibraryPage {
 				// Update status UI
 				updateStatusUI(videoData.assignment_status || 'none', videoData.video_id, videoData.status_by_hotel || 'active');
 
-				// Handle thumbnail
+				// Handle video player
+				const videoPlayer = document.getElementById('detail-video-player');
+				const videoPlaceholder = document.getElementById('detail-video-placeholder');
 				const thumbnailImg = document.getElementById('detail-thumbnail');
 				const placeholderSvg = document.getElementById('detail-placeholder');
-				if (videoData.thumbnail_url) {
-					thumbnailImg.src = videoData.thumbnail_url;
-					thumbnailImg.alt = videoData.title || '';
-					thumbnailImg.classList.remove('hidden');
-					placeholderSvg.classList.add('hidden');
+				const playIcon = document.getElementById('detail-play-icon');
+				
+				if (videoData.video_url) {
+					// Show video player and set source
+					if (videoPlayer) {
+						// Remove existing event listeners by cloning and replacing the element
+						const newVideoPlayer = videoPlayer.cloneNode(false);
+						videoPlayer.parentNode.replaceChild(newVideoPlayer, videoPlayer);
+						
+						// Get reference to the new video element
+						const currentVideoPlayer = document.getElementById('detail-video-player');
+						
+						currentVideoPlayer.src = videoData.video_url;
+						currentVideoPlayer.poster = videoData.thumbnail_url || '';
+						currentVideoPlayer.controls = true;
+						currentVideoPlayer.playsInline = true;
+						
+						// Set up thumbnail/placeholder display
+						const setupThumbnail = function() {
+							if (videoData.thumbnail_url) {
+								if (thumbnailImg) {
+									thumbnailImg.src = videoData.thumbnail_url;
+									thumbnailImg.alt = videoData.title || '';
+									thumbnailImg.classList.remove('hidden');
+								}
+								if (placeholderSvg) {
+									placeholderSvg.classList.add('hidden');
+								}
+							} else {
+								if (thumbnailImg) {
+									thumbnailImg.classList.add('hidden');
+								}
+								if (placeholderSvg) {
+									placeholderSvg.classList.remove('hidden');
+								}
+							}
+						};
+						
+						// Show placeholder when paused
+						currentVideoPlayer.addEventListener('pause', function() {
+							if (videoPlaceholder) {
+								videoPlaceholder.classList.remove('hidden');
+							}
+							if (playIcon) {
+								playIcon.classList.remove('hidden');
+							}
+							currentVideoPlayer.classList.add('hidden');
+							setupThumbnail();
+						});
+						
+						// Show placeholder when video ends
+						currentVideoPlayer.addEventListener('ended', function() {
+							if (videoPlaceholder) {
+								videoPlaceholder.classList.remove('hidden');
+							}
+							if (playIcon) {
+								playIcon.classList.remove('hidden');
+							}
+							currentVideoPlayer.classList.add('hidden');
+							setupThumbnail();
+						});
+						
+						// Hide placeholder when playing
+						currentVideoPlayer.addEventListener('play', function() {
+							if (videoPlaceholder) {
+								videoPlaceholder.classList.add('hidden');
+							}
+							if (playIcon) {
+								playIcon.classList.add('hidden');
+							}
+							currentVideoPlayer.classList.remove('hidden');
+						});
+						
+						// Make placeholder clickable to play video
+						if (videoPlaceholder) {
+							videoPlaceholder.style.cursor = 'pointer';
+							// Remove old click listener if exists and add new one
+							const placeholderClickHandler = function() {
+								currentVideoPlayer.play();
+							};
+							videoPlaceholder.onclick = placeholderClickHandler;
+						}
+						
+						// Initially show placeholder (video starts paused)
+						if (videoPlaceholder) {
+							videoPlaceholder.classList.remove('hidden');
+						}
+						if (playIcon) {
+							playIcon.classList.remove('hidden');
+						}
+						currentVideoPlayer.classList.add('hidden');
+						setupThumbnail();
+					}
 				} else {
-					thumbnailImg.classList.add('hidden');
-					placeholderSvg.classList.remove('hidden');
+					// Hide video player, show placeholder with thumbnail
+					if (videoPlayer) {
+						videoPlayer.src = '';
+						videoPlayer.classList.add('hidden');
+					}
+					if (videoPlaceholder) {
+						videoPlaceholder.classList.remove('hidden');
+					}
+					// Hide play icon when no video URL
+					if (playIcon) {
+						playIcon.classList.add('hidden');
+					}
+					// Handle thumbnail in placeholder
+					if (videoData.thumbnail_url) {
+						if (thumbnailImg) {
+							thumbnailImg.src = videoData.thumbnail_url;
+							thumbnailImg.alt = videoData.title || '';
+							thumbnailImg.classList.remove('hidden');
+						}
+						if (placeholderSvg) {
+							placeholderSvg.classList.add('hidden');
+						}
+					} else {
+						if (thumbnailImg) {
+							thumbnailImg.classList.add('hidden');
+						}
+						if (placeholderSvg) {
+							placeholderSvg.classList.remove('hidden');
+						}
+					}
 				}
 
 				// Show panel and scroll to it

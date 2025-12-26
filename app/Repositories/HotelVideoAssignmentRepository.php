@@ -25,9 +25,9 @@ class HotelVideoAssignmentRepository {
 	/**
 	 * Assign video to hotel.
 	 *
-	 * @param int   $hotel_id    Hotel ID.
-	 * @param int   $video_id    Internal video ID from video_metadata table.
-	 * @param int   $assigned_by User ID who assigned (optional).
+	 * @param int $hotel_id    Hotel ID.
+	 * @param int $video_id    Internal video ID from video_metadata table.
+	 * @param int $assigned_by User ID who assigned (optional).
 	 * @return int|false Assignment ID on success, false on failure.
 	 */
 	public function assign( int $hotel_id, int $video_id, int $assigned_by = 0 ) {
@@ -89,10 +89,9 @@ class HotelVideoAssignmentRepository {
 		global $wpdb;
 		$table = $this->get_table_name();
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$assignment = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE hotel_id = %d AND video_id = %d",
+				"SELECT * FROM {$table} WHERE hotel_id = %d AND video_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$hotel_id,
 				$video_id
 			)
@@ -120,18 +119,18 @@ class HotelVideoAssignmentRepository {
 
 		$args = wp_parse_args( $args, $defaults );
 
-		$where = array( 'hotel_id = %d' );
+		$where        = array( 'hotel_id = %d' );
 		$where_values = array( $hotel_id );
 
 		if ( ! empty( $args['status'] ) ) {
-			$where[] = 'status = %s';
+			$where[]        = 'status = %s';
 			$where_values[] = $args['status'];
 		}
 
 		$where_clause = implode( ' AND ', $where );
 
 		$orderby = in_array( $args['orderby'], array( 'assigned_at', 'video_id' ), true ) ? $args['orderby'] : 'assigned_at';
-		$order = 'DESC' === strtoupper( $args['order'] ) ? 'DESC' : 'ASC';
+		$order   = 'DESC' === strtoupper( $args['order'] ) ? 'DESC' : 'ASC';
 
 		// Now video_id references internal video_id from video_metadata table, not WordPress post ID.
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -157,7 +156,7 @@ class HotelVideoAssignmentRepository {
 	 */
 	public function get_video_hotels( int $video_id, array $args = array() ): array {
 		global $wpdb;
-		$table = $this->get_table_name();
+		$table        = $this->get_table_name();
 		$hotels_table = Schema::get_table_name( 'hotels' );
 
 		$defaults = array(
@@ -168,18 +167,18 @@ class HotelVideoAssignmentRepository {
 
 		$args = wp_parse_args( $args, $defaults );
 
-		$where = array( 'a.video_id = %d' );
+		$where        = array( 'a.video_id = %d' );
 		$where_values = array( $video_id );
 
 		if ( ! empty( $args['status'] ) ) {
-			$where[] = 'a.status = %s';
+			$where[]        = 'a.status = %s';
 			$where_values[] = $args['status'];
 		}
 
 		$where_clause = implode( ' AND ', $where );
 
 		$orderby = in_array( $args['orderby'], array( 'assigned_at', 'hotel_id' ), true ) ? $args['orderby'] : 'assigned_at';
-		$order = 'DESC' === strtoupper( $args['order'] ) ? 'DESC' : 'ASC';
+		$order   = 'DESC' === strtoupper( $args['order'] ) ? 'DESC' : 'ASC';
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$query = "SELECT a.*, h.hotel_name, h.hotel_code, h.status as hotel_status 
@@ -206,10 +205,9 @@ class HotelVideoAssignmentRepository {
 		global $wpdb;
 		$table = $this->get_table_name();
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT COUNT(*) FROM {$table} WHERE video_id = %d AND status = 'active'",
+				"SELECT COUNT(*) FROM {$table} WHERE video_id = %d AND status = 'active'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$video_id
 			)
 		);
@@ -339,7 +337,7 @@ class HotelVideoAssignmentRepository {
 	 */
 	public function get_pending_requests(): array {
 		global $wpdb;
-		$table = $this->get_table_name();
+		$table        = $this->get_table_name();
 		$hotels_table = Schema::get_table_name( 'hotels' );
 		$videos_table = Schema::get_table_name( 'video_metadata' );
 
@@ -403,10 +401,9 @@ class HotelVideoAssignmentRepository {
 		global $wpdb;
 		$table = $this->get_table_name();
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$assignment = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE id = %d",
+				"SELECT * FROM {$table} WHERE id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$assignment_id
 			)
 		);
@@ -450,10 +447,9 @@ class HotelVideoAssignmentRepository {
 		global $wpdb;
 		$table = $this->get_table_name();
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$assignments = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE hotel_id = %d AND status = 'active' AND status_by_hotel = 'active' ORDER BY assigned_at DESC",
+				"SELECT * FROM {$table} WHERE hotel_id = %d AND status = 'active' AND status_by_hotel = 'active' ORDER BY assigned_at DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$hotel_id
 			)
 		);

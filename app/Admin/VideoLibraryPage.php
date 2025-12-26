@@ -62,16 +62,16 @@ class VideoLibraryPage implements ServiceProviderInterface {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'hotel-chain' ) ) );
 		}
 
-		$video_id = isset( $_POST['video_id'] ) ? absint( $_POST['video_id'] ) : 0;
+		$video_id     = isset( $_POST['video_id'] ) ? absint( $_POST['video_id'] ) : 0;
 		$selected_cat = isset( $_POST['video_cat'] ) ? sanitize_text_field( wp_unslash( $_POST['video_cat'] ) ) : '';
 
 		if ( ! $video_id ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid video ID.', 'hotel-chain' ) ) );
 		}
 
-		$video_repository = new VideoRepository();
+		$video_repository      = new VideoRepository();
 		$assignment_repository = new HotelVideoAssignmentRepository();
-		$hotel_repository = new HotelRepository();
+		$hotel_repository      = new HotelRepository();
 
 		$video = $video_repository->get_by_video_id( $video_id );
 
@@ -80,9 +80,9 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		}
 
 		// Build data for the panel.
-		$title = $video->title;
-		$description = $video->description;
-		$category_label = $video->category ?: __( 'Uncategorized', 'hotel-chain' );
+		$title          = $video->title;
+		$description    = $video->description;
+		$category_label = $video->category ? $video->category : __( 'Uncategorized', 'hotel-chain' );
 
 		$tag_names = array();
 		if ( ! empty( $video->tags ) ) {
@@ -98,14 +98,14 @@ class VideoLibraryPage implements ServiceProviderInterface {
 			$thumbnail_url = $video->thumbnail_url;
 		}
 
-		$duration_label = $video->duration_label ?: '';
+		$duration_label = $video->duration_label ? $video->duration_label : '';
 
 		$file_size_label = '';
 		if ( $video->file_size ) {
 			$file_size_label = round( $video->file_size / ( 1024 * 1024 ) ) . ' MB';
 		}
 
-		$format_label = $video->file_format ?: '';
+		$format_label = $video->file_format ? $video->file_format : '';
 
 		$resolution_label = '';
 		if ( $video->resolution_width && $video->resolution_height ) {
@@ -114,8 +114,8 @@ class VideoLibraryPage implements ServiceProviderInterface {
 
 		$uploaded_label = $video->created_at ? date_i18n( 'M j, Y', strtotime( $video->created_at ) ) : '';
 
-		$hotel_count = $assignment_repository->get_video_assignment_count( $video->video_id );
-		$total_views = (int) $video->total_views;
+		$hotel_count    = $assignment_repository->get_video_assignment_count( $video->video_id );
+		$total_views    = (int) $video->total_views;
 		$avg_completion = $video->avg_completion_rate ? number_format( $video->avg_completion_rate, 1 ) . '%' : '0%';
 
 		// Categories and tags for form.
@@ -141,9 +141,14 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		}
 
 		// Hotels for assignment table.
-		$all_hotels = $hotel_repository->get_all( array( 'status' => 'active', 'limit' => -1 ) );
+		$all_hotels      = $hotel_repository->get_all(
+			array(
+				'status' => 'active',
+				'limit'  => -1,
+			)
+		);
 		$assigned_hotels = $assignment_repository->get_video_hotels( $video->video_id, array( 'status' => '' ) );
-		$assigned_map = array();
+		$assigned_map    = array();
 		foreach ( $assigned_hotels as $assignment ) {
 			$assigned_map[ $assignment->hotel_id ] = $assignment;
 		}
@@ -193,7 +198,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		}
 
 		$assignment_repository = new HotelVideoAssignmentRepository();
-		$result = $assignment_repository->assign( $hotel_id, $video_id );
+		$result                = $assignment_repository->assign( $hotel_id, $video_id );
 
 		if ( $result ) {
 			wp_send_json_success( array( 'message' => __( 'Video assigned successfully.', 'hotel-chain' ) ) );
@@ -221,7 +226,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		}
 
 		$assignment_repository = new HotelVideoAssignmentRepository();
-		$result = $assignment_repository->delete( $assignment_id );
+		$result                = $assignment_repository->delete( $assignment_id );
 
 		if ( $result ) {
 			wp_send_json_success( array( 'message' => __( 'Video unassigned successfully.', 'hotel-chain' ) ) );
@@ -271,7 +276,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		$all_hotels,
 		$assigned_map
 	): void {
-		$title = $video->title;
+		$title       = $video->title;
 		$description = $video->description;
 		?>
 		<div class="bg-white rounded p-4 mb-6 border border-solid border-gray-300">
@@ -310,19 +315,19 @@ class VideoLibraryPage implements ServiceProviderInterface {
 							<div class="space-y-2 mb-4 text-sm">
 								<div class="flex justify-between">
 									<span class="text-gray-600"><?php esc_html_e( 'Duration:', 'hotel-chain' ); ?></span>
-									<span><?php echo esc_html( $duration_label ?: '-' ); ?></span>
+									<span><?php echo esc_html( $duration_label ? $duration_label : '-' ); ?></span>
 								</div>
 								<div class="flex justify-between">
 									<span class="text-gray-600"><?php esc_html_e( 'File Size:', 'hotel-chain' ); ?></span>
-									<span><?php echo esc_html( $file_size_label ?: '-' ); ?></span>
+									<span><?php echo esc_html( $file_size_label ? $file_size_label : '-' ); ?></span>
 								</div>
 								<div class="flex justify-between">
 									<span class="text-gray-600"><?php esc_html_e( 'Format:', 'hotel-chain' ); ?></span>
-									<span><?php echo esc_html( $format_label ?: '-' ); ?></span>
+									<span><?php echo esc_html( $format_label ? $format_label : '-' ); ?></span>
 								</div>
 								<div class="flex justify-between">
 									<span class="text-gray-600"><?php esc_html_e( 'Resolution:', 'hotel-chain' ); ?></span>
-									<span><?php echo esc_html( $resolution_label ?: '-' ); ?></span>
+									<span><?php echo esc_html( $resolution_label ? $resolution_label : '-' ); ?></span>
 								</div>
 								<div class="flex justify-between">
 									<span class="text-gray-600"><?php esc_html_e( 'Uploaded:', 'hotel-chain' ); ?></span>
@@ -388,7 +393,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 							</div>
 							<div class="mb-4">
 								<label class="mb-1 text-sm font-semibold text-slate-800 block" for="video_language_inline"><?php esc_html_e( 'Default Language', 'hotel-chain' ); ?></label>
-								<input type="text" id="video_language_inline" name="video_language" value="<?php echo esc_attr( $video->default_language ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
+								<input type="text" id="video_language_inline" name="video_language" value="<?php echo esc_attr( $video->default_language ? $video->default_language : '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
 							</div>
 							<div class="mb-4">
 								<label class="mb-1 text-sm font-semibold text-slate-800 block"><?php esc_html_e( 'Tags', 'hotel-chain' ); ?></label>
@@ -416,7 +421,23 @@ class VideoLibraryPage implements ServiceProviderInterface {
 								<button type="button" class="px-4 py-2 bg-purple-200 border-2 border-purple-400 rounded text-purple-900" data-hotel-replace-button="1">
 									<?php esc_html_e( 'Replace Video', 'hotel-chain' ); ?>
 								</button>
-								<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'hotel_chain_delete_video', 'video_id' => $video->video_id, 'video_cat' => $selected_cat ), admin_url( 'admin-post.php' ) ), 'hotel_chain_delete_video' ) ); ?>" class="px-4 py-2 bg-red-200 border-2 border-red-400 rounded text-red-900 text-center" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to delete this video?', 'hotel-chain' ) ); ?>');">
+								<a href="
+								<?php
+								echo esc_url(
+									wp_nonce_url(
+										add_query_arg(
+											array(
+												'action'   => 'hotel_chain_delete_video',
+												'video_id' => $video->video_id,
+												'video_cat' => $selected_cat,
+											),
+											admin_url( 'admin-post.php' )
+										),
+										'hotel_chain_delete_video'
+									)
+								);
+								?>
+											" class="px-4 py-2 bg-red-200 border-2 border-red-400 rounded text-red-900 text-center" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to delete this video?', 'hotel-chain' ) ); ?>');">
 									<?php esc_html_e( 'Delete Video', 'hotel-chain' ); ?>
 								</a>
 							</div>
@@ -430,7 +451,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 											printf(
 												/* translators: %d: number of hotels. */
 												esc_html__( '%d hotels', 'hotel-chain' ),
-												$hotel_count
+												esc_html( (string) $hotel_count )
 											);
 											?>
 										</div>
@@ -472,7 +493,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 				<tbody>
 					<?php foreach ( $all_hotels as $hotel ) : ?>
 						<?php
-						$assignment = isset( $assigned_map[ $hotel->id ] ) ? $assigned_map[ $hotel->id ] : null;
+						$assignment  = isset( $assigned_map[ $hotel->id ] ) ? $assigned_map[ $hotel->id ] : null;
 						$is_assigned = $assignment && in_array( $assignment->status, array( 'active', 'pending' ), true );
 						?>
 						<tr class="border-b border-solid border-gray-100 hover:bg-gray-50">
@@ -498,7 +519,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 									<?php
 									$status_by_hotel = isset( $assignment->status_by_hotel ) ? $assignment->status_by_hotel : 'active';
 									if ( 'active' === $status_by_hotel ) :
-									?>
+										?>
 										<span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></span>
 									<?php else : ?>
 										<span class="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"><?php esc_html_e( 'Inactive', 'hotel-chain' ); ?></span>
@@ -549,7 +570,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		$selected_cat = isset( $_GET['video_cat'] ) ? sanitize_text_field( wp_unslash( $_GET['video_cat'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		$video_repository = new VideoRepository();
-		$videos = $video_repository->get_all(
+		$videos           = $video_repository->get_all(
 			array(
 				'category' => $selected_cat,
 				'limit'    => -1,
@@ -580,24 +601,30 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		);
 
 		foreach ( $videos as $video ) {
-			$video_url = home_url( '/videos/' . $video->slug . '/' );
-			$uploaded_date = $video->created_at ? date( 'Y-m-d', strtotime( $video->created_at ) ) : '';
+			$video_url     = home_url( '/videos/' . $video->slug . '/' );
+			$uploaded_date = $video->created_at ? gmdate( 'Y-m-d', strtotime( $video->created_at ) ) : '';
+
+			$category_value         = $video->category ? $video->category : '';
+			$tags_value             = $video->tags ? $video->tags : '';
+			$duration_label_value   = $video->duration_label ? $video->duration_label : '';
+			$default_language_value = $video->default_language ? $video->default_language : '';
 
 			fputcsv(
 				$output,
 				array(
 					$video->video_id,
 					$video->title,
-					$video->category ?: '',
-					$video->tags ?: '',
-					$video->duration_label ?: '',
-					$video->default_language ?: '',
+					$category_value,
+					$tags_value,
+					$duration_label_value,
+					$default_language_value,
 					$video_url,
 					$uploaded_date,
 				)
 			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- php://output stream requires fclose().
 		fclose( $output );
 		exit;
 	}
@@ -614,8 +641,8 @@ class VideoLibraryPage implements ServiceProviderInterface {
 
 		check_admin_referer( 'hotel_chain_assign_video' );
 
-		$hotel_id = isset( $_GET['hotel_id'] ) ? absint( $_GET['hotel_id'] ) : 0;
-		$video_id = isset( $_GET['video_id'] ) ? absint( $_GET['video_id'] ) : 0;
+		$hotel_id     = isset( $_GET['hotel_id'] ) ? absint( $_GET['hotel_id'] ) : 0;
+		$video_id     = isset( $_GET['video_id'] ) ? absint( $_GET['video_id'] ) : 0;
 		$selected_cat = isset( $_GET['video_cat'] ) ? sanitize_text_field( wp_unslash( $_GET['video_cat'] ) ) : '';
 
 		if ( $hotel_id && $video_id ) {
@@ -650,8 +677,8 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		check_admin_referer( 'hotel_chain_unassign_video' );
 
 		$assignment_id = isset( $_GET['assignment_id'] ) ? absint( $_GET['assignment_id'] ) : 0;
-		$video_id = isset( $_GET['video_id'] ) ? absint( $_GET['video_id'] ) : 0;
-		$selected_cat = isset( $_GET['video_cat'] ) ? sanitize_text_field( wp_unslash( $_GET['video_cat'] ) ) : '';
+		$video_id      = isset( $_GET['video_id'] ) ? absint( $_GET['video_id'] ) : 0;
+		$selected_cat  = isset( $_GET['video_cat'] ) ? sanitize_text_field( wp_unslash( $_GET['video_cat'] ) ) : '';
 
 		if ( $assignment_id ) {
 			$assignment_repo = new HotelVideoAssignmentRepository();
@@ -684,7 +711,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 
 		check_admin_referer( 'hotel_chain_delete_video' );
 
-		$video_id = isset( $_GET['video_id'] ) ? absint( $_GET['video_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$video_id     = isset( $_GET['video_id'] ) ? absint( $_GET['video_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$selected_cat = isset( $_GET['video_cat'] ) ? sanitize_text_field( wp_unslash( $_GET['video_cat'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		if ( ! $video_id ) {
@@ -701,7 +728,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		}
 
 		$video_repository = new VideoRepository();
-		$video = $video_repository->get_by_video_id( $video_id );
+		$video            = $video_repository->get_by_video_id( $video_id );
 
 		if ( ! $video ) {
 			wp_safe_redirect(
@@ -725,7 +752,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 
 		// Also delete assignments.
 		$assignment_repo = new HotelVideoAssignmentRepository();
-		$assignments = $assignment_repo->get_video_hotels( $video_id );
+		$assignments     = $assignment_repo->get_video_hotels( $video_id );
 		foreach ( $assignments as $assignment ) {
 			$assignment_repo->delete( $assignment->id );
 		}
@@ -772,7 +799,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		}
 
 		$video_repository = new VideoRepository();
-		$video = $video_repository->get_by_video_id( $video_id );
+		$video            = $video_repository->get_by_video_id( $video_id );
 
 		if ( ! $video ) {
 			wp_safe_redirect(
@@ -832,7 +859,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 
 			if ( ! is_wp_error( $video_attachment_id ) && $video_attachment_id ) {
 				$update_data['video_file_id'] = $video_attachment_id;
-				$video_replaced = 1;
+				$video_replaced               = 1;
 
 				// Recalculate duration label from attachment metadata.
 				$duration_label = '';
@@ -882,7 +909,8 @@ class VideoLibraryPage implements ServiceProviderInterface {
 
 			if ( ! is_wp_error( $thumb_attachment_id ) && $thumb_attachment_id ) {
 				$update_data['thumbnail_id']  = $thumb_attachment_id;
-				$update_data['thumbnail_url'] = wp_get_attachment_url( $thumb_attachment_id ) ?: '';
+				$attachment_url               = wp_get_attachment_url( $thumb_attachment_id );
+				$update_data['thumbnail_url'] = $attachment_url ? $attachment_url : '';
 			}
 		}
 
@@ -921,7 +949,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		$unassigned        = isset( $_GET['unassigned'] ) ? absint( $_GET['unassigned'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$assigned          = isset( $_GET['assigned'] ) ? absint( $_GET['assigned'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		$video_repository = new VideoRepository();
+		$video_repository      = new VideoRepository();
 		$assignment_repository = new HotelVideoAssignmentRepository();
 
 		// Fetch videos from custom table.
@@ -993,7 +1021,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 						printf(
 							/* translators: %d: number of videos. */
 							esc_html__( 'System Video Library (%d videos)', 'hotel-chain' ),
-							$total_videos
+							esc_html( (string) $total_videos )
 						);
 						?>
 					</h3>
@@ -1010,7 +1038,22 @@ class VideoLibraryPage implements ServiceProviderInterface {
 								<?php endforeach; ?>
 							</select>
 						</form>
-						<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array( 'action' => 'hotel_chain_export_videos', 'video_cat' => $selected_cat ), admin_url( 'admin-post.php' ) ), 'hotel_chain_export_videos' ) ); ?>" class="px-4 py-2 bg-blue-200 border border-solid border-blue-400 rounded text-blue-900 inline-flex items-center justify-center">
+						<a href="
+						<?php
+						echo esc_url(
+							wp_nonce_url(
+								add_query_arg(
+									array(
+										'action'    => 'hotel_chain_export_videos',
+										'video_cat' => $selected_cat,
+									),
+									admin_url( 'admin-post.php' )
+								),
+								'hotel_chain_export_videos'
+							)
+						);
+						?>
+									" class="px-4 py-2 bg-blue-200 border border-solid border-blue-400 rounded text-blue-900 inline-flex items-center justify-center">
 							<?php esc_html_e( 'Export List', 'hotel-chain' ); ?>
 						</a>
 					</div>
@@ -1022,8 +1065,8 @@ class VideoLibraryPage implements ServiceProviderInterface {
 					<div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="video-library-grid">
 						<?php foreach ( $videos as $video ) : ?>
 							<?php
-							$category_label = $video->category ?: esc_html__( 'Uncategorized', 'hotel-chain' );
-							$duration_label = $video->duration_label ?: '';
+							$category_label = $video->category ? $video->category : esc_html__( 'Uncategorized', 'hotel-chain' );
+							$duration_label = $video->duration_label ? $video->duration_label : '';
 
 							$thumbnail_url = '';
 							if ( $video->thumbnail_id ) {
@@ -1296,7 +1339,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 							wp.editor.initialize(editorId, {
 								tinymce: {
 									wpautop: true,
-									plugins: 'wordpress, wplink, textcolor, colorpicker, paste',
+									plugins: 'WordPress, wplink, textcolor, colorpicker, paste',
 									toolbar1: 'bold,italic,underline,strikethrough,|,bullist,numlist,|,blockquote,|,alignleft,aligncenter,alignright,|,link,unlink,|,forecolor,|,undo,redo,|,fullscreen',
 									menubar: false,
 									height: 300,

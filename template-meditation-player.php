@@ -47,7 +47,7 @@ $all_videos      = $assignment_repo->get_hotel_active_videos( $hotel->id );
 $current_index = 0;
 $total_videos  = count( $all_videos );
 foreach ( $all_videos as $idx => $assignment ) {
-	if ( $assignment->video_id == $video_id ) {
+	if ( $assignment->video_id === $video_id ) {
 		$current_index = $idx;
 		break;
 	}
@@ -55,7 +55,8 @@ foreach ( $all_videos as $idx => $assignment ) {
 
 // Get next 2 videos for "Continue Your Journey".
 $next_videos = array();
-for ( $i = $current_index + 1; $i < min( $current_index + 3, $total_videos ); $i++ ) {
+$max_index   = min( $current_index + 3, $total_videos );
+for ( $i = $current_index + 1; $i < $max_index; $i++ ) {
 	$next_video = $video_repo->get_by_video_id( $all_videos[ $i ]->video_id );
 	if ( $next_video ) {
 		$next_videos[] = array(
@@ -110,6 +111,7 @@ wp_enqueue_style(
 				<!-- Navigation -->
 				<nav class="hidden md:flex items-center gap-1">
 					<?php
+					// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Local variable for navigation tabs.
 					$tabs = array(
 						'home'      => __( 'Home', 'hotel-chain' ),
 						'videos'    => __( 'Videos', 'hotel-chain' ),
@@ -162,7 +164,7 @@ wp_enqueue_style(
 
 			<!-- Video Player -->
 			<?php
-			$thumbnail_url = $video->thumbnail_url ?: ( $video->thumbnail_id ? wp_get_attachment_url( $video->thumbnail_id ) : '' );
+			$thumbnail_url = $video->thumbnail_url ? $video->thumbnail_url : ( $video->thumbnail_id ? wp_get_attachment_url( $video->thumbnail_id ) : '' );
 			?>
 			<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
 				<div class="aspect-video rounded-lg relative overflow-hidden" style="background-color: rgb(0, 0, 0);">
@@ -293,7 +295,7 @@ wp_enqueue_style(
 						<div class="space-y-3 mb-4">
 							<div class="flex justify-between">
 								<span style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;"><?php esc_html_e( 'Completed:', 'hotel-chain' ); ?></span>
-								<span id="progress-time" style="color: rgb(61, 61, 68); font-family: var(--font-sans);">0:00 / <?php echo esc_html( $video->duration_label ?: '0:00' ); ?></span>
+								<span id="progress-time" style="color: rgb(61, 61, 68); font-family: var(--font-sans);">0:00 / <?php echo esc_html( $video->duration_label ? $video->duration_label : '0:00' ); ?></span>
 							</div>
 							<div class="flex justify-between">
 								<span style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;"><?php esc_html_e( 'Percentage:', 'hotel-chain' ); ?></span>
@@ -330,7 +332,10 @@ wp_enqueue_style(
 										<div class="flex-1">
 											<div class="mb-1" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 0.875rem; font-weight: 600;"><?php echo esc_html( $next['video']->title ); ?></div>
 											<div style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.75rem;">
-												<?php printf( esc_html__( 'Meditation %d', 'hotel-chain' ), $next['index'] ); ?>
+												<?php
+												/* translators: %d: Meditation number. */
+												printf( esc_html__( 'Meditation %d', 'hotel-chain' ), esc_html( (string) $next['index'] ) );
+												?>
 												<?php if ( $next['video']->duration_label ) : ?>
 													· <?php echo esc_html( $next['video']->duration_label ); ?>
 												<?php endif; ?>

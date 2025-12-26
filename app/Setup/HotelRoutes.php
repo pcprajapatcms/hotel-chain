@@ -41,7 +41,7 @@ class HotelRoutes implements ServiceProviderInterface {
 			'top'
 		);
 
-		// Meditation player route: /hotel/{slug}/meditation/{video_id}
+		// Meditation player route: /hotel/{slug}/meditation/{video_id}.
 		add_rewrite_rule(
 			'^hotel/([^/]+)/meditation/([0-9]+)/?$',
 			'index.php?hotel_slug=$matches[1]&meditation_video_id=$matches[2]',
@@ -131,7 +131,7 @@ class HotelRoutes implements ServiceProviderInterface {
 	 */
 	private function get_hotel_by_slug( string $slug ): ?\WP_User {
 		$repository = new HotelRepository();
-		$hotel = $repository->get_by_slug( $slug );
+		$hotel      = $repository->get_by_slug( $slug );
 
 		if ( ! $hotel ) {
 			return null;
@@ -149,11 +149,18 @@ class HotelRoutes implements ServiceProviderInterface {
 	public function handle_save_video_progress(): void {
 		global $wpdb;
 
-		$video_id    = isset( $_POST['video_id'] ) ? absint( $_POST['video_id'] ) : 0;
-		$hotel_id    = isset( $_POST['hotel_id'] ) ? absint( $_POST['hotel_id'] ) : 0;
-		$duration    = isset( $_POST['duration'] ) ? absint( $_POST['duration'] ) : 0;
-		$percentage  = isset( $_POST['percentage'] ) ? floatval( $_POST['percentage'] ) : 0;
-		$completed   = isset( $_POST['completed'] ) ? absint( $_POST['completed'] ) : 0;
+		check_ajax_referer( 'hotel_video_progress', 'nonce' );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		$video_id = isset( $_POST['video_id'] ) ? absint( $_POST['video_id'] ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		$hotel_id = isset( $_POST['hotel_id'] ) ? absint( $_POST['hotel_id'] ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		$duration = isset( $_POST['duration'] ) ? absint( $_POST['duration'] ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		$percentage = isset( $_POST['percentage'] ) ? floatval( $_POST['percentage'] ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+		$completed = isset( $_POST['completed'] ) ? absint( $_POST['completed'] ) : 0;
 
 		if ( ! $video_id || ! $hotel_id ) {
 			wp_send_json_error( array( 'message' => 'Missing required fields' ) );
@@ -165,7 +172,7 @@ class HotelRoutes implements ServiceProviderInterface {
 		// Check if record exists for this user/video/hotel combination.
 		$existing = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT id, completion_percentage FROM {$table} WHERE video_id = %d AND hotel_id = %d AND user_id = %d ORDER BY id DESC LIMIT 1",
+				"SELECT id, completion_percentage FROM {$table} WHERE video_id = %d AND hotel_id = %d AND user_id = %d ORDER BY id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$video_id,
 				$hotel_id,
 				$user_id
@@ -217,7 +224,11 @@ class HotelRoutes implements ServiceProviderInterface {
 	public function handle_get_video_progress(): void {
 		global $wpdb;
 
+		check_ajax_referer( 'hotel_video_progress', 'nonce' );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
 		$video_id = isset( $_POST['video_id'] ) ? absint( $_POST['video_id'] ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
 		$hotel_id = isset( $_POST['hotel_id'] ) ? absint( $_POST['hotel_id'] ) : 0;
 
 		if ( ! $video_id || ! $hotel_id ) {
@@ -229,7 +240,7 @@ class HotelRoutes implements ServiceProviderInterface {
 
 		$progress = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT view_duration, completion_percentage, completed FROM {$table} WHERE video_id = %d AND hotel_id = %d AND user_id = %d ORDER BY id DESC LIMIT 1",
+				"SELECT view_duration, completion_percentage, completed FROM {$table} WHERE video_id = %d AND hotel_id = %d AND user_id = %d ORDER BY id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$video_id,
 				$hotel_id,
 				$user_id
@@ -237,17 +248,21 @@ class HotelRoutes implements ServiceProviderInterface {
 		);
 
 		if ( $progress ) {
-			wp_send_json_success( array(
-				'duration'   => (int) $progress->view_duration,
-				'percentage' => (float) $progress->completion_percentage,
-				'completed'  => (int) $progress->completed,
-			) );
+			wp_send_json_success(
+				array(
+					'duration'   => (int) $progress->view_duration,
+					'percentage' => (float) $progress->completion_percentage,
+					'completed'  => (int) $progress->completed,
+				)
+			);
 		} else {
-			wp_send_json_success( array(
-				'duration'   => 0,
-				'percentage' => 0,
-				'completed'  => 0,
-			) );
+			wp_send_json_success(
+				array(
+					'duration'   => 0,
+					'percentage' => 0,
+					'completed'  => 0,
+				)
+			);
 		}
 	}
 }

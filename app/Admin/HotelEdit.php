@@ -51,6 +51,7 @@ class HotelEdit implements ServiceProviderInterface {
 			return;
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter for display purposes only.
 		$hotel_id = isset( $_GET['hotel_id'] ) ? absint( $_GET['hotel_id'] ) : 0;
 
 		if ( ! $hotel_id ) {
@@ -58,7 +59,7 @@ class HotelEdit implements ServiceProviderInterface {
 		}
 
 		$repository = new HotelRepository();
-		$hotel = $repository->get_by_id( $hotel_id );
+		$hotel      = $repository->get_by_id( $hotel_id );
 
 		if ( ! $hotel ) {
 			wp_die( esc_html__( 'Hotel not found.', 'hotel-chain' ) );
@@ -67,29 +68,31 @@ class HotelEdit implements ServiceProviderInterface {
 		// Get WordPress user for email if needed.
 		$user = get_user_by( 'id', $hotel->user_id );
 
-		$hotel_name    = $hotel->hotel_name ?? '';
-		$hotel_code    = $hotel->hotel_code ?? '';
-		$contact_email = $hotel->contact_email ?? ( $user ? $user->user_email : '' );
-		$contact_phone = $hotel->contact_phone ?? '';
-		$address       = $hotel->address ?? '';
-		$city          = $hotel->city ?? '';
-		$country       = $hotel->country ?? '';
-		$website       = $hotel->website ?? '';
-		$status        = $hotel->status ?? 'active';
+		$hotel_name      = $hotel->hotel_name ?? '';
+		$hotel_code      = $hotel->hotel_code ?? '';
+		$contact_email   = $hotel->contact_email ?? ( $user ? $user->user_email : '' );
+		$contact_phone   = $hotel->contact_phone ?? '';
+		$address         = $hotel->address ?? '';
+		$city            = $hotel->city ?? '';
+		$country         = $hotel->country ?? '';
+		$website         = $hotel->website ?? '';
+		$status          = $hotel->status ?? 'active';
 		$access_duration = $hotel->access_duration ?? 0;
 
-		// Check for success/error messages
-		$message = '';
+		// Check for success/error messages.
+		$message      = '';
 		$message_type = '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter for display purposes only.
 		if ( isset( $_GET['updated'] ) && '1' === $_GET['updated'] ) {
-			$message = __( 'Hotel information updated successfully.', 'hotel-chain' );
+			$message      = __( 'Hotel information updated successfully.', 'hotel-chain' );
 			$message_type = 'success';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter for display purposes only.
 		} elseif ( isset( $_GET['error'] ) && '1' === $_GET['error'] ) {
-			$message = __( 'Failed to update hotel information. Please try again.', 'hotel-chain' );
+			$message      = __( 'Failed to update hotel information. Please try again.', 'hotel-chain' );
 			$message_type = 'error';
 		}
 		?>
-		<div class="wrap w-10/12 lg:w-8/12 mx-auto">
+		<div class="wrap w-12/12 md:w-10/12 xl:w-8/12 mx-auto">
 			<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Edit Hotel Information', 'hotel-chain' ); ?></h1>
 			<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'Update hotel details and information.', 'hotel-chain' ); ?></p>
 
@@ -99,20 +102,20 @@ class HotelEdit implements ServiceProviderInterface {
 				</div>
 			<?php endif; ?>
 
-			<div class="rounded p-4 border border-solid border-gray-400 bg-white mb-6">
-				<div class="mb-4 pb-3 border-b border-solid border-gray-400 flex items-center justify-between">
+			<div class="rounded p-2 py-4 md:p-4 border border-solid border-gray-400 bg-white mb-6">
+				<div class="mb-4 pb-3 border-b border-solid border-gray-400 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 					<h3 class="text-lg font-semibold"><?php esc_html_e( 'Hotel Information', 'hotel-chain' ); ?></h3>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-details&hotel_id=' . $hotel_id ) ); ?>" class="px-4 py-2 bg-gray-200 border-2 border-gray-400 rounded text-gray-900">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-details&hotel_id=' . $hotel_id ) ); ?>" class="px-4 py-2 bg-gray-200 border-2 border-gray-400 rounded text-gray-900 whitespace-nowrap text-center">
 						<?php esc_html_e( 'Back to Hotel Details', 'hotel-chain' ); ?>
 					</a>
 				</div>
-				<div class="bg-white border border-solid border-gray-400 rounded p-6">
+				<div class="bg-white md:border border-solid border-gray-400 rounded p-0 md:p-6">
 					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 						<?php wp_nonce_field( 'hotel_chain_update_hotel' ); ?>
 						<input type="hidden" name="action" value="hotel_chain_update_hotel" />
 						<input type="hidden" name="hotel_id" value="<?php echo esc_attr( $hotel_id ); ?>" />
 
-						<div class="grid grid-cols-2 gap-6">
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 							<div>
 								<div class="mb-4">
 									<label class="mb-1 text-sm font-semibold text-slate-800 block" for="hotel_name"><?php esc_html_e( 'Hotel Name', 'hotel-chain' ); ?></label>
@@ -120,13 +123,14 @@ class HotelEdit implements ServiceProviderInterface {
 								</div>
 
 								<div class="mb-4">
-									<label class="mb-1 text-sm font-semibold text-slate-800 block" for="hotel_code"><?php esc_html_e( 'Hotel Code', 'hotel-chain' ); ?></label>
-									<input type="text" id="hotel_code" name="hotel_code" value="<?php echo esc_attr( $hotel_code ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" required />
+									<label class="mb-1 text-sm font-semibold text-slate-800 block" for="hotel_code"><?php esc_html_e( 'Hotel Code', 'hotel-chain' ); ?> <span class="text-xs text-red-500 mt-1">(<?php esc_html_e( 'Hotel code cannot be changed', 'hotel-chain' ); ?>)</span></label>
+									<input type="text" id="hotel_code" name="hotel_code" value="<?php echo esc_attr( $hotel_code ); ?>" readonly class="w-full px-3 py-2 border border-slate-300 rounded-md bg-slate-50 text-slate-500 cursor-not-allowed" />
 								</div>
 
 								<div class="mb-4">
-									<label class="mb-1 text-sm font-semibold text-slate-800 block" for="contact_email"><?php esc_html_e( 'Contact Email', 'hotel-chain' ); ?></label>
-									<input type="email" id="contact_email" name="contact_email" value="<?php echo esc_attr( $contact_email ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" required />
+									<label class="mb-1 text-sm font-semibold text-slate-800 block" for="contact_email"><?php esc_html_e( 'Contact Email', 'hotel-chain' ); ?> <span class="text-xs text-red-500 mt-1">(<?php esc_html_e( 'Contact email cannot be changed', 'hotel-chain' ); ?>)</span></label>
+									<input type="email" id="contact_email" name="contact_email" value="<?php echo esc_attr( $contact_email ); ?>" readonly class="w-full px-3 py-2 border border-slate-300 rounded-md bg-slate-50 text-slate-500 cursor-not-allowed" />
+									
 								</div>
 
 								<div class="mb-4">
@@ -158,10 +162,10 @@ class HotelEdit implements ServiceProviderInterface {
 							</div>
 						</div>
 
-						<div class="grid grid-cols-2 gap-6 mt-4">
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
 							<div class="mb-4">
 								<label class="mb-1 text-sm font-semibold text-slate-800 block" for="status"><?php esc_html_e( 'Status', 'hotel-chain' ); ?></label>
-								<select id="status" name="status" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500">
+								<select id="status" name="status" class="w-full max-w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500">
 									<option value="active" <?php selected( $status, 'active' ); ?>><?php esc_html_e( 'Active', 'hotel-chain' ); ?></option>
 									<option value="inactive" <?php selected( $status, 'inactive' ); ?>><?php esc_html_e( 'Inactive', 'hotel-chain' ); ?></option>
 								</select>
@@ -174,8 +178,8 @@ class HotelEdit implements ServiceProviderInterface {
 							</div>
 						</div>
 
-						<div class="flex items-center justify-end gap-3 mt-6 pt-6 border-t border-solid border-gray-400">
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-details&hotel_id=' . $hotel_id ) ); ?>" class="px-4 py-2 bg-gray-200 border-2 border-gray-400 rounded text-gray-900">
+						<div class="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-end gap-3 mt-6 pt-6 border-t border-solid border-gray-400">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-details&hotel_id=' . $hotel_id ) ); ?>" class="px-4 py-2 bg-gray-200 border-2 border-gray-400 rounded text-gray-900 text-center">
 								<?php esc_html_e( 'Cancel', 'hotel-chain' ); ?>
 							</a>
 							<button type="submit" class="px-4 py-2 bg-green-200 border-2 border-green-400 rounded text-green-900">
@@ -216,7 +220,7 @@ class HotelEdit implements ServiceProviderInterface {
 		}
 
 		$repository = new HotelRepository();
-		$hotel = $repository->get_by_id( $hotel_id );
+		$hotel      = $repository->get_by_id( $hotel_id );
 
 		if ( ! $hotel ) {
 			wp_safe_redirect(
@@ -230,20 +234,14 @@ class HotelEdit implements ServiceProviderInterface {
 			exit;
 		}
 
-		// Prepare update data
+		// Prepare update data.
 		$update_data = array();
 
 		if ( isset( $_POST['hotel_name'] ) ) {
 			$update_data['hotel_name'] = sanitize_text_field( wp_unslash( $_POST['hotel_name'] ) );
 		}
 
-		if ( isset( $_POST['hotel_code'] ) ) {
-			$update_data['hotel_code'] = sanitize_text_field( wp_unslash( $_POST['hotel_code'] ) );
-		}
-
-		if ( isset( $_POST['contact_email'] ) ) {
-			$update_data['contact_email'] = sanitize_email( wp_unslash( $_POST['contact_email'] ) );
-		}
+		// Hotel code and email are not editable - do not update them.
 
 		if ( isset( $_POST['contact_phone'] ) ) {
 			$update_data['contact_phone'] = sanitize_text_field( wp_unslash( $_POST['contact_phone'] ) );
@@ -267,7 +265,7 @@ class HotelEdit implements ServiceProviderInterface {
 
 		if ( isset( $_POST['status'] ) ) {
 			$status = sanitize_text_field( wp_unslash( $_POST['status'] ) );
-			// Validate status - only allow 'active' or 'inactive'
+			// Validate status - only allow 'active' or 'inactive'.
 			if ( in_array( $status, array( 'active', 'inactive' ), true ) ) {
 				$update_data['status'] = $status;
 			}
@@ -283,9 +281,9 @@ class HotelEdit implements ServiceProviderInterface {
 			wp_safe_redirect(
 				add_query_arg(
 					array(
-						'page'    => 'hotel-edit',
+						'page'     => 'hotel-edit',
 						'hotel_id' => $hotel_id,
-						'updated' => '1',
+						'updated'  => '1',
 					),
 					admin_url( 'admin.php' )
 				)
