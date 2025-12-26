@@ -67,10 +67,12 @@ class GuestRepository {
 	 */
 	public function get_by_token( string $token ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM {$this->table} WHERE verification_token = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$token
-		) );
+		return $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table} WHERE verification_token = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$token
+			)
+		);
 	}
 
 	/**
@@ -101,11 +103,13 @@ class GuestRepository {
 	 */
 	public function get_by_email_and_hotel( string $email, int $hotel_id ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM {$this->table} WHERE email = %s AND hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$email,
-			$hotel_id
-		) );
+		return $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table} WHERE email = %s AND hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$email,
+				$hotel_id
+			)
+		);
 	}
 
 	/**
@@ -139,11 +143,13 @@ class GuestRepository {
 	 */
 	public function get_by_hotel_and_user( int $hotel_id, int $user_id ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare(
-			"SELECT * FROM {$this->table} WHERE hotel_id = %d AND user_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$hotel_id,
-			$user_id
-		) );
+		return $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table} WHERE hotel_id = %d AND user_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$hotel_id,
+				$user_id
+			)
+		);
 	}
 
 	/**
@@ -166,20 +172,25 @@ class GuestRepository {
 
 		$args = wp_parse_args( $args, $defaults );
 
-		$where = "WHERE hotel_id = %d";
-		$params = array( $hotel_id );
+		$sanitized_orderby = sanitize_sql_orderby( $args['orderby'] . ' ' . $args['order'] );
+		$orderby           = $sanitized_orderby ? $sanitized_orderby : 'created_at DESC';
 
 		if ( $args['status'] ) {
-			$where .= " AND status = %s";
-			$params[] = $args['status'];
+			$sql = $wpdb->prepare(
+				"SELECT * FROM {$this->table} WHERE hotel_id = %d AND status = %s ORDER BY {$orderby} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$hotel_id,
+				$args['status'],
+				$args['limit'],
+				$args['offset']
+			);
+		} else {
+			$sql = $wpdb->prepare(
+				"SELECT * FROM {$this->table} WHERE hotel_id = %d ORDER BY {$orderby} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$hotel_id,
+				$args['limit'],
+				$args['offset']
+			);
 		}
-
-		$orderby = sanitize_sql_orderby( $args['orderby'] . ' ' . $args['order'] ) ?: 'created_at DESC';
-
-		$sql = $wpdb->prepare(
-			"SELECT * FROM {$this->table} {$where} ORDER BY {$orderby} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			array_merge( $params, array( $args['limit'], $args['offset'] ) )
-		);
 
 		return $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
@@ -195,17 +206,21 @@ class GuestRepository {
 		global $wpdb;
 
 		if ( $status ) {
-			return (int) $wpdb->get_var( $wpdb->prepare(
-				"SELECT COUNT(*) FROM {$this->table} WHERE hotel_id = %d AND status = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$hotel_id,
-				$status
-			) );
+			return (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$this->table} WHERE hotel_id = %d AND status = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$hotel_id,
+					$status
+				)
+			);
 		}
 
-		return (int) $wpdb->get_var( $wpdb->prepare(
-			"SELECT COUNT(*) FROM {$this->table} WHERE hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$hotel_id
-		) );
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$this->table} WHERE hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$hotel_id
+			)
+		);
 	}
 
 	/**

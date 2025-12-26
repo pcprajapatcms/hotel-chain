@@ -25,7 +25,7 @@ class GuestExpiration implements ServiceProviderInterface {
 	public function register(): void {
 		// Schedule daily cron to check and expire guests.
 		add_action( 'hotel_chain_check_guest_expiration', array( $this, 'check_and_expire_guests' ) );
-		
+
 		// Register cron schedule if not already scheduled.
 		if ( ! wp_next_scheduled( 'hotel_chain_check_guest_expiration' ) ) {
 			wp_schedule_event( time(), 'daily', 'hotel_chain_check_guest_expiration' );
@@ -48,13 +48,15 @@ class GuestExpiration implements ServiceProviderInterface {
 		$guests_table = Schema::get_table_name( 'guests' );
 
 		// Update guests whose access_end has passed to 'expired' status.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$wpdb->query(
 			"UPDATE {$guests_table} 
 			SET status = 'expired' 
 			WHERE status = 'active' 
 			AND access_end IS NOT NULL 
-			AND access_end < NOW()" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			AND access_end < NOW()"
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**
@@ -73,7 +75,7 @@ class GuestExpiration implements ServiceProviderInterface {
 		}
 
 		$guest_repo = new GuestRepository();
-		$guest = $guest_repo->get_by_user_id( $current_user->ID );
+		$guest      = $guest_repo->get_by_user_id( $current_user->ID );
 
 		if ( ! $guest ) {
 			return;
@@ -82,7 +84,7 @@ class GuestExpiration implements ServiceProviderInterface {
 		// If guest is active but access_end has passed, update to expired.
 		if ( 'active' === $guest->status && ! empty( $guest->access_end ) ) {
 			$access_end_timestamp = strtotime( $guest->access_end );
-			$current_timestamp = current_time( 'timestamp' );
+			$current_timestamp    = time();
 
 			if ( $access_end_timestamp < $current_timestamp ) {
 				$guest_repo->update( $guest->id, array( 'status' => 'expired' ) );
@@ -109,7 +111,7 @@ class GuestExpiration implements ServiceProviderInterface {
 		// If access_end is set, check if it hasn't passed.
 		if ( ! empty( $guest->access_end ) ) {
 			$access_end_timestamp = strtotime( $guest->access_end );
-			$current_timestamp = current_time( 'timestamp' );
+			$current_timestamp    = time();
 
 			if ( $access_end_timestamp < $current_timestamp ) {
 				return false;

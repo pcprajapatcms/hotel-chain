@@ -11,6 +11,9 @@ use HotelChain\Contracts\ServiceProviderInterface;
 use HotelChain\Repositories\HotelRepository;
 use HotelChain\Repositories\HotelVideoAssignmentRepository;
 use HotelChain\Repositories\VideoRepository;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
 
 /**
  * Render single Hotel detail admin page.
@@ -61,7 +64,7 @@ class HotelView implements ServiceProviderInterface {
 			return;
 		}
 
-		$repository = new HotelRepository();
+		$repository   = new HotelRepository();
 		$detail_hotel = $repository->get_by_id( $detail_id );
 
 		if ( ! $detail_hotel ) {
@@ -88,29 +91,29 @@ class HotelView implements ServiceProviderInterface {
 
 		$created_ts = $detail_hotel->created_at ? strtotime( $detail_hotel->created_at ) : null;
 		if ( ! $created_ts ) {
-			$created_ts = current_time( 'timestamp' );
+			$created_ts = time();
 		}
 		$created_label = date_i18n( 'M j, Y', $created_ts );
 
 		// Get video assignment count.
 		$assignment_repository = new HotelVideoAssignmentRepository();
-		$hotel_videos = $assignment_repository->get_hotel_videos( $detail_hotel->id, array( 'status' => 'active' ) );
-		$videos_assigned = count( $hotel_videos );
+		$hotel_videos          = $assignment_repository->get_hotel_videos( $detail_hotel->id, array( 'status' => 'active' ) );
+		$videos_assigned       = count( $hotel_videos );
 		?>
-		<div class="wrap w-8/12 mx-auto">
+		<div class="wrap w-12/12 md:w-10/12 xl:w-8/12 mx-auto">
 		<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Hotel Detail View', 'hotel-chain' ); ?></h1>
 			<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'View and manage hotel details.', 'hotel-chain' ); ?></p>
 
-			<div class="rounded p-4 border border-solid border-gray-400 bg-white mb-6">
-				<div class="mb-4 pb-3 border-b border-solid border-gray-400 flex items-center justify-between">
+			<div class="rounded p-2 py-4 md:p-4 border border-solid border-gray-400 bg-white mb-6">
+				<div class="mb-4 pb-3 border-b border-solid border-gray-400 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 					<h3 class="text-lg font-semibold"><?php esc_html_e( 'Hotel Detail View', 'hotel-chain' ); ?></h3>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-chain-accounts' ) ); ?>" class="px-4 py-2 bg-green-200 border-2 border-green-400 rounded text-green-900 flex items-center gap-2">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-chain-accounts' ) ); ?>" class="px-4 py-2 bg-green-200 border-2 border-green-400 rounded text-green-900 flex items-center justify-center gap-2 whitespace-nowrap">
 						<?php esc_html_e( 'Back to all hotels', 'hotel-chain' ); ?>
 					</a>
 				</div>
-				<div class="bg-white border border-solid border-gray-400 rounded p-6">
-					<div class="grid grid-cols-3 gap-6">
-						<div class="col-span-1">
+				<div class="bg-white border border-solid border-gray-400 rounded p-3 md:p-6">
+					<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+						<div class="lg:col-span-1">
 							<div class="flex items-center gap-3 mb-4">
 								<div class="w-16 h-16 bg-gray-200 border border-solid border-gray-400 rounded flex items-center justify-center">
 									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building2 lucide-building-2 w-8 h-8 text-gray-500" aria-hidden="true">
@@ -183,9 +186,9 @@ class HotelView implements ServiceProviderInterface {
 								</button>
 							</div>
 						</div>
-						<div class="col-span-2">
+						<div class="lg:col-span-2">
 							<h4 class="mb-3 pb-2 border-b border-solid border-gray-400"><?php esc_html_e( 'Account Statistics', 'hotel-chain' ); ?></h4>
-							<div class="grid grid-cols-3 gap-4 mb-6">
+							<div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
 								<div class="p-3 bg-gray-50 border border-solid border-gray-400 rounded text-center">
 									<div class="text-gray-600 mb-1"><?php esc_html_e( 'Total Guests', 'hotel-chain' ); ?></div>
 									<div class="text-gray-900">0</div>
@@ -212,12 +215,36 @@ class HotelView implements ServiceProviderInterface {
 								</div>
 							</div>
 							<h4 class="mb-3 pb-2 border-b border-solid border-gray-400"><?php esc_html_e( 'Admin Actions', 'hotel-chain' ); ?></h4>
-							<div class="grid grid-cols-2 gap-3">
+							<div class="grid grid-cols-2 gap-3 mb-6">
 								<button type="button" id="assign-videos-btn" class="px-4 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900" data-hotel-id="<?php echo esc_attr( $detail_hotel->id ); ?>"><?php esc_html_e( 'Assign Videos', 'hotel-chain' ); ?></button>
 								<button type="button" class="px-4 py-2 bg-purple-200 border-2 border-purple-400 rounded text-purple-900"><?php esc_html_e( 'View Analytics', 'hotel-chain' ); ?></button>
 								<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-edit&hotel_id=' . $detail_hotel->id ) ); ?>" class="px-4 py-2 bg-green-200 border-2 border-green-400 rounded text-green-900 text-center"><?php esc_html_e( 'Edit Hotel Info', 'hotel-chain' ); ?></a>
 								<button type="button" id="delete-hotel-btn" class="px-4 py-2 bg-red-200 border-2 border-red-400 rounded text-red-900" data-hotel-id="<?php echo esc_attr( $detail_hotel->id ); ?>" data-hotel-name="<?php echo esc_attr( $detail_name ); ?>"><?php esc_html_e( 'Delete Hotel', 'hotel-chain' ); ?></button>
 							</div>
+							
+							<?php if ( ! empty( $detail_reg ) ) : ?>
+								<?php
+								// Generate QR code for registration URL.
+								$qr_code_data_uri = $this->generate_qr_code( $detail_reg );
+								?>
+								<h4 class="mb-3 pb-2 border-b border-solid border-gray-400"><?php esc_html_e( 'Registration QR Code', 'hotel-chain' ); ?></h4>
+								<div class="flex flex-col items-center p-4 bg-gray-50 border border-solid border-gray-400 rounded">
+									<div class="mb-3 text-center">
+										<p class="text-sm text-gray-600 mb-2"><?php esc_html_e( 'Scan this QR code to access the guest registration page', 'hotel-chain' ); ?></p>
+										<?php if ( $qr_code_data_uri ) : ?>
+											<img src="<?php echo esc_attr( $qr_code_data_uri ); ?>" alt="<?php esc_attr_e( 'Registration QR Code', 'hotel-chain' ); ?>" class="mx-auto border-2 border-solid border-gray-300 rounded p-2 bg-white" style="max-width: 250px; height: auto;" />
+										<?php else : ?>
+											<div class="p-4 bg-red-50 border border-red-300 rounded text-red-700 text-sm">
+												<?php esc_html_e( 'Error generating QR code. Please check that the QR code library is installed.', 'hotel-chain' ); ?>
+											</div>
+										<?php endif; ?>
+									</div>
+									<div class="text-center">
+										<p class="text-xs text-gray-500 mb-2"><?php esc_html_e( 'Registration URL:', 'hotel-chain' ); ?></p>
+										<p class="text-xs font-mono break-all text-gray-700"><?php echo esc_html( $detail_reg ); ?></p>
+									</div>
+								</div>
+							<?php endif; ?>
 						</div>
 					</div>
 				</div>
@@ -514,6 +541,56 @@ class HotelView implements ServiceProviderInterface {
 	}
 
 	/**
+	 * Generate QR code data URI for a given URL.
+	 *
+	 * @param string $url URL to encode in QR code.
+	 * @return string|null Data URI of QR code image or null on error.
+	 */
+	private function generate_qr_code( string $url ): ?string {
+		if ( empty( $url ) ) {
+			return null;
+		}
+
+		try {
+			// Check if QR code library is available.
+			if ( ! class_exists( 'Endroid\QrCode\QrCode' ) ) {
+				return null;
+			}
+
+			// Check if GD extension is available (required for PNG).
+			if ( ! extension_loaded( 'gd' ) ) {
+				return null;
+			}
+
+			// Create QR code with high error correction level.
+			$qr_code = QrCode::create( $url )
+				->setSize( 300 )
+				->setMargin( 10 )
+				->setErrorCorrectionLevel( new ErrorCorrectionLevelHigh() );
+
+			$writer = new PngWriter();
+			$result = $writer->write( $qr_code );
+
+			// Convert to data URI.
+			$data_uri = $result->getDataUri();
+
+			return $data_uri;
+		} catch ( \Exception $e ) {
+			// Log error but don't break the page.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'QR Code generation error: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
+			return null;
+		} catch ( \Throwable $e ) {
+			// Catch any other errors.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'QR Code generation error: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
+			return null;
+		}
+	}
+
+	/**
 	 * AJAX handler to get all videos for assignment modal.
 	 *
 	 * @return void
@@ -531,21 +608,21 @@ class HotelView implements ServiceProviderInterface {
 			wp_send_json_error( array( 'message' => __( 'Invalid hotel ID.', 'hotel-chain' ) ) );
 		}
 
-		$video_repository = new VideoRepository();
+		$video_repository      = new VideoRepository();
 		$assignment_repository = new HotelVideoAssignmentRepository();
 
-		// Get all videos
+		// Get all videos.
 		$all_videos = $video_repository->get_all( array( 'limit' => -1 ) );
 
-		// Get already assigned video IDs for this hotel
-		$assigned_videos = $assignment_repository->get_hotel_videos( $hotel_id, array( 'status' => '' ) );
+		// Get already assigned video IDs for this hotel.
+		$assigned_videos    = $assignment_repository->get_hotel_videos( $hotel_id, array( 'status' => '' ) );
 		$assigned_video_ids = array();
 		foreach ( $assigned_videos as $assignment ) {
 			$assigned_video_ids[] = (int) $assignment->video_id;
 		}
 
-		// Format videos for response
-		$format_duration = function( $seconds ) {
+		// Format videos for response.
+		$format_duration = function ( $seconds ) {
 			if ( ! $seconds ) {
 				return '0:00';
 			}
@@ -559,14 +636,14 @@ class HotelView implements ServiceProviderInterface {
 			$videos[] = array(
 				'video_id' => (int) $video->video_id,
 				'title'    => $video->title,
-				'category' => $video->category ?: __( 'Uncategorized', 'hotel-chain' ),
+				'category' => $video->category ? $video->category : __( 'Uncategorized', 'hotel-chain' ),
 				'duration' => $format_duration( $video->duration_seconds ),
 			);
 		}
 
 		wp_send_json_success(
 			array(
-				'videos'              => $videos,
+				'videos'             => $videos,
 				'assigned_video_ids' => $assigned_video_ids,
 			)
 		);
@@ -584,7 +661,7 @@ class HotelView implements ServiceProviderInterface {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'hotel-chain' ) ) );
 		}
 
-		$hotel_id = isset( $_POST['hotel_id'] ) ? absint( $_POST['hotel_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$hotel_id       = isset( $_POST['hotel_id'] ) ? absint( $_POST['hotel_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$video_ids_json = isset( $_POST['video_ids'] ) ? wp_unslash( $_POST['video_ids'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		if ( ! $hotel_id ) {
@@ -597,9 +674,9 @@ class HotelView implements ServiceProviderInterface {
 		}
 
 		$assignment_repository = new HotelVideoAssignmentRepository();
-		$assigned_count = 0;
-		$skipped_count = 0;
-		$current_user_id = get_current_user_id();
+		$assigned_count        = 0;
+		$skipped_count         = 0;
+		$current_user_id       = get_current_user_id();
 
 		foreach ( $video_ids as $video_id ) {
 			$video_id = absint( $video_id );
@@ -618,8 +695,8 @@ class HotelView implements ServiceProviderInterface {
 		if ( $assigned_count > 0 ) {
 			wp_send_json_success(
 				array(
-					'message' => sprintf(
-						// translators: %d: number of videos assigned
+					'message'        => sprintf(
+						/* translators: %d: number of videos assigned. */
 						_n( '%d video assigned successfully.', '%d videos assigned successfully.', $assigned_count, 'hotel-chain' ),
 						$assigned_count
 					),
@@ -651,7 +728,7 @@ class HotelView implements ServiceProviderInterface {
 		}
 
 		$repository = new HotelRepository();
-		$hotel = $repository->get_by_id( $hotel_id );
+		$hotel      = $repository->get_by_id( $hotel_id );
 
 		if ( ! $hotel ) {
 			wp_send_json_error( array( 'message' => __( 'Hotel not found.', 'hotel-chain' ) ) );
@@ -669,5 +746,4 @@ class HotelView implements ServiceProviderInterface {
 			wp_send_json_error( array( 'message' => __( 'Failed to delete hotel.', 'hotel-chain' ) ) );
 		}
 	}
-
 }

@@ -35,7 +35,7 @@ if ( $current_user_id ) {
 	$guest_repo = new GuestRepository();
 	$guest      = $guest_repo->get_by_hotel_and_user( $hotel->id, $current_user_id );
 	// Check if guest has valid access (status is active AND access_end hasn't passed).
-	$is_guest   = GuestExpiration::is_guest_access_valid( $guest );
+	$is_guest = GuestExpiration::is_guest_access_valid( $guest );
 }
 
 // Get current page/tab.
@@ -107,7 +107,7 @@ if ( $current_user_id && $video_count > 0 ) {
 		);
 		if ( $view ) {
 			if ( $view->completed ) {
-				$completed_count++;
+				++$completed_count;
 			}
 			$total_progress_pct += (int) $view->completion_percentage;
 		}
@@ -140,6 +140,7 @@ if ( $current_user_id && $video_count > 0 ) {
 	);
 
 	// Streak: consecutive days (including today) with at least one view.
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names cannot be parameterized.
 	$days_with_activity = $wpdb->get_col(
 		$wpdb->prepare(
 			"SELECT DISTINCT DATE(viewed_at) AS activity_day
@@ -150,16 +151,17 @@ if ( $current_user_id && $video_count > 0 ) {
 			$current_user_id
 		)
 	);
+	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 	if ( ! empty( $days_with_activity ) ) {
-		$days_set         = array_flip( $days_with_activity );
-		$today            = new DateTimeImmutable( current_time( 'mysql' ) );
+		$days_set          = array_flip( $days_with_activity );
+		$today             = new DateTimeImmutable( current_time( 'mysql' ) );
 		$guest_streak_days = 0;
 
 		for ( $i = 0; ; $i++ ) {
 			$day = $today->sub( new DateInterval( 'P' . $i . 'D' ) )->format( 'Y-m-d' );
 			if ( isset( $days_set[ $day ] ) ) {
-				$guest_streak_days++;
+				++$guest_streak_days;
 			} else {
 				break;
 			}
@@ -168,6 +170,7 @@ if ( $current_user_id && $video_count > 0 ) {
 
 	// Recent activity: last 5 views with title and time.
 	$video_metadata_table = $wpdb->prefix . 'hotel_chain_video_metadata';
+	// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names cannot be parameterized.
 	$guest_recent_activity = $wpdb->get_results(
 		$wpdb->prepare(
 			"SELECT vv.viewed_at, vv.completed, v.title
@@ -180,19 +183,29 @@ if ( $current_user_id && $video_count > 0 ) {
 			$current_user_id
 		)
 	);
+	// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 }
 
 // Get welcome section data.
-$welcome_section = ! empty( $hotel->welcome_section ) ? json_decode( $hotel->welcome_section, true ) : array();
-$welcome_heading     = ! empty( $welcome_section['welcome_heading'] ) ? $welcome_section['welcome_heading'] : __( 'WELCOME TO YOUR SANCTUARY', 'hotel-chain' );
-$welcome_subheading  = ! empty( $welcome_section['welcome_subheading'] ) ? $welcome_section['welcome_subheading'] : __( 'The Inner Peace Series', 'hotel-chain' );
-$welcome_description = ! empty( $welcome_section['welcome_description'] ) ? $welcome_section['welcome_description'] : __( 'Watch this brief introduction to learn how to get the most from your meditation practice', 'hotel-chain' );
-$welcome_video_id    = ! empty( $welcome_section['welcome_video_id'] ) ? absint( $welcome_section['welcome_video_id'] ) : 0;
+$welcome_section      = ! empty( $hotel->welcome_section ) ? json_decode( $hotel->welcome_section, true ) : array();
+$welcome_heading      = ! empty( $welcome_section['welcome_heading'] ) ? $welcome_section['welcome_heading'] : __( 'WELCOME TO YOUR SANCTUARY', 'hotel-chain' );
+$welcome_subheading   = ! empty( $welcome_section['welcome_subheading'] ) ? $welcome_section['welcome_subheading'] : __( 'The Inner Peace Series', 'hotel-chain' );
+$welcome_description  = ! empty( $welcome_section['welcome_description'] ) ? $welcome_section['welcome_description'] : __( 'Watch this brief introduction to learn how to get the most from your meditation practice', 'hotel-chain' );
+$welcome_video_id     = ! empty( $welcome_section['welcome_video_id'] ) ? absint( $welcome_section['welcome_video_id'] ) : 0;
 $welcome_thumbnail_id = ! empty( $welcome_section['welcome_thumbnail_id'] ) ? absint( $welcome_section['welcome_thumbnail_id'] ) : 0;
-$welcome_steps       = ! empty( $welcome_section['steps'] ) ? $welcome_section['steps'] : array(
-	array( 'heading' => __( 'Practice in Order', 'hotel-chain' ), 'description' => __( 'Each meditation builds on the previous one for maximum benefit', 'hotel-chain' ) ),
-	array( 'heading' => __( 'Find Your Space', 'hotel-chain' ), 'description' => __( "Choose a quiet place where you won't be disturbed", 'hotel-chain' ) ),
-	array( 'heading' => __( 'No Pressure', 'hotel-chain' ), 'description' => __( "There's no wrong way. Simply show up and be present", 'hotel-chain' ) ),
+$welcome_steps        = ! empty( $welcome_section['steps'] ) ? $welcome_section['steps'] : array(
+	array(
+		'heading'     => __( 'Practice in Order', 'hotel-chain' ),
+		'description' => __( 'Each meditation builds on the previous one for maximum benefit', 'hotel-chain' ),
+	),
+	array(
+		'heading'     => __( 'Find Your Space', 'hotel-chain' ),
+		'description' => __( "Choose a quiet place where you won't be disturbed", 'hotel-chain' ),
+	),
+	array(
+		'heading'     => __( 'No Pressure', 'hotel-chain' ),
+		'description' => __( "There's no wrong way. Simply show up and be present", 'hotel-chain' ),
+	),
 );
 
 // Get video and thumbnail URLs.
@@ -241,6 +254,7 @@ wp_enqueue_style(
 				<!-- Navigation -->
 				<nav class="hidden md:flex items-center gap-1">
 					<?php
+					// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Local variable for navigation tabs.
 					$tabs = array(
 						'home'      => __( 'Home', 'hotel-chain' ),
 						'videos'    => __( 'Videos', 'hotel-chain' ),
@@ -471,7 +485,7 @@ wp_enqueue_style(
 											<path d="M12 6v6l4 2"></path>
 											<circle cx="12" cy="12" r="10"></circle>
 										</svg>
-										<span class="text-gray-500 text-sm"><?php echo esc_html( $video->duration_label ?: '00:00' ); ?></span>
+										<span class="text-gray-500 text-sm"><?php echo esc_html( $video->duration_label ? $video->duration_label : '00:00' ); ?></span>
 									</div>
 									<?php if ( $is_completed ) : ?>
 										<span class="text-green-500 text-xs font-semibold uppercase tracking-wider"><?php esc_html_e( 'Completed', 'hotel-chain' ); ?></span>
@@ -500,7 +514,10 @@ wp_enqueue_style(
 								<div class="mb-6">
 									<span class="block mb-2 text-gray-500 text-xs font-semibold uppercase tracking-wider"><?php esc_html_e( 'Themes', 'hotel-chain' ); ?></span>
 									<div class="flex flex-wrap gap-2">
-										<?php foreach ( $tags as $tag ) : ?>
+										<?php
+										// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Local variable for tag iteration.
+										foreach ( $tags as $tag ) :
+											?>
 											<span class="px-3 py-1 rounded-full text-sm" style="background-color: rgb(240, 231, 215); color: rgb(61, 61, 68);"><?php echo esc_html( $tag ); ?></span>
 										<?php endforeach; ?>
 									</div>
@@ -518,7 +535,7 @@ wp_enqueue_style(
 						</div>
 					</div>
 					<?php
-					$video_index++;
+					++$video_index;
 				endforeach;
 				?>
 			</div>
@@ -684,14 +701,14 @@ wp_enqueue_style(
 							<li class="py-3 flex items-center justify-between">
 								<div>
 									<p class="text-sm font-medium text-gray-900">
-										<?php echo esc_html( $activity->title ?: __( 'Meditation', 'hotel-chain' ) ); ?>
+										<?php echo esc_html( $activity->title ? $activity->title : __( 'Meditation', 'hotel-chain' ) ); ?>
 									</p>
 									<p class="text-xs text-gray-500">
 										<?php
 										echo esc_html(
 											human_time_diff(
 												strtotime( $activity->viewed_at ),
-												current_time( 'timestamp' )
+												time()
 											)
 										);
 										echo ' ';
@@ -699,7 +716,7 @@ wp_enqueue_style(
 										?>
 									</p>
 								</div>
-								<?php if ( (int) $activity->completed === 1 ) : ?>
+								<?php if ( 1 === (int) $activity->completed ) : ?>
 									<span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
 										<?php esc_html_e( 'Completed', 'hotel-chain' ); ?>
 									</span>
@@ -776,7 +793,7 @@ wp_enqueue_style(
 		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 			<div class="flex flex-col md:flex-row items-center justify-between gap-4">
 				<p class="text-sm text-gray-500">
-					&copy; <?php echo esc_html( date( 'Y' ) ); ?> <?php echo esc_html( $hotel->hotel_name ); ?>. <?php esc_html_e( 'All rights reserved.', 'hotel-chain' ); ?>
+					&copy; <?php echo esc_html( gmdate( 'Y' ) ); ?> <?php echo esc_html( $hotel->hotel_name ); ?>. <?php esc_html_e( 'All rights reserved.', 'hotel-chain' ); ?>
 				</p>
 				<div class="flex items-center gap-4 text-sm text-gray-500">
 					<a href="#" class="hover:text-gray-700"><?php esc_html_e( 'Privacy Policy', 'hotel-chain' ); ?></a>

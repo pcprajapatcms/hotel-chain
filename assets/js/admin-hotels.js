@@ -88,8 +88,17 @@
 		}
 
 		// Initial filter if input has a value from URL.
-		if (input.value) {
+		// Only filter if there's actually a search term (not empty).
+		if (input.value && input.value.trim()) {
 			filterHotels(input.value);
+		} else {
+			// Ensure all rows are visible if no search term.
+			desktopRows.forEach(function(row) {
+				row.style.display = '';
+			});
+			mobileCards.forEach(function(card) {
+				card.style.display = '';
+			});
 		}
 
 		input.addEventListener('input', function(event) {
@@ -506,6 +515,169 @@
 		});
 	}
 
+	// Hotel creation form validation.
+	function bindHotelFormValidation() {
+		var form = document.getElementById('hotel-create-form');
+		if (!form) {
+			return;
+		}
+
+		// Get error type from URL if present.
+		var urlParams = new URLSearchParams(window.location.search);
+		var errorType = urlParams.get('hotel_error');
+
+		// Clear all errors initially.
+		function clearAllErrors() {
+			var inputs = form.querySelectorAll('input[type="text"], input[type="email"]');
+			inputs.forEach(function(input) {
+				input.classList.remove('border-red-500', 'border-2');
+				input.classList.add('border-slate-300');
+				var errorSpan = input.parentElement.querySelector('.hotel-field-error');
+				if (errorSpan) {
+					errorSpan.classList.add('hidden');
+					errorSpan.textContent = '';
+				}
+			});
+		}
+
+		// Show error for a specific field.
+		function showFieldError(fieldId, message) {
+			var input = document.getElementById(fieldId);
+			if (!input) {
+				return;
+			}
+			input.classList.remove('border-slate-300');
+			input.classList.add('border-red-500', 'border-2');
+			var errorSpan = input.parentElement.querySelector('.hotel-field-error');
+			if (errorSpan) {
+				errorSpan.textContent = message;
+				errorSpan.classList.remove('hidden');
+			}
+		}
+
+		// Validate email format.
+		function isValidEmail(email) {
+			var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			return emailRegex.test(email);
+		}
+
+		// Validate form on submit.
+		form.addEventListener('submit', function(event) {
+			clearAllErrors();
+			var isValid = true;
+			var errorMessages = {};
+
+			// Get field values.
+			var hotelName = (document.getElementById('hotel_name') || {}).value || '';
+			var contactEmail = (document.getElementById('contact_email') || {}).value || '';
+			var adminUsername = (document.getElementById('admin_username') || {}).value || '';
+
+			// Validate hotel name.
+			if (!hotelName.trim()) {
+				isValid = false;
+				errorMessages.hotel_name = window.hotelChainAdmin && window.hotelChainAdmin.hotelNameRequired 
+					? window.hotelChainAdmin.hotelNameRequired 
+					: 'Hotel name is required.';
+			}
+
+			// Validate contact email.
+			if (!contactEmail.trim()) {
+				isValid = false;
+				errorMessages.contact_email = window.hotelChainAdmin && window.hotelChainAdmin.contactEmailRequired 
+					? window.hotelChainAdmin.contactEmailRequired 
+					: 'Contact email is required.';
+			} else if (!isValidEmail(contactEmail)) {
+				isValid = false;
+				errorMessages.contact_email = window.hotelChainAdmin && window.hotelChainAdmin.contactEmailInvalid 
+					? window.hotelChainAdmin.contactEmailInvalid 
+					: 'Please enter a valid email address.';
+			}
+
+			// Validate admin username.
+			if (!adminUsername.trim()) {
+				isValid = false;
+				errorMessages.admin_username = window.hotelChainAdmin && window.hotelChainAdmin.adminUsernameRequired 
+					? window.hotelChainAdmin.adminUsernameRequired 
+					: 'Admin username is required.';
+			}
+
+			// Show errors if validation failed.
+			if (!isValid) {
+				event.preventDefault();
+				event.stopPropagation();
+
+				if (errorMessages.hotel_name) {
+					showFieldError('hotel_name', errorMessages.hotel_name);
+				}
+				if (errorMessages.contact_email) {
+					showFieldError('contact_email', errorMessages.contact_email);
+				}
+				if (errorMessages.admin_username) {
+					showFieldError('admin_username', errorMessages.admin_username);
+				}
+
+				// Scroll to first error.
+				var firstError = form.querySelector('.border-red-500');
+				if (firstError) {
+					firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					firstError.focus();
+				}
+
+				return false;
+			}
+		});
+
+		// Clear errors on input.
+		var requiredFields = ['hotel_name', 'contact_email', 'admin_username'];
+		requiredFields.forEach(function(fieldId) {
+			var field = document.getElementById(fieldId);
+			if (field) {
+				field.addEventListener('input', function() {
+					if (this.value.trim()) {
+						this.classList.remove('border-red-500', 'border-2');
+						this.classList.add('border-slate-300');
+						var errorSpan = this.parentElement.querySelector('.hotel-field-error');
+						if (errorSpan) {
+							errorSpan.classList.add('hidden');
+							errorSpan.textContent = '';
+						}
+					}
+				});
+			}
+		});
+
+		// Show errors from server-side validation on page load.
+		if (errorType) {
+			setTimeout(function() {
+				switch (errorType) {
+					case 'missing_name':
+						showFieldError('hotel_name', window.hotelChainAdmin && window.hotelChainAdmin.hotelNameRequired 
+							? window.hotelChainAdmin.hotelNameRequired 
+							: 'Hotel name is required.');
+						break;
+					case 'missing_email':
+						showFieldError('contact_email', window.hotelChainAdmin && window.hotelChainAdmin.contactEmailRequired 
+							? window.hotelChainAdmin.contactEmailRequired 
+							: 'Contact email is required.');
+						break;
+					case 'missing_username':
+						showFieldError('admin_username', window.hotelChainAdmin && window.hotelChainAdmin.adminUsernameRequired 
+							? window.hotelChainAdmin.adminUsernameRequired 
+							: 'Admin username is required.');
+						break;
+				}
+				// Scroll to first error.
+				var firstError = form.querySelector('.border-red-500');
+				if (firstError) {
+					firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					setTimeout(function() {
+						firstError.focus();
+					}, 300);
+				}
+			}, 100);
+		}
+	}
+
 	// Initialize once DOM is ready.
 	if (document.readyState === 'loading') {
 		document.addEventListener('DOMContentLoaded', function() {
@@ -515,6 +687,7 @@
 			bindVideoTagsAutocomplete();
 			bindVideoReplace();
 			bindInlineVideoPreview();
+			bindHotelFormValidation();
 		});
 	} else {
 		bindCopyButtons();
@@ -523,5 +696,6 @@
 		bindVideoTagsAutocomplete();
 		bindVideoReplace();
 		bindInlineVideoPreview();
+		bindHotelFormValidation();
 	}
 })();

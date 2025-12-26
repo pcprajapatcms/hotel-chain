@@ -24,28 +24,6 @@ class MenuVisibility {
 	 */
 	public static function get_hidden_menus(): array {
 		return array(
-			// Hide menus for Administrator role.
-			'administrator' => array(
-				// Example: Hide Posts menu.
-				// 'edit.php',
-				// Example: Hide Media menu.
-				// 'upload.php',
-				// Example: Hide Comments menu.
-				// 'edit-comments.php',
-				// Example: Hide Appearance menu.
-				// 'themes.php',
-				// Example: Hide Plugins menu.
-				// 'plugins.php',
-				// Example: Hide Users menu.
-				// 'users.php',
-				// Example: Hide Tools menu.
-				// 'tools.php',
-				// Example: Hide Settings menu.
-				// 'options-general.php',
-				// Example: Hide specific submenu (parent => submenu slug).
-				// array( 'edit.php' => 'edit.php' ), // Posts > All Posts.
-			),
-
 			// Hide menus for Hotel role.
 			'hotel' => array(
 				'index.php',
@@ -57,26 +35,6 @@ class MenuVisibility {
 				'users.php',
 				'tools.php',
 				'options-general.php',
-			),
-
-			// Hide menus for Guest role.
-			'guest' => array(
-				// Example: Hide Posts menu.
-				// 'edit.php',
-				// Example: Hide Media menu.
-				// 'upload.php',
-				// Example: Hide Comments menu.
-				// 'edit-comments.php',
-				// Example: Hide Appearance menu.
-				// 'themes.php',
-				// Example: Hide Plugins menu.
-				// 'plugins.php',
-				// Example: Hide Users menu.
-				// 'users.php',
-				// Example: Hide Tools menu.
-				// 'tools.php',
-				// Example: Hide Settings menu.
-				// 'options-general.php',
 			),
 		);
 	}

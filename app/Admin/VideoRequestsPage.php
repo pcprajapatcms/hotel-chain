@@ -34,7 +34,7 @@ class VideoRequestsPage implements ServiceProviderInterface {
 	 */
 	public function register_menu(): void {
 		$assignment_repo = new HotelVideoAssignmentRepository();
-		$pending_count = $assignment_repo->get_pending_requests_count();
+		$pending_count   = $assignment_repo->get_pending_requests_count();
 
 		$menu_title = __( 'Video Requests', 'hotel-chain' );
 		if ( $pending_count > 0 ) {
@@ -101,7 +101,7 @@ class VideoRequestsPage implements ServiceProviderInterface {
 		}
 
 		$assignment_repo = new HotelVideoAssignmentRepository();
-		$result = $assignment_repo->approve( $request_id, get_current_user_id() );
+		$result          = $assignment_repo->approve( $request_id, get_current_user_id() );
 
 		if ( $result ) {
 			wp_send_json_success( array( 'message' => __( 'Request approved. Video assigned to hotel.', 'hotel-chain' ) ) );
@@ -129,7 +129,7 @@ class VideoRequestsPage implements ServiceProviderInterface {
 		}
 
 		$assignment_repo = new HotelVideoAssignmentRepository();
-		$result = $assignment_repo->reject( $request_id );
+		$result          = $assignment_repo->reject( $request_id );
 
 		if ( $result ) {
 			wp_send_json_success( array( 'message' => __( 'Request rejected.', 'hotel-chain' ) ) );
@@ -182,7 +182,7 @@ class VideoRequestsPage implements ServiceProviderInterface {
 		$approved = isset( $_GET['approved'] ) ? absint( $_GET['approved'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$rejected = isset( $_GET['rejected'] ) ? absint( $_GET['rejected'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
-		$assignment_repo = new HotelVideoAssignmentRepository();
+		$assignment_repo  = new HotelVideoAssignmentRepository();
 		$pending_requests = $assignment_repo->get_pending_requests();
 		?>
 		<div class="wrap w-8/12 mx-auto">
@@ -235,7 +235,7 @@ class VideoRequestsPage implements ServiceProviderInterface {
 									<div class="text-xs text-gray-500"><?php echo esc_html( $request->hotel_code ); ?></div>
 								</td>
 								<td class="py-3 px-2">
-									<div class="text-gray-900"><?php echo esc_html( $request->video_title ?: __( 'Unknown Video', 'hotel-chain' ) ); ?></div>
+									<div class="text-gray-900"><?php echo esc_html( $request->video_title ? $request->video_title : __( 'Unknown Video', 'hotel-chain' ) ); ?></div>
 								</td>
 								<td class="py-3 px-2 text-gray-600 text-sm">
 									<?php echo esc_html( date_i18n( 'M j, Y g:i A', strtotime( $request->assigned_at ) ) ); ?>

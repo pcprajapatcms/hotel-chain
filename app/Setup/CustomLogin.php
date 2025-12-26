@@ -101,8 +101,11 @@ class CustomLogin implements ServiceProviderInterface {
 	 * @return void
 	 */
 	private function process_hotel_login(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WordPress login forms use wp_authenticate() for security.
 		$username = isset( $_POST['log'] ) ? sanitize_user( wp_unslash( $_POST['log'] ) ) : '';
-		$password = isset( $_POST['pwd'] ) ? wp_unslash( $_POST['pwd'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- WordPress login forms use wp_authenticate() for security.
+		$password = isset( $_POST['pwd'] ) ? wp_unslash( $_POST['pwd'] ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WordPress login forms use wp_authenticate() for security.
 		$remember = isset( $_POST['rememberme'] ) ? true : false;
 
 		if ( empty( $username ) || empty( $password ) ) {
@@ -154,16 +157,16 @@ class CustomLogin implements ServiceProviderInterface {
 
 		// Only validate if we're on the hotel login page (check referrer or POST data).
 		$is_hotel_login = false;
-		
+
 		if ( $referrer && strpos( $referrer, '/hotel-login' ) !== false ) {
 			$is_hotel_login = true;
 		}
-		
+
 		// Check if POST has hotel_login field.
 		if ( isset( $_POST['hotel_login'] ) && '1' === $_POST['hotel_login'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$is_hotel_login = true;
 		}
-		
+
 		// Also check if POST is coming from hotel-login page via redirect_to.
 		if ( isset( $_POST['redirect_to'] ) && strpos( wp_unslash( $_POST['redirect_to'] ), 'hotel-dashboard' ) !== false ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$is_hotel_login = true;
@@ -214,7 +217,7 @@ class CustomLogin implements ServiceProviderInterface {
 			filemtime( get_template_directory() . '/assets/css/main.css' )
 		);
 
-		$login_url = home_url( '/hotel-login' );
+		$login_url   = home_url( '/hotel-login' );
 		$redirect_to = admin_url( 'admin.php?page=hotel-dashboard' );
 
 		?>
@@ -309,7 +312,12 @@ class CustomLogin implements ServiceProviderInterface {
 												<path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path>
 												<rect x="2" y="4" width="20" height="16" rx="2"></rect>
 											</svg>
-											<input id="user_login" name="log" type="text" placeholder="hotel@yourproperty.com" value="<?php echo isset( $_POST['log'] ) ? esc_attr( wp_unslash( $_POST['log'] ) ) : ''; ?>" class="w-full pl-12 pr-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 1rem;" required autofocus autocomplete="username">
+											<input id="user_login" name="log" type="text" placeholder="hotel@yourproperty.com" value="
+											<?php
+											// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Displaying previously submitted value only.
+											echo isset( $_POST['log'] ) ? esc_attr( wp_unslash( $_POST['log'] ) ) : '';
+											?>
+											" class="w-full pl-12 pr-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 1rem;" required autofocus autocomplete="username">
 										</div>
 									</div>
 
@@ -408,10 +416,10 @@ class CustomLogin implements ServiceProviderInterface {
 			} elseif ( in_array( 'guest', $user->roles, true ) ) {
 				// Redirect to hotel page if guest is associated with a hotel.
 				$guest_repo = new GuestRepository();
-				$guest = $guest_repo->get_by_user_id( $user->ID );
+				$guest      = $guest_repo->get_by_user_id( $user->ID );
 				if ( $guest && ! empty( $guest->hotel_id ) ) {
 					$hotel_repo = new HotelRepository();
-					$hotel = $hotel_repo->get_by_id( (int) $guest->hotel_id );
+					$hotel      = $hotel_repo->get_by_id( (int) $guest->hotel_id );
 					if ( $hotel && ! empty( $hotel->hotel_slug ) ) {
 						wp_safe_redirect( home_url( '/hotel/' . $hotel->hotel_slug . '/' ) );
 						exit;
@@ -447,14 +455,14 @@ class CustomLogin implements ServiceProviderInterface {
 			if ( in_array( 'guest', $user->roles, true ) ) {
 				// Get guest record to find associated hotel.
 				$guest_repo = new GuestRepository();
-				$guest = $guest_repo->get_by_user_id( $user->ID );
+				$guest      = $guest_repo->get_by_user_id( $user->ID );
 
 				$redirect_to = home_url();
 
 				// If guest is registered with a hotel, redirect to that hotel's page.
 				if ( $guest && ! empty( $guest->hotel_id ) ) {
 					$hotel_repo = new HotelRepository();
-					$hotel = $hotel_repo->get_by_id( (int) $guest->hotel_id );
+					$hotel      = $hotel_repo->get_by_id( (int) $guest->hotel_id );
 
 					if ( $hotel && ! empty( $hotel->hotel_slug ) ) {
 						$redirect_to = home_url( '/hotel/' . $hotel->hotel_slug . '/' );
@@ -481,8 +489,11 @@ class CustomLogin implements ServiceProviderInterface {
 	 * @return void
 	 */
 	private function process_guest_login(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WordPress login forms use wp_authenticate() for security.
 		$username = isset( $_POST['log'] ) ? sanitize_user( wp_unslash( $_POST['log'] ) ) : '';
-		$password = isset( $_POST['pwd'] ) ? wp_unslash( $_POST['pwd'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- WordPress login forms use wp_authenticate() for security.
+		$password = isset( $_POST['pwd'] ) ? wp_unslash( $_POST['pwd'] ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WordPress login forms use wp_authenticate() for security.
 		$remember = isset( $_POST['rememberme'] ) ? true : false;
 
 		if ( empty( $username ) || empty( $password ) ) {
@@ -510,14 +521,14 @@ class CustomLogin implements ServiceProviderInterface {
 
 		// Get guest record to find associated hotel.
 		$guest_repo = new GuestRepository();
-		$guest = $guest_repo->get_by_user_id( $user->ID );
+		$guest      = $guest_repo->get_by_user_id( $user->ID );
 
 		$redirect_to = home_url();
 
 		// If guest is registered with a hotel, redirect to that hotel's page.
 		if ( $guest && ! empty( $guest->hotel_id ) ) {
 			$hotel_repo = new HotelRepository();
-			$hotel = $hotel_repo->get_by_id( (int) $guest->hotel_id );
+			$hotel      = $hotel_repo->get_by_id( (int) $guest->hotel_id );
 
 			if ( $hotel && ! empty( $hotel->hotel_slug ) ) {
 				$redirect_to = home_url( '/hotel/' . $hotel->hotel_slug . '/' );
@@ -538,13 +549,13 @@ class CustomLogin implements ServiceProviderInterface {
 	 */
 	public function validate_guest_login( $user, string $username, string $password ) {
 		// Only validate if we're on the guest login page (check referrer or POST data).
-		$referrer = wp_get_referer();
+		$referrer       = wp_get_referer();
 		$is_guest_login = false;
-		
+
 		if ( $referrer && strpos( $referrer, '/guest-login' ) !== false ) {
 			$is_guest_login = true;
 		}
-		
+
 		// Check if POST has guest_login field.
 		if ( isset( $_POST['guest_login'] ) && '1' === $_POST['guest_login'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$is_guest_login = true;
@@ -595,7 +606,7 @@ class CustomLogin implements ServiceProviderInterface {
 			filemtime( get_template_directory() . '/assets/css/main.css' )
 		);
 
-		$login_url = home_url( '/guest-login' );
+		$login_url   = home_url( '/guest-login' );
 		$redirect_to = home_url();
 
 		?>
@@ -680,7 +691,12 @@ class CustomLogin implements ServiceProviderInterface {
 												<path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"></path>
 												<rect x="2" y="4" width="20" height="16" rx="2"></rect>
 											</svg>
-											<input id="user_login" name="log" type="text" placeholder="Enter your email" value="<?php echo isset( $_POST['log'] ) ? esc_attr( wp_unslash( $_POST['log'] ) ) : ''; ?>" class="w-full pl-12 pr-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 1rem;" required autofocus autocomplete="username">
+											<input id="user_login" name="log" type="text" placeholder="Enter your email" value="
+											<?php
+											// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Displaying previously submitted value only.
+											echo isset( $_POST['log'] ) ? esc_attr( wp_unslash( $_POST['log'] ) ) : '';
+											?>
+											" class="w-full pl-12 pr-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 1rem;" required autofocus autocomplete="username">
 										</div>
 									</div>
 
@@ -706,18 +722,6 @@ class CustomLogin implements ServiceProviderInterface {
 									<button type="submit" name="wp-submit" id="wp-submit" class="w-full py-4 rounded shadow-lg hover:shadow-xl transition-all" style="background-color: rgb(61, 61, 68); color: rgb(240, 231, 215); font-family: var(--font-sans); font-size: 1rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; cursor: pointer;">Continue Your Journey</button>
 								</form>
 
-								<div class="my-8 flex items-center gap-4">
-									<div class="flex-1 h-px" style="background-color: rgb(196, 196, 196);"></div>
-									<span style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;">OR</span>
-									<div class="flex-1 h-px" style="background-color: rgb(196, 196, 196);"></div>
-								</div>
-
-								<div class="text-center">
-									<p style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem; margin-bottom: 0.5rem;">First time here?</p>
-									<a href="<?php echo esc_url( home_url( '/register' ) ); ?>" class="hover:opacity-70 transition-opacity inline-block" style="font-family: var(--font-sans); color: rgb(61, 61, 68); font-size: 1rem; font-weight: 600; text-decoration: none;">Create Your Account</a>
-									<p class="mt-2" style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.75rem; font-style: italic;">You'll need a unique registration link from your hotel</p>
-								</div>
-
 								<div class="mt-12 p-6 rounded text-center" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196);">
 									<p class="mb-2" style="font-family: var(--font-script); color: rgb(61, 61, 68); font-size: 1.5rem; line-height: 1.4;">Drop your baggage</p>
 									<p style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;">Find your center. Carry peace home with you.</p>
@@ -740,9 +744,9 @@ class CustomLogin implements ServiceProviderInterface {
 	 */
 	public function handle_custom_login(): void {
 		// Check for actions that WordPress should handle normally.
-		$action = isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$action          = isset( $_REQUEST['action'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$allowed_actions = array( 'logout', 'resetpass', 'rp', 'register', 'confirmaction' );
-		
+
 		// Handle password reset on custom page.
 		if ( 'lostpassword' === $action || 'retrievepassword' === $action ) {
 			$login_type = $this->get_login_type();
@@ -768,7 +772,7 @@ class CustomLogin implements ServiceProviderInterface {
 				exit;
 			}
 		}
-		
+
 		if ( in_array( $action, $allowed_actions, true ) ) {
 			// Let WordPress handle these actions normally.
 			return;
@@ -776,7 +780,7 @@ class CustomLogin implements ServiceProviderInterface {
 
 		// Check if user is already logged in (but not for special actions).
 		if ( is_user_logged_in() && ! in_array( $action, $allowed_actions, true ) ) {
-			$user = wp_get_current_user();
+			$user        = wp_get_current_user();
 			$redirect_to = admin_url();
 
 			// Redirect based on user role.
@@ -841,8 +845,11 @@ class CustomLogin implements ServiceProviderInterface {
 	 * @return void
 	 */
 	private function process_admin_login(): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WordPress login forms use wp_authenticate() for security.
 		$username = isset( $_POST['log'] ) ? sanitize_user( wp_unslash( $_POST['log'] ) ) : '';
-		$password = isset( $_POST['pwd'] ) ? wp_unslash( $_POST['pwd'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- WordPress login forms use wp_authenticate() for security.
+		$password = isset( $_POST['pwd'] ) ? wp_unslash( $_POST['pwd'] ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- WordPress login forms use wp_authenticate() for security.
 		$remember = isset( $_POST['rememberme'] ) ? true : false;
 
 		if ( empty( $username ) || empty( $password ) ) {
@@ -850,7 +857,7 @@ class CustomLogin implements ServiceProviderInterface {
 		}
 
 		// Check if this is from homepage.
-		$referrer = wp_get_referer();
+		$referrer    = wp_get_referer();
 		$is_homepage = ( $referrer && ( home_url( '/' ) === $referrer || home_url() === $referrer ) ) || ( ! $referrer && ( is_front_page() || is_home() ) );
 
 		// Attempt login.
@@ -939,7 +946,15 @@ class CustomLogin implements ServiceProviderInterface {
 		$user_login = isset( $_POST['user_login'] ) ? wp_unslash( $_POST['user_login'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		if ( empty( $user_login ) ) {
-			wp_safe_redirect( add_query_arg( array( 'action' => 'lostpassword', 'error' => 'empty_username' ), wp_login_url() ) );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'action' => 'lostpassword',
+						'error'  => 'empty_username',
+					),
+					wp_login_url()
+				)
+			);
 			exit;
 		}
 
@@ -953,14 +968,30 @@ class CustomLogin implements ServiceProviderInterface {
 
 		if ( ! $user ) {
 			// Don't reveal if user exists for security.
-			wp_safe_redirect( add_query_arg( array( 'action' => 'lostpassword', 'checkemail' => 'confirm' ), wp_login_url() ) );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'action'     => 'lostpassword',
+						'checkemail' => 'confirm',
+					),
+					wp_login_url()
+				)
+			);
 			exit;
 		}
 
 		// Check if user is administrator.
 		if ( ! in_array( 'administrator', $user->roles, true ) ) {
 			// Don't reveal if user exists for security.
-			wp_safe_redirect( add_query_arg( array( 'action' => 'lostpassword', 'checkemail' => 'confirm' ), wp_login_url() ) );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'action'     => 'lostpassword',
+						'checkemail' => 'confirm',
+					),
+					wp_login_url()
+				)
+			);
 			exit;
 		}
 
@@ -968,12 +999,28 @@ class CustomLogin implements ServiceProviderInterface {
 		$result = retrieve_password( $user->user_login );
 
 		if ( is_wp_error( $result ) ) {
-			wp_safe_redirect( add_query_arg( array( 'action' => 'lostpassword', 'error' => $result->get_error_code() ), wp_login_url() ) );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'action' => 'lostpassword',
+						'error'  => $result->get_error_code(),
+					),
+					wp_login_url()
+				)
+			);
 			exit;
 		}
 
 		// Success - redirect to show confirmation message.
-		wp_safe_redirect( add_query_arg( array( 'action' => 'lostpassword', 'checkemail' => 'confirm' ), wp_login_url() ) );
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'action'     => 'lostpassword',
+					'checkemail' => 'confirm',
+				),
+				wp_login_url()
+			)
+		);
 		exit;
 	}
 
@@ -984,35 +1031,79 @@ class CustomLogin implements ServiceProviderInterface {
 	 */
 	private function process_password_reset_submission(): void {
 		$login = isset( $_GET['login'] ) ? sanitize_text_field( wp_unslash( $_GET['login'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$key = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$key   = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$pass1 = isset( $_POST['pass1'] ) ? wp_unslash( $_POST['pass1'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$pass2 = isset( $_POST['pass2'] ) ? wp_unslash( $_POST['pass2'] ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		if ( empty( $login ) || empty( $key ) ) {
-			wp_safe_redirect( add_query_arg( array( 'action' => 'rp', 'error' => 'invalid_key' ), wp_login_url() ) );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'action' => 'rp',
+						'error'  => 'invalid_key',
+					),
+					wp_login_url()
+				)
+			);
 			exit;
 		}
 
 		$user = check_password_reset_key( $key, $login );
 
 		if ( is_wp_error( $user ) ) {
-			wp_safe_redirect( add_query_arg( array( 'action' => 'rp', 'error' => $user->get_error_code() ), wp_login_url() ) );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'action' => 'rp',
+						'error'  => $user->get_error_code(),
+					),
+					wp_login_url()
+				)
+			);
 			exit;
 		}
 
 		// Check if user is administrator.
 		if ( ! in_array( 'administrator', $user->roles, true ) ) {
-			wp_safe_redirect( add_query_arg( array( 'action' => 'rp', 'error' => 'admin_only' ), wp_login_url() ) );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'action' => 'rp',
+						'error'  => 'admin_only',
+					),
+					wp_login_url()
+				)
+			);
 			exit;
 		}
 
 		if ( empty( $pass1 ) || empty( $pass2 ) ) {
-			wp_safe_redirect( add_query_arg( array( 'action' => 'rp', 'login' => $login, 'key' => $key, 'error' => 'empty_password' ), wp_login_url() ) );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'action' => 'rp',
+						'login'  => $login,
+						'key'    => $key,
+						'error'  => 'empty_password',
+					),
+					wp_login_url()
+				)
+			);
 			exit;
 		}
 
 		if ( $pass1 !== $pass2 ) {
-			wp_safe_redirect( add_query_arg( array( 'action' => 'rp', 'login' => $login, 'key' => $key, 'error' => 'password_mismatch' ), wp_login_url() ) );
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'action' => 'rp',
+						'login'  => $login,
+						'key'    => $key,
+						'error'  => 'password_mismatch',
+					),
+					wp_login_url()
+				)
+			);
 			exit;
 		}
 
@@ -1020,7 +1111,15 @@ class CustomLogin implements ServiceProviderInterface {
 		reset_password( $user, $pass1 );
 
 		// Success - redirect to login with success message.
-		wp_safe_redirect( add_query_arg( array( 'action' => 'login', 'password' => 'changed' ), wp_login_url() ) );
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'action'   => 'login',
+					'password' => 'changed',
+				),
+				wp_login_url()
+			)
+		);
 		exit;
 	}
 
@@ -1033,15 +1132,15 @@ class CustomLogin implements ServiceProviderInterface {
 	 */
 	private function render_admin_login( string $action = 'login', bool $show_buttons = false ): void {
 		// Get login errors from URL parameters.
-		$errors = new \WP_Error();
+		$errors          = new \WP_Error();
 		$success_message = '';
-		$login = '';
-		$key = '';
-		
+		$login           = '';
+		$key             = '';
+
 		if ( 'rp' === $action || 'resetpass' === $action ) {
 			// Handle password reset form errors.
 			$login = isset( $_GET['login'] ) ? sanitize_text_field( wp_unslash( $_GET['login'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$key = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$key   = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 			// Validate reset key.
 			if ( ! empty( $login ) && ! empty( $key ) ) {
@@ -1055,7 +1154,9 @@ class CustomLogin implements ServiceProviderInterface {
 				$errors->add( 'invalid_key', __( 'Invalid password reset link.', 'hotel-chain' ) );
 			}
 
-			if ( isset( $_GET['error'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter for display purposes only.
+			if ( isset( $_GET['error'] ) ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter for display purposes only.
 				$error_code = sanitize_text_field( wp_unslash( $_GET['error'] ) );
 				if ( 'empty_password' === $error_code ) {
 					$errors->add( 'empty_password', __( 'Please enter a new password.', 'hotel-chain' ) );
@@ -1070,7 +1171,9 @@ class CustomLogin implements ServiceProviderInterface {
 			if ( isset( $_GET['checkemail'] ) && 'confirm' === $_GET['checkemail'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				$success_message = __( 'Check your email for the confirmation link, then visit the login page.', 'hotel-chain' );
 			}
-			if ( isset( $_GET['error'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter for display purposes only.
+			if ( isset( $_GET['error'] ) ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- GET parameter for display purposes only.
 				$error_code = sanitize_text_field( wp_unslash( $_GET['error'] ) );
 				if ( 'empty_username' === $error_code ) {
 					$errors->add( 'empty_username', __( 'Enter a username or email address.', 'hotel-chain' ) );
@@ -1110,9 +1213,9 @@ class CustomLogin implements ServiceProviderInterface {
 			wp_enqueue_script( 'password-strength-meter' );
 		}
 
-		$login_url = site_url( 'wp-login.php', 'login_post' );
+		$login_url   = site_url( 'wp-login.php', 'login_post' );
 		$redirect_to = isset( $_GET['redirect_to'] ) ? esc_url_raw( wp_unslash( $_GET['redirect_to'] ) ) : admin_url(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$rememberme = isset( $_POST['rememberme'] ) ? true : false; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$rememberme  = isset( $_POST['rememberme'] ) ? true : false; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		?>
 		<!DOCTYPE html>
@@ -1214,7 +1317,20 @@ class CustomLogin implements ServiceProviderInterface {
 
 								<?php if ( 'rp' === $action || 'resetpass' === $action ) : ?>
 									<!-- Password Reset Form (New Password) -->
-									<form name="resetpassform" id="resetpassform" action="<?php echo esc_url( add_query_arg( array( 'action' => 'rp', 'login' => $login, 'key' => $key ), wp_login_url() ) ); ?>" method="post" class="space-y-6" autocomplete="off">
+									<form name="resetpassform" id="resetpassform" action="
+									<?php
+									echo esc_url(
+										add_query_arg(
+											array(
+												'action' => 'rp',
+												'login'  => $login,
+												'key'    => $key,
+											),
+											wp_login_url()
+										)
+									);
+									?>
+									" method="post" class="space-y-6" autocomplete="off">
 										<input type="hidden" name="action" value="resetpass" />
 										<input type="hidden" name="login" value="<?php echo esc_attr( $login ); ?>" />
 										<input type="hidden" name="key" value="<?php echo esc_attr( $key ); ?>" />
@@ -1308,7 +1424,12 @@ class CustomLogin implements ServiceProviderInterface {
 													<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
 													<circle cx="12" cy="7" r="4"></circle>
 												</svg>
-												<input id="user_login" name="user_login" type="text" placeholder="Username or email" value="<?php echo isset( $_POST['user_login'] ) ? esc_attr( wp_unslash( $_POST['user_login'] ) ) : ''; ?>" class="w-full pl-12 pr-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 1rem;" required autofocus autocomplete="username">
+												<input id="user_login" name="user_login" type="text" placeholder="Username or email" value="
+												<?php
+												// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Displaying previously submitted value only.
+												echo isset( $_POST['user_login'] ) ? esc_attr( wp_unslash( $_POST['user_login'] ) ) : '';
+												?>
+												" class="w-full pl-12 pr-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 1rem;" required autofocus autocomplete="username">
 											</div>
 										</div>
 
@@ -1345,7 +1466,12 @@ class CustomLogin implements ServiceProviderInterface {
 												<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
 												<circle cx="12" cy="7" r="4"></circle>
 											</svg>
-											<input id="user_login" name="log" type="text" placeholder="Username or email" value="<?php echo isset( $_POST['log'] ) ? esc_attr( wp_unslash( $_POST['log'] ) ) : ''; ?>" class="w-full pl-12 pr-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 1rem;" required autofocus autocomplete="username">
+											<input id="user_login" name="log" type="text" placeholder="Username or email" value="
+											<?php
+											// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Displaying previously submitted value only.
+											echo isset( $_POST['log'] ) ? esc_attr( wp_unslash( $_POST['log'] ) ) : '';
+											?>
+											" class="w-full pl-12 pr-4 py-3 rounded transition-all" style="background-color: rgb(255, 255, 255); border: 2px solid rgb(196, 196, 196); color: rgb(61, 61, 68); font-family: var(--font-sans); font-size: 1rem;" required autofocus autocomplete="username">
 										</div>
 									</div>
 
@@ -1445,8 +1571,12 @@ class CustomLogin implements ServiceProviderInterface {
 		$login_type = $this->get_login_type();
 		if ( 'admin' === $login_type || empty( $login_type ) ) {
 			// If there are errors, ensure we show our custom page on next load.
+			// Errors will be shown via URL parameter on next page load.
+			// Errors are handled via URL parameters, no action needed here.
+			// Errors handled via URL parameters - no action needed in this block.
 			if ( $errors->has_errors() ) {
-				// Errors will be shown via URL parameter on next page load.
+				// Intentionally empty - errors handled via URL parameters.
+				return $errors;
 			}
 		}
 		return $errors;

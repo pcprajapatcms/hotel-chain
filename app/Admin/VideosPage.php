@@ -29,19 +29,19 @@ class VideosPage implements ServiceProviderInterface {
 		 *
 		 * @return void
 		 */
-		public function register_menu(): void {
-			// Attach under the main Hotel Accounts menu for consistency.
-			$parent_slug = 'hotel-chain-accounts';
+	public function register_menu(): void {
+		// Attach under the main Hotel Accounts menu for consistency.
+		$parent_slug = 'hotel-chain-accounts';
 
-			add_submenu_page(
-				$parent_slug,
-				__( 'Upload Videos', 'hotel-chain' ),
-				__( 'Upload Videos', 'hotel-chain' ),
-				'manage_options',
-				'hotel-video-upload',
-				array( $this, 'render_page' )
-			);
-		}
+		add_submenu_page(
+			$parent_slug,
+			__( 'Upload Videos', 'hotel-chain' ),
+			__( 'Upload Videos', 'hotel-chain' ),
+			'manage_options',
+			'hotel-video-upload',
+			array( $this, 'render_page' )
+		);
+	}
 
 	/**
 	 * Handle video upload form submit.
@@ -107,7 +107,8 @@ class VideosPage implements ServiceProviderInterface {
 			// Upload thumbnail as unattached media and track its ID/URL only.
 			$thumb_attachment_id = media_handle_upload( 'video_thumbnail', 0 );
 			if ( ! is_wp_error( $thumb_attachment_id ) && $thumb_attachment_id ) {
-				$thumb_url = wp_get_attachment_url( $thumb_attachment_id ) ?: '';
+				$attachment_url = wp_get_attachment_url( $thumb_attachment_id );
+				$thumb_url      = $attachment_url ? $attachment_url : '';
 			} else {
 				$thumb_attachment_id = 0;
 			}
@@ -166,27 +167,27 @@ class VideosPage implements ServiceProviderInterface {
 
 			// Persist metadata into custom video_metadata table.
 			$video_repository = new VideoRepository();
-			$video_id = $video_repository->create_or_update(
+			$video_id         = $video_repository->create_or_update(
 				null,
 				array(
-					'title'              => $title,
-					'description'        => $description,
-					'practice_tip'       => $practice_tip,
-					'category'           => $category_id ? (string) $category_id : '',
-					'tags'               => $tags_raw,
-					'thumbnail_id'       => $thumb_attachment_id,
-					'thumbnail_url'      => $thumb_url,
-					'video_file_id'      => $video_attachment_id,
-					'duration_seconds'   => $duration_seconds,
-					'duration_label'     => $duration_label,
-					'file_size'          => $file_size,
-					'file_format'        => $file_format,
-					'resolution_width'   => $resolution_width,
-					'resolution_height'  => $resolution_height,
-					'default_language'   => $language,
-					'total_views'        => 0,
-					'total_completions'  => 0,
-					'avg_completion_rate'=> 0.00,
+					'title'               => $title,
+					'description'         => $description,
+					'practice_tip'        => $practice_tip,
+					'category'            => $category_id ? (string) $category_id : '',
+					'tags'                => $tags_raw,
+					'thumbnail_id'        => $thumb_attachment_id,
+					'thumbnail_url'       => $thumb_url,
+					'video_file_id'       => $video_attachment_id,
+					'duration_seconds'    => $duration_seconds,
+					'duration_label'      => $duration_label,
+					'file_size'           => $file_size,
+					'file_format'         => $file_format,
+					'resolution_width'    => $resolution_width,
+					'resolution_height'   => $resolution_height,
+					'default_language'    => $language,
+					'total_views'         => 0,
+					'total_completions'   => 0,
+					'avg_completion_rate' => 0.00,
 				)
 			);
 		}

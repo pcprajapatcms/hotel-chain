@@ -29,11 +29,11 @@ class Schema {
 	 */
 	public static function get_table_names(): array {
 		return array(
-			'hotels'                => self::get_table_name( 'hotels' ),
+			'hotels'                  => self::get_table_name( 'hotels' ),
 			'hotel_video_assignments' => self::get_table_name( 'hotel_video_assignments' ),
-			'video_metadata'        => self::get_table_name( 'video_metadata' ),
-			'guests'                => self::get_table_name( 'guests' ),
-			'video_views'           => self::get_table_name( 'video_views' ),
+			'video_metadata'          => self::get_table_name( 'video_metadata' ),
+			'guests'                  => self::get_table_name( 'guests' ),
+			'video_views'             => self::get_table_name( 'video_views' ),
 		);
 	}
 
@@ -44,7 +44,7 @@ class Schema {
 	 */
 	public static function get_hotels_table_sql(): string {
 		global $wpdb;
-		$table_name = self::get_table_name( 'hotels' );
+		$table_name      = self::get_table_name( 'hotels' );
 		$charset_collate = $wpdb->get_charset_collate();
 
 		return "CREATE TABLE IF NOT EXISTS {$table_name} (
@@ -86,7 +86,7 @@ class Schema {
 	 */
 	public static function get_hotel_video_assignments_table_sql(): string {
 		global $wpdb;
-		$table_name = self::get_table_name( 'hotel_video_assignments' );
+		$table_name      = self::get_table_name( 'hotel_video_assignments' );
 		$charset_collate = $wpdb->get_charset_collate();
 
 		return "CREATE TABLE IF NOT EXISTS {$table_name} (
@@ -113,7 +113,7 @@ class Schema {
 	 */
 	public static function get_video_metadata_table_sql(): string {
 		global $wpdb;
-		$table_name = self::get_table_name( 'video_metadata' );
+		$table_name      = self::get_table_name( 'video_metadata' );
 		$charset_collate = $wpdb->get_charset_collate();
 
 		return "CREATE TABLE IF NOT EXISTS {$table_name} (
@@ -157,7 +157,7 @@ class Schema {
 	 */
 	public static function get_guests_table_sql(): string {
 		global $wpdb;
-		$table_name = self::get_table_name( 'guests' );
+		$table_name      = self::get_table_name( 'guests' );
 		$charset_collate = $wpdb->get_charset_collate();
 
 		return "CREATE TABLE IF NOT EXISTS {$table_name} (
@@ -195,7 +195,7 @@ class Schema {
 	 */
 	public static function get_video_views_table_sql(): string {
 		global $wpdb;
-		$table_name = self::get_table_name( 'video_views' );
+		$table_name      = self::get_table_name( 'video_views' );
 		$charset_collate = $wpdb->get_charset_collate();
 
 		return "CREATE TABLE IF NOT EXISTS {$table_name} (
@@ -225,11 +225,11 @@ class Schema {
 	 */
 	public static function get_all_table_sql(): array {
 		return array(
-			'hotels'                => self::get_hotels_table_sql(),
+			'hotels'                  => self::get_hotels_table_sql(),
 			'hotel_video_assignments' => self::get_hotel_video_assignments_table_sql(),
-			'video_metadata'        => self::get_video_metadata_table_sql(),
-			'guests'                => self::get_guests_table_sql(),
-			'video_views'           => self::get_video_views_table_sql(),
+			'video_metadata'          => self::get_video_metadata_table_sql(),
+			'guests'                  => self::get_guests_table_sql(),
+			'video_views'             => self::get_video_views_table_sql(),
 		);
 	}
 }

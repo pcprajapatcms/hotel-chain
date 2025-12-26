@@ -69,4 +69,3 @@ class Videos implements ServiceProviderInterface {
 		return $new_template ? $new_template : $template;
 	}
 }
-

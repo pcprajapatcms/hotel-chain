@@ -8,6 +8,9 @@
 namespace HotelChain\Frontend;
 
 use HotelChain\Repositories\HotelRepository;
+use Endroid\QrCode\QrCode;
+use Endroid\QrCode\Writer\PngWriter;
+use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
 
 /**
  * Hotel Profile page for hotel users.
@@ -171,8 +174,10 @@ class HotelProfilePage {
 		}
 
 		// Helper to fetch a value from POST or fall back to existing welcome_section.
-		$get_welcome_field = static function ( string $key, $default = '' ) use ( $existing_welcome ) {
-			if ( isset( $_POST[ $key ] ) && $_POST[ $key ] !== '' ) {
+		$get_welcome_field = static function ( string $key, $default_value = '' ) use ( $existing_welcome ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in handle_save().
+			if ( isset( $_POST[ $key ] ) && '' !== $_POST[ $key ] ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in handle_save().
 				return wp_unslash( $_POST[ $key ] );
 			}
 
@@ -180,7 +185,7 @@ class HotelProfilePage {
 				return $existing_welcome[ $key ];
 			}
 
-			return $default;
+			return $default_value;
 		};
 
 		// Build welcome section JSON, preserving existing values when POST is empty.
@@ -277,6 +282,10 @@ class HotelProfilePage {
 		$welcome_video_url    = $welcome_video_id ? wp_get_attachment_url( $welcome_video_id ) : '';
 		$welcome_thumb_url    = $welcome_thumbnail_id ? wp_get_attachment_url( $welcome_thumbnail_id ) : '';
 
+		// Get hotel URLs.
+		$registration_url = $hotel->registration_url ?? '';
+		$landing_url      = $hotel->landing_url ?? '';
+
 		// Enqueue media uploader.
 		wp_enqueue_media();
 		?>
@@ -304,32 +313,77 @@ class HotelProfilePage {
 								</div>
 								<div class="mb-4">
 									<label class="block mb-1"><?php esc_html_e( 'Contact Email', 'hotel-chain' ); ?></label>
-									<input type="text" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" value="<?php echo esc_html( $hotel->contact_email ?: '-' ); ?>" readonly />
+									<input type="text" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" value="<?php echo esc_html( $hotel->contact_email ? $hotel->contact_email : '-' ); ?>" readonly />
 								</div>
 								<div class="mb-4">
 									<label class="block mb-1"><?php esc_html_e( 'Support Phone', 'hotel-chain' ); ?></label>
-									<input type="text" name="contact_phone" value="<?php echo esc_attr( $hotel->contact_phone ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( '+1 (555) 123-4567', 'hotel-chain' ); ?>" />
+									<input type="text" name="contact_phone" value="<?php echo esc_attr( $hotel->contact_phone ? $hotel->contact_phone : '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( '+1 (555) 123-4567', 'hotel-chain' ); ?>" />
 								</div>
 							</div>
 							<div>
 								<div class="mb-4">
 									<label class="block mb-1"><?php esc_html_e( 'Address', 'hotel-chain' ); ?></label>
-									<input type="text" name="address" value="<?php echo esc_attr( $hotel->address ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( '123 Main Street', 'hotel-chain' ); ?>" />
+									<input type="text" name="address" value="<?php echo esc_attr( $hotel->address ? $hotel->address : '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( '123 Main Street', 'hotel-chain' ); ?>" />
 								</div>
 								<div class="mb-4">
 									<label class="block mb-1"><?php esc_html_e( 'City', 'hotel-chain' ); ?></label>
-									<input type="text" name="city" value="<?php echo esc_attr( $hotel->city ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( 'New York', 'hotel-chain' ); ?>" />
+									<input type="text" name="city" value="<?php echo esc_attr( $hotel->city ? $hotel->city : '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( 'New York', 'hotel-chain' ); ?>" />
 								</div>
 								<div class="mb-4">
 									<label class="block mb-1"><?php esc_html_e( 'Country', 'hotel-chain' ); ?></label>
-									<input type="text" name="country" value="<?php echo esc_attr( $hotel->country ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( 'United States', 'hotel-chain' ); ?>" />
+									<input type="text" name="country" value="<?php echo esc_attr( $hotel->country ? $hotel->country : '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="<?php esc_attr_e( 'United States', 'hotel-chain' ); ?>" />
 								</div>
 								<div class="mb-4">
 									<label class="block mb-1"><?php esc_html_e( 'Website', 'hotel-chain' ); ?></label>
-									<input type="url" name="website" value="<?php echo esc_attr( $hotel->website ?: '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="https://example.com" />
+									<input type="url" name="website" value="<?php echo esc_attr( $hotel->website ? $hotel->website : '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="https://example.com" />
 								</div>
 							</div>
 						</div>
+					</div>
+
+					<!-- Hotel URLs with QR Codes -->
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
+						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400"><?php esc_html_e( 'Hotel URLs', 'hotel-chain' ); ?></h3>
+						
+						<!-- Guest Registration URL -->
+						<?php if ( ! empty( $registration_url ) ) : ?>
+							<?php $registration_qr = $this->generate_qr_code( $registration_url ); ?>
+							<div class="flex flex-col items-center p-4 bg-gray-50 border border-solid border-gray-400 rounded mb-6">
+								<h4 class="mb-3 pb-2 border-b border-solid border-gray-400 w-full text-center"><?php esc_html_e( 'Guest Registration URL', 'hotel-chain' ); ?></h4>
+								<div class="mb-3 text-center">
+									<p class="text-sm text-gray-600 mb-2"><?php esc_html_e( 'Scan this QR code to access the guest registration page', 'hotel-chain' ); ?></p>
+									<?php if ( $registration_qr ) : ?>
+										<img src="<?php echo esc_attr( $registration_qr ); ?>" alt="<?php esc_attr_e( 'Registration QR Code', 'hotel-chain' ); ?>" class="mx-auto border-2 border-solid border-gray-300 rounded p-2 bg-white" style="max-width: 250px; height: auto;" />
+									<?php else : ?>
+										<div class="p-4 bg-red-50 border border-red-300 rounded text-red-700 text-sm">
+											<?php esc_html_e( 'Error generating QR code. Please check that the QR code library is installed.', 'hotel-chain' ); ?>
+										</div>
+									<?php endif; ?>
+								</div>
+								<div class="text-center w-full">
+									<p class="text-xs text-gray-500 mb-2"><?php esc_html_e( 'Registration URL:', 'hotel-chain' ); ?></p>
+									<div class="flex items-center gap-2 bg-white p-2 rounded border border-gray-300">
+										<p class="text-xs font-mono break-all text-gray-700 flex-1 text-left"><?php echo esc_html( $registration_url ); ?></p>
+										<button type="button" class="copy-url-btn px-3 py-1 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 text-xs whitespace-nowrap" data-url="<?php echo esc_attr( $registration_url ); ?>">
+											<?php esc_html_e( 'Copy URL', 'hotel-chain' ); ?>
+										</button>
+									</div>
+								</div>
+							</div>
+						<?php endif; ?>
+
+						<!-- Hotel Landing Page URL -->
+						<?php if ( ! empty( $landing_url ) ) : ?>
+							<div class="p-4 bg-gray-50 border border-solid border-gray-400 rounded">
+								<h4 class="mb-3 pb-2 border-b border-solid border-gray-400"><?php esc_html_e( 'Hotel Landing Page URL', 'hotel-chain' ); ?></h4>
+								<div class="flex items-center gap-2">
+									<p class="text-sm font-mono break-all text-gray-700 flex-1 bg-white p-2 rounded border border-gray-300"><?php echo esc_html( $landing_url ); ?></p>
+									<button type="button" class="copy-url-btn px-3 py-1 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 text-sm whitespace-nowrap" data-url="<?php echo esc_attr( $landing_url ); ?>">
+										<?php esc_html_e( 'Copy URL', 'hotel-chain' ); ?>
+									</button>
+								</div>
+							</div>
+						<?php endif; ?>
 					</div>
 
 					<!-- Welcome Section Customization -->
@@ -873,6 +927,29 @@ class HotelProfilePage {
 								window.location.reload();
 							});
 						}
+
+						// Copy URL functionality
+						const copyUrlButtons = document.querySelectorAll('.copy-url-btn');
+						copyUrlButtons.forEach(button => {
+							button.addEventListener('click', function() {
+								const url = this.getAttribute('data-url');
+								if (url) {
+									navigator.clipboard.writeText(url).then(function() {
+										const originalText = button.textContent;
+										button.textContent = '<?php esc_html_e( 'Copied!', 'hotel-chain' ); ?>';
+										button.classList.remove('bg-blue-200', 'border-blue-400', 'text-blue-900');
+										button.classList.add('bg-green-200', 'border-green-400', 'text-green-900');
+										setTimeout(function() {
+											button.textContent = originalText;
+											button.classList.remove('bg-green-200', 'border-green-400', 'text-green-900');
+											button.classList.add('bg-blue-200', 'border-blue-400', 'text-blue-900');
+										}, 2000);
+									}).catch(function(err) {
+										alert('<?php esc_html_e( 'Failed to copy URL. Please try again.', 'hotel-chain' ); ?>');
+									});
+								}
+							});
+						});
 					});
 					</script>
 
@@ -951,5 +1028,47 @@ class HotelProfilePage {
 			</div>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Generate QR code data URI for a given URL.
+	 *
+	 * @param string $url URL to encode in QR code.
+	 * @return string|null Data URI or null on failure.
+	 */
+	private function generate_qr_code( string $url ): ?string {
+		if ( empty( $url ) ) {
+			return null;
+		}
+
+		try {
+			// Check if QR code library is available.
+			if ( ! class_exists( 'Endroid\QrCode\QrCode' ) ) {
+				return null;
+			}
+
+			// Check if GD extension is available (required for PNG).
+			if ( ! extension_loaded( 'gd' ) ) {
+				return null;
+			}
+
+			// Create QR code with high error correction level.
+			$qr_code = QrCode::create( $url )
+				->setSize( 300 )
+				->setMargin( 10 )
+				->setErrorCorrectionLevel( new ErrorCorrectionLevelHigh() );
+
+			$writer = new PngWriter();
+			$result = $writer->write( $qr_code );
+
+			// Convert to data URI.
+			$data_uri = $result->getDataUri();
+
+			return $data_uri;
+		} catch ( \Exception $e ) {
+			return null;
+		} catch ( \Throwable $e ) {
+			return null;
+		}
 	}
 }

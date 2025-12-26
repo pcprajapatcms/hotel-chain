@@ -98,7 +98,7 @@ class Assets implements ServiceProviderInterface {
 			return;
 		}
 
-		// Enqueue editor scripts for pages that use wp_editor
+		// Enqueue editor scripts for pages that use wp_editor.
 		if ( in_array( $page, array( 'hotel-video-library', 'hotel-video-upload' ), true ) ) {
 			wp_enqueue_editor();
 			wp_enqueue_media();
@@ -144,14 +144,18 @@ class Assets implements ServiceProviderInterface {
 			'hotel-chain-admin',
 			'hotelChainAdmin',
 			array(
-				'regCopiedText'       => esc_html__( 'Registration URL copied to clipboard!', 'hotel-chain' ),
-				'landCopiedText'      => esc_html__( 'Landing page URL copied to clipboard!', 'hotel-chain' ),
-				'videoUploadUrl'      => esc_url_raw( admin_url( 'edit.php?post_type=video&page=hotel-video-upload' ) ),
-				'uploadPreparingText' => esc_html__( 'Preparing upload...', 'hotel-chain' ),
-				'uploadInProgressText'=> esc_html__( 'Uploading...', 'hotel-chain' ),
-				'uploadFinishingText' => esc_html__( 'Finalizing upload...', 'hotel-chain' ),
-				'uploadErrorText'     => esc_html__( 'Upload failed. Please try again.', 'hotel-chain' ),
-				'videoTags'           => $video_tags,
+				'regCopiedText'         => esc_html__( 'Registration URL copied to clipboard!', 'hotel-chain' ),
+				'landCopiedText'        => esc_html__( 'Landing page URL copied to clipboard!', 'hotel-chain' ),
+				'videoUploadUrl'        => esc_url_raw( admin_url( 'edit.php?post_type=video&page=hotel-video-upload' ) ),
+				'uploadPreparingText'   => esc_html__( 'Preparing upload...', 'hotel-chain' ),
+				'uploadInProgressText'  => esc_html__( 'Uploading...', 'hotel-chain' ),
+				'uploadFinishingText'   => esc_html__( 'Finalizing upload...', 'hotel-chain' ),
+				'uploadErrorText'       => esc_html__( 'Upload failed. Please try again.', 'hotel-chain' ),
+				'videoTags'             => $video_tags,
+				'hotelNameRequired'     => esc_html__( 'Hotel name is required.', 'hotel-chain' ),
+				'contactEmailRequired'  => esc_html__( 'Contact email is required.', 'hotel-chain' ),
+				'contactEmailInvalid'   => esc_html__( 'Please enter a valid email address.', 'hotel-chain' ),
+				'adminUsernameRequired' => esc_html__( 'Admin username is required.', 'hotel-chain' ),
 			)
 		);
 	}

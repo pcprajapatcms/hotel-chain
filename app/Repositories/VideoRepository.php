@@ -26,7 +26,7 @@ class VideoRepository {
 	 * Create or update video metadata.
 	 *
 	 * @param int|null $video_id Internal video ID. If null, a new ID will be generated.
-	 * @param array $data     Metadata.
+	 * @param array    $data     Metadata.
 	 * @return int|false Internal video_id on success, false on failure.
 	 */
 	public function create_or_update( ?int $video_id, array $data ) {
@@ -43,25 +43,25 @@ class VideoRepository {
 		}
 
 		$defaults = array(
-			'slug'               => '',
-			'video_file_id'      => 0,
-			'title'              => '',
-			'description'        => '',
-			'practice_tip'       => '',
-			'category'           => '',
-			'tags'               => '',
-			'thumbnail_id'       => 0,
-			'thumbnail_url'      => '',
-			'duration_seconds'   => null,
-			'duration_label'     => '',
-			'file_size'          => null,
-			'file_format'        => '',
-			'resolution_width'   => null,
-			'resolution_height'  => null,
-			'default_language'   => '',
-			'total_views'        => 0,
-			'total_completions'  => 0,
-			'avg_completion_rate'=> 0.00,
+			'slug'                => '',
+			'video_file_id'       => 0,
+			'title'               => '',
+			'description'         => '',
+			'practice_tip'        => '',
+			'category'            => '',
+			'tags'                => '',
+			'thumbnail_id'        => 0,
+			'thumbnail_url'       => '',
+			'duration_seconds'    => null,
+			'duration_label'      => '',
+			'file_size'           => null,
+			'file_format'         => '',
+			'resolution_width'    => null,
+			'resolution_height'   => null,
+			'default_language'    => '',
+			'total_views'         => 0,
+			'total_completions'   => 0,
+			'avg_completion_rate' => 0.00,
 		);
 
 		$data = wp_parse_args( $data, $defaults );
@@ -79,26 +79,26 @@ class VideoRepository {
 		$result = $wpdb->insert(
 			$table,
 			array(
-				'video_id'           => absint( $video_id ),
-				'slug'               => $slug,
-				'video_file_id'      => absint( $data['video_file_id'] ),
-				'title'              => sanitize_text_field( $data['title'] ),
-				'description'        => wp_kses_post( $data['description'] ),
-				'practice_tip'       => wp_kses_post( $data['practice_tip'] ),
-				'category'           => sanitize_text_field( $data['category'] ),
-				'tags'               => sanitize_text_field( $data['tags'] ),
-				'thumbnail_id'       => $data['thumbnail_id'] ? absint( $data['thumbnail_id'] ) : null,
-				'thumbnail_url'      => sanitize_text_field( $data['thumbnail_url'] ),
-				'duration_seconds'   => $data['duration_seconds'] ? absint( $data['duration_seconds'] ) : null,
-				'duration_label'     => sanitize_text_field( $data['duration_label'] ),
-				'file_size'          => $data['file_size'] ? absint( $data['file_size'] ) : null,
-				'file_format'        => sanitize_text_field( $data['file_format'] ),
-				'resolution_width'   => $data['resolution_width'] ? absint( $data['resolution_width'] ) : null,
-				'resolution_height'  => $data['resolution_height'] ? absint( $data['resolution_height'] ) : null,
-				'default_language'   => sanitize_text_field( $data['default_language'] ),
-				'total_views'        => absint( $data['total_views'] ),
-				'total_completions'  => absint( $data['total_completions'] ),
-				'avg_completion_rate'=> floatval( $data['avg_completion_rate'] ),
+				'video_id'            => absint( $video_id ),
+				'slug'                => $slug,
+				'video_file_id'       => absint( $data['video_file_id'] ),
+				'title'               => sanitize_text_field( $data['title'] ),
+				'description'         => wp_kses_post( $data['description'] ),
+				'practice_tip'        => wp_kses_post( $data['practice_tip'] ),
+				'category'            => sanitize_text_field( $data['category'] ),
+				'tags'                => sanitize_text_field( $data['tags'] ),
+				'thumbnail_id'        => $data['thumbnail_id'] ? absint( $data['thumbnail_id'] ) : null,
+				'thumbnail_url'       => sanitize_text_field( $data['thumbnail_url'] ),
+				'duration_seconds'    => $data['duration_seconds'] ? absint( $data['duration_seconds'] ) : null,
+				'duration_label'      => sanitize_text_field( $data['duration_label'] ),
+				'file_size'           => $data['file_size'] ? absint( $data['file_size'] ) : null,
+				'file_format'         => sanitize_text_field( $data['file_format'] ),
+				'resolution_width'    => $data['resolution_width'] ? absint( $data['resolution_width'] ) : null,
+				'resolution_height'   => $data['resolution_height'] ? absint( $data['resolution_height'] ) : null,
+				'default_language'    => sanitize_text_field( $data['default_language'] ),
+				'total_views'         => absint( $data['total_views'] ),
+				'total_completions'   => absint( $data['total_completions'] ),
+				'avg_completion_rate' => floatval( $data['avg_completion_rate'] ),
 			),
 			array( '%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%d', '%s', '%d', '%d', '%s', '%d', '%d', '%f' )
 		);
@@ -123,11 +123,11 @@ class VideoRepository {
 		$table = $this->get_table_name();
 
 		$update_data = array();
-		$format = array();
+		$format      = array();
 
 		if ( isset( $data['video_file_id'] ) ) {
 			$update_data['video_file_id'] = absint( $data['video_file_id'] );
-			$format[] = '%d';
+			$format[]                     = '%d';
 		}
 
 		if ( isset( $data['slug'] ) ) {
@@ -137,72 +137,72 @@ class VideoRepository {
 
 		if ( isset( $data['title'] ) ) {
 			$update_data['title'] = sanitize_text_field( $data['title'] );
-			$format[] = '%s';
+			$format[]             = '%s';
 		}
 
 		if ( isset( $data['description'] ) ) {
 			$update_data['description'] = wp_kses_post( $data['description'] );
-			$format[] = '%s';
+			$format[]                   = '%s';
 		}
 
 		if ( isset( $data['practice_tip'] ) ) {
 			$update_data['practice_tip'] = wp_kses_post( $data['practice_tip'] );
-			$format[] = '%s';
+			$format[]                    = '%s';
 		}
 
 		if ( isset( $data['category'] ) ) {
 			$update_data['category'] = sanitize_text_field( $data['category'] );
-			$format[] = '%s';
+			$format[]                = '%s';
 		}
 
 		if ( isset( $data['tags'] ) ) {
 			$update_data['tags'] = sanitize_text_field( $data['tags'] );
-			$format[] = '%s';
+			$format[]            = '%s';
 		}
 
 		if ( isset( $data['thumbnail_id'] ) ) {
 			$update_data['thumbnail_id'] = $data['thumbnail_id'] ? absint( $data['thumbnail_id'] ) : null;
-			$format[] = '%d';
+			$format[]                    = '%d';
 		}
 
 		if ( isset( $data['thumbnail_url'] ) ) {
 			$update_data['thumbnail_url'] = sanitize_text_field( $data['thumbnail_url'] );
-			$format[] = '%s';
+			$format[]                     = '%s';
 		}
 
 		if ( isset( $data['duration_seconds'] ) ) {
 			$update_data['duration_seconds'] = $data['duration_seconds'] ? absint( $data['duration_seconds'] ) : null;
-			$format[] = '%d';
+			$format[]                        = '%d';
 		}
 
 		if ( isset( $data['duration_label'] ) ) {
 			$update_data['duration_label'] = sanitize_text_field( $data['duration_label'] );
-			$format[] = '%s';
+			$format[]                      = '%s';
 		}
 
 		if ( isset( $data['file_size'] ) ) {
 			$update_data['file_size'] = $data['file_size'] ? absint( $data['file_size'] ) : null;
-			$format[] = '%d';
+			$format[]                 = '%d';
 		}
 
 		if ( isset( $data['file_format'] ) ) {
 			$update_data['file_format'] = sanitize_text_field( $data['file_format'] );
-			$format[] = '%s';
+			$format[]                   = '%s';
 		}
 
 		if ( isset( $data['resolution_width'] ) ) {
 			$update_data['resolution_width'] = $data['resolution_width'] ? absint( $data['resolution_width'] ) : null;
-			$format[] = '%d';
+			$format[]                        = '%d';
 		}
 
 		if ( isset( $data['resolution_height'] ) ) {
 			$update_data['resolution_height'] = $data['resolution_height'] ? absint( $data['resolution_height'] ) : null;
-			$format[] = '%d';
+			$format[]                         = '%d';
 		}
 
 		if ( isset( $data['default_language'] ) ) {
 			$update_data['default_language'] = sanitize_text_field( $data['default_language'] );
-			$format[] = '%s';
+			$format[]                        = '%s';
 		}
 
 		if ( empty( $update_data ) ) {
@@ -248,7 +248,7 @@ class VideoRepository {
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$results = $wpdb->get_col( "SELECT DISTINCT category FROM {$table} WHERE category IS NOT NULL AND category <> '' ORDER BY category ASC" );
 
-		return array_map( 'strval', $results ?: array() );
+		return array_map( 'strval', $results ? $results : array() );
 	}
 
 	/**
@@ -271,25 +271,25 @@ class VideoRepository {
 
 		$args = wp_parse_args( $args, $defaults );
 
-		$where = array( '1=1' );
+		$where        = array( '1=1' );
 		$where_values = array();
 
 		if ( ! empty( $args['category'] ) ) {
-			$where[] = 'category = %s';
+			$where[]        = 'category = %s';
 			$where_values[] = sanitize_text_field( $args['category'] );
 		}
 
 		$where_clause = implode( ' AND ', $where );
 
 		$orderby = in_array( $args['orderby'], array( 'created_at', 'title', 'video_id' ), true ) ? $args['orderby'] : 'created_at';
-		$order = 'DESC' === strtoupper( $args['order'] ) ? 'DESC' : 'ASC';
+		$order   = 'DESC' === strtoupper( $args['order'] ) ? 'DESC' : 'ASC';
 
 		$limit_clause = '';
 		if ( $args['limit'] > 0 ) {
-			$limit_clause = 'LIMIT %d';
+			$limit_clause   = 'LIMIT %d';
 			$where_values[] = absint( $args['limit'] );
 			if ( $args['offset'] > 0 ) {
-				$limit_clause .= ' OFFSET %d';
+				$limit_clause  .= ' OFFSET %d';
 				$where_values[] = absint( $args['offset'] );
 			}
 		}
@@ -378,11 +378,11 @@ class VideoRepository {
 		}
 
 		$total_completions = $metadata->total_completions;
-		$current_avg = floatval( $metadata->avg_completion_rate );
+		$current_avg       = floatval( $metadata->avg_completion_rate );
 
 		// Calculate new average.
 		$new_total = $total_completions + 1;
-		$new_avg = ( ( $current_avg * $total_completions ) + $completion_rate ) / $new_total;
+		$new_avg   = ( ( $current_avg * $total_completions ) + $completion_rate ) / $new_total;
 
 		$result = $wpdb->update(
 			$table,
@@ -428,8 +428,8 @@ class VideoRepository {
 			$base_slug = 'video';
 		}
 
-		$slug      = $base_slug;
-		$suffix    = 2;
+		$slug   = $base_slug;
+		$suffix = 2;
 
 		while ( true ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared

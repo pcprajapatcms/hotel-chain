@@ -49,7 +49,7 @@ class HotelDashboard implements ServiceProviderInterface {
 		}
 
 		$hotel_repository = new HotelRepository();
-		$hotel = $hotel_repository->get_by_user_id( $current_user->ID );
+		$hotel            = $hotel_repository->get_by_user_id( $current_user->ID );
 
 		if ( ! $hotel ) {
 			wp_send_json_error( array( 'message' => __( 'Hotel not found.', 'hotel-chain' ) ) );
@@ -90,7 +90,7 @@ class HotelDashboard implements ServiceProviderInterface {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'hotel-chain' ) ) );
 		}
 
-		$video_id = isset( $_POST['video_id'] ) ? absint( $_POST['video_id'] ) : 0;
+		$video_id   = isset( $_POST['video_id'] ) ? absint( $_POST['video_id'] ) : 0;
 		$new_status = isset( $_POST['status'] ) ? sanitize_text_field( wp_unslash( $_POST['status'] ) ) : '';
 
 		if ( ! $video_id || ! in_array( $new_status, array( 'active', 'inactive' ), true ) ) {
@@ -98,14 +98,14 @@ class HotelDashboard implements ServiceProviderInterface {
 		}
 
 		$hotel_repository = new HotelRepository();
-		$hotel = $hotel_repository->get_by_user_id( $current_user->ID );
+		$hotel            = $hotel_repository->get_by_user_id( $current_user->ID );
 
 		if ( ! $hotel ) {
 			wp_send_json_error( array( 'message' => __( 'Hotel not found.', 'hotel-chain' ) ) );
 		}
 
 		$assignment_repo = new HotelVideoAssignmentRepository();
-		$result = $assignment_repo->update_hotel_status( $hotel->id, $video_id, $new_status );
+		$result          = $assignment_repo->update_hotel_status( $hotel->id, $video_id, $new_status );
 
 		if ( $result ) {
 			wp_send_json_success(
@@ -194,36 +194,36 @@ class HotelDashboard implements ServiceProviderInterface {
 		}
 
 		$hotel_repository = new HotelRepository();
-		$hotel = $hotel_repository->get_by_user_id( $current_user->ID );
+		$hotel            = $hotel_repository->get_by_user_id( $current_user->ID );
 
 		if ( ! $hotel ) {
 			wp_die( esc_html__( 'Hotel account not found.', 'hotel-chain' ) );
 		}
 
 		// Get repositories.
-		$guest_repo = new GuestRepository();
+		$guest_repo      = new GuestRepository();
 		$assignment_repo = new HotelVideoAssignmentRepository();
-		$video_repo = new VideoRepository();
+		$video_repo      = new VideoRepository();
 
 		// Calculate guest statistics.
-		$total_guests = $guest_repo->count_hotel_guests( $hotel->id );
-		$active_guests = $guest_repo->count_hotel_guests( $hotel->id, 'active' );
+		$total_guests   = $guest_repo->count_hotel_guests( $hotel->id );
+		$active_guests  = $guest_repo->count_hotel_guests( $hotel->id, 'active' );
 		$expired_guests = $guest_repo->count_hotel_guests( $hotel->id, 'expired' );
 
 		// Get assigned videos.
-		$assigned_videos = $assignment_repo->get_hotel_videos( $hotel->id, array( 'status' => 'active' ) );
+		$assigned_videos       = $assignment_repo->get_hotel_videos( $hotel->id, array( 'status' => 'active' ) );
 		$meditations_available = count( $assigned_videos );
 
 		// Calculate total practice time (sum of view_duration from video_views table).
 		global $wpdb;
-		$video_views_table = Schema::get_table_name( 'video_views' );
+		$video_views_table      = Schema::get_table_name( 'video_views' );
 		$total_practice_seconds = $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT SUM(view_duration) FROM {$video_views_table} WHERE hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$hotel->id
 			)
 		);
-		$total_practice_hours = $total_practice_seconds ? round( (int) $total_practice_seconds / 3600 ) : 0;
+		$total_practice_hours   = $total_practice_seconds ? round( (int) $total_practice_seconds / 3600 ) : 0;
 
 		// Get top meditations (videos with most views for this hotel in the last 7 days).
 		$top_meditations_data = array();
@@ -262,32 +262,35 @@ class HotelDashboard implements ServiceProviderInterface {
 			$completion_rate = $total_views > 0 ? round( ( (int) $total_completions / (int) $total_views ) * 100 ) : 0;
 
 			$top_meditations_data[] = array(
-				'video_id' => $video->video_id,
-				'title' => $video->title,
-				'practices' => (int) $practice_count,
+				'video_id'   => $video->video_id,
+				'title'      => $video->title,
+				'practices'  => (int) $practice_count,
 				'completion' => $completion_rate,
 			);
 		}
 
 		// Sort by practice count (most practices first) and limit to 5.
-		usort( $top_meditations_data, function( $a, $b ) {
-			return $b['practices'] - $a['practices'];
-		} );
+		usort(
+			$top_meditations_data,
+			function ( $a, $b ) {
+				return $b['practices'] - $a['practices'];
+			}
+		);
 		$top_meditations_data = array_slice( $top_meditations_data, 0, 5 );
 
 		// Get recent activity (guest registrations, video completions, and expiring guests).
 		$recent_guests = $guest_repo->get_hotel_guests(
 			$hotel->id,
 			array(
-				'status' => 'active',
-				'limit' => 5,
+				'status'  => 'active',
+				'limit'   => 5,
 				'orderby' => 'created_at',
-				'order' => 'DESC',
+				'order'   => 'DESC',
 			)
 		);
 
 		$recent_activities = array();
-		
+
 		// Add guest registrations.
 		foreach ( array_slice( $recent_guests, 0, 2 ) as $guest ) {
 			$guest_name = trim( ( $guest->first_name ?? '' ) . ' ' . ( $guest->last_name ?? '' ) );
@@ -295,16 +298,18 @@ class HotelDashboard implements ServiceProviderInterface {
 				$guest_name = __( 'Guest', 'hotel-chain' );
 			}
 			$recent_activities[] = array(
-				'type' => 'registration',
-				'message' => sprintf( __( '%s registered for meditation series', 'hotel-chain' ), $guest_name ),
-				'time' => human_time_diff( strtotime( $guest->created_at ), current_time( 'timestamp' ) ) . ' ago',
+				'type'      => 'registration',
+				/* translators: %s: Guest name */
+				'message'   => sprintf( __( '%s registered for meditation series', 'hotel-chain' ), $guest_name ),
+				'time'      => human_time_diff( strtotime( $guest->created_at ), time() ) . ' ago',
 				'timestamp' => strtotime( $guest->created_at ),
 			);
 		}
 
 		// Get recent video completions/starts.
 		$video_metadata_table = Schema::get_table_name( 'video_metadata' );
-		$guests_table = Schema::get_table_name( 'guests' );
+		$guests_table         = Schema::get_table_name( 'guests' );
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names cannot be parameterized.
 		$recent_views = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT vv.*, v.title, u.display_name, g.first_name, g.last_name
@@ -314,11 +319,12 @@ class HotelDashboard implements ServiceProviderInterface {
 				LEFT JOIN {$guests_table} g ON vv.user_id = g.user_id AND g.hotel_id = %d
 				WHERE vv.hotel_id = %d
 				ORDER BY vv.viewed_at DESC
-				LIMIT 3", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				LIMIT 3",
 				$hotel->id,
 				$hotel->id
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		foreach ( $recent_views as $view ) {
 			$user_name = $view->display_name;
@@ -329,15 +335,17 @@ class HotelDashboard implements ServiceProviderInterface {
 				$user_name = __( 'Guest', 'hotel-chain' );
 			}
 			$recent_activities[] = array(
-				'type' => 'completion',
-				'message' => sprintf( __( '%s began meditation series', 'hotel-chain' ), $user_name ),
-				'time' => human_time_diff( strtotime( $view->viewed_at ), current_time( 'timestamp' ) ) . ' ago',
+				'type'      => 'completion',
+				/* translators: %s: User name */
+				'message'   => sprintf( __( '%s began meditation series', 'hotel-chain' ), $user_name ),
+				'time'      => human_time_diff( strtotime( $view->viewed_at ), time() ) . ' ago',
 				'timestamp' => strtotime( $view->viewed_at ),
 			);
 		}
 
 		// Check for guests expiring soon (within 3 days).
 		$guests_table = Schema::get_table_name( 'guests' );
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names cannot be parameterized.
 		$expiring_guests = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$guests_table} 
@@ -345,29 +353,34 @@ class HotelDashboard implements ServiceProviderInterface {
 				AND access_end IS NOT NULL 
 				AND access_end BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 3 DAY)
 				ORDER BY access_end ASC
-				LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				LIMIT 1",
 				$hotel->id
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		foreach ( $expiring_guests as $expiring_guest ) {
 			$guest_name = trim( ( $expiring_guest->first_name ?? '' ) . ' ' . ( $expiring_guest->last_name ?? '' ) );
 			if ( empty( $guest_name ) ) {
 				$guest_name = __( 'Guest', 'hotel-chain' );
 			}
-			$days_left = ceil( ( strtotime( $expiring_guest->access_end ) - current_time( 'timestamp' ) ) / DAY_IN_SECONDS );
+			$days_left           = ceil( ( strtotime( $expiring_guest->access_end ) - time() ) / DAY_IN_SECONDS );
 			$recent_activities[] = array(
-				'type' => 'expiring',
-				'message' => sprintf( __( 'Guest account expiring soon: %s (%d %s)', 'hotel-chain' ), $guest_name, $days_left, _n( 'day', 'days', $days_left, 'hotel-chain' ) ),
-				'time' => human_time_diff( strtotime( $expiring_guest->access_end ), current_time( 'timestamp' ) ) . ' ago',
+				'type'      => 'expiring',
+				/* translators: 1: Guest name, 2: Number of days, 3: Day/days text */
+				'message'   => sprintf( __( 'Guest account expiring soon: %1$s (%2$d %3$s)', 'hotel-chain' ), $guest_name, $days_left, _n( 'day', 'days', $days_left, 'hotel-chain' ) ),
+				'time'      => human_time_diff( strtotime( $expiring_guest->access_end ), time() ) . ' ago',
 				'timestamp' => strtotime( $expiring_guest->access_end ),
 			);
 		}
 
 		// Sort activities by timestamp (most recent first) and limit to 3.
-		usort( $recent_activities, function( $a, $b ) {
-			return $b['timestamp'] - $a['timestamp'];
-		} );
+		usort(
+			$recent_activities,
+			function ( $a, $b ) {
+				return $b['timestamp'] - $a['timestamp'];
+			}
+		);
 		$recent_activities = array_slice( $recent_activities, 0, 3 );
 
 		?>
@@ -464,7 +477,12 @@ class HotelDashboard implements ServiceProviderInterface {
 									</svg>
 								</div>
 								<div style="font-family: var(--font-sans); color: rgb(60, 56, 55); font-weight: 600; margin-bottom: 0.5rem;">Meditation Library</div>
-								<div style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;"><?php echo esc_html( sprintf( _n( '%d meditation', '%d meditations', $meditations_available, 'hotel-chain' ), $meditations_available ) ); ?></div>
+								<div style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;">
+								<?php
+								/* translators: %d: Number of meditations */
+								echo esc_html( sprintf( _n( '%d meditation', '%d meditations', $meditations_available, 'hotel-chain' ), $meditations_available ) );
+								?>
+								</div>
 							</a>
 
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-profile' ) ); ?>" class="border-2 rounded p-6 text-center cursor-pointer transition-all hover:shadow-md no-underline" style="border-color: rgb(196, 196, 196);">
@@ -512,7 +530,12 @@ class HotelDashboard implements ServiceProviderInterface {
 											</div>
 											<div class="flex-1 min-w-0">
 												<div style="font-family: var(--font-sans); color: rgb(60, 56, 55); font-weight: 600;"><?php echo esc_html( $meditation['title'] ); ?></div>
-												<div style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;"><?php echo esc_html( sprintf( _n( '%d practice', '%d practices', $meditation['practices'], 'hotel-chain' ), $meditation['practices'] ) ); ?></div>
+												<div style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;">
+												<?php
+												/* translators: %d: Number of practices */
+												echo esc_html( sprintf( _n( '%d practice', '%d practices', $meditation['practices'], 'hotel-chain' ), $meditation['practices'] ) );
+												?>
+												</div>
 											</div>
 										</div>
 										<div class="text-left sm:text-right">
