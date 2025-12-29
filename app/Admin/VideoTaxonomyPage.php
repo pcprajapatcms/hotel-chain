@@ -8,9 +8,10 @@
 namespace HotelChain\Admin;
 
 use HotelChain\Contracts\ServiceProviderInterface;
+use HotelChain\Repositories\VideoTaxonomyRepository;
 
 /**
- * Video taxonomy settings (categories & tags stored in options).
+ * Video taxonomy settings (categories & tags stored in custom table).
  */
 class VideoTaxonomyPage implements ServiceProviderInterface {
 	/**
@@ -24,18 +25,19 @@ class VideoTaxonomyPage implements ServiceProviderInterface {
 	}
 
 	/**
-	 * Register submenu page under Hotel Accounts.
+	 * Register main menu page.
 	 *
 	 * @return void
 	 */
 	public function register_menu(): void {
-		add_submenu_page(
-			'hotel-chain-accounts',
+		add_menu_page(
 			__( 'Video Categories & Tags', 'hotel-chain' ),
 			__( 'Video Categories & Tags', 'hotel-chain' ),
 			'manage_options',
 			'hotel-video-taxonomy',
-			array( $this, 'render_page' )
+			array( $this, 'render_page' ),
+			'dashicons-tag',
+			7
 		);
 	}
 
@@ -49,15 +51,9 @@ class VideoTaxonomyPage implements ServiceProviderInterface {
 			return;
 		}
 
-		$categories = get_option( 'hotel_chain_video_categories', array() );
-		$tags       = get_option( 'hotel_chain_video_tags', array() );
-
-		if ( ! is_array( $categories ) ) {
-			$categories = array();
-		}
-		if ( ! is_array( $tags ) ) {
-			$tags = array();
-		}
+		$taxonomy_repo = new VideoTaxonomyRepository();
+		$categories    = $taxonomy_repo->get_categories();
+		$tags          = $taxonomy_repo->get_tags();
 
 		$updated = isset( $_GET['updated'] ) ? absint( $_GET['updated'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		?>
@@ -87,12 +83,13 @@ class VideoTaxonomyPage implements ServiceProviderInterface {
 						<?php if ( empty( $categories ) ) : ?>
 							<p class="text-gray-500 text-sm py-4 text-center" id="no-categories-msg"><?php esc_html_e( 'No categories yet. Click "Add Category" to create one.', 'hotel-chain' ); ?></p>
 						<?php else : ?>
-							<?php foreach ( $categories as $index => $category ) : ?>
-								<div class="taxonomy-item flex items-center gap-2 bg-gray-50 border border-solid border-gray-200 rounded p-2" draggable="true">
+							<?php foreach ( $categories as $category ) : ?>
+								<div class="taxonomy-item flex items-center gap-2 bg-gray-50 border border-solid border-gray-200 rounded p-2" draggable="true" data-id="<?php echo esc_attr( $category->id ); ?>">
+									<input type="hidden" name="category_ids[]" value="<?php echo esc_attr( $category->id ); ?>" />
 									<span class="drag-handle cursor-move text-gray-400 hover:text-gray-600 px-1">
 										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
 									</span>
-									<input type="text" name="categories[]" value="<?php echo esc_attr( $category ); ?>" class="flex-1 px-3 py-2 border border-solid border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="<?php esc_attr_e( 'Category name', 'hotel-chain' ); ?>" />
+									<input type="text" name="categories[]" value="<?php echo esc_attr( $category->name ); ?>" class="flex-1 px-3 py-2 border border-solid border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="<?php esc_attr_e( 'Category name', 'hotel-chain' ); ?>" />
 									<button type="button" class="remove-item-btn px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded" title="<?php esc_attr_e( 'Remove', 'hotel-chain' ); ?>">
 										<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
 									</button>
@@ -114,12 +111,13 @@ class VideoTaxonomyPage implements ServiceProviderInterface {
 						<?php if ( empty( $tags ) ) : ?>
 							<p class="text-gray-500 text-sm py-4 text-center" id="no-tags-msg"><?php esc_html_e( 'No tags yet. Click "Add Tag" to create one.', 'hotel-chain' ); ?></p>
 						<?php else : ?>
-							<?php foreach ( $tags as $index => $tag ) : ?>
-								<div class="taxonomy-item flex items-center gap-2 bg-gray-50 border border-solid border-gray-200 rounded p-2" draggable="true">
+							<?php foreach ( $tags as $tag ) : ?>
+								<div class="taxonomy-item flex items-center gap-2 bg-gray-50 border border-solid border-gray-200 rounded p-2" draggable="true" data-id="<?php echo esc_attr( $tag->id ); ?>">
+									<input type="hidden" name="tag_ids[]" value="<?php echo esc_attr( $tag->id ); ?>" />
 									<span class="drag-handle cursor-move text-gray-400 hover:text-gray-600 px-1">
 										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
 									</span>
-									<input type="text" name="tags[]" value="<?php echo esc_attr( $tag ); ?>" class="flex-1 px-3 py-2 border border-solid border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="<?php esc_attr_e( 'Tag name', 'hotel-chain' ); ?>" />
+									<input type="text" name="tags[]" value="<?php echo esc_attr( $tag->name ); ?>" class="flex-1 px-3 py-2 border border-solid border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="<?php esc_attr_e( 'Tag name', 'hotel-chain' ); ?>" />
 									<button type="button" class="remove-item-btn px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded" title="<?php esc_attr_e( 'Remove', 'hotel-chain' ); ?>">
 										<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
 									</button>
@@ -151,6 +149,7 @@ class VideoTaxonomyPage implements ServiceProviderInterface {
 					<span class="drag-handle cursor-move text-gray-400 hover:text-gray-600 px-1">
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
 					</span>
+					<input type="hidden" name="${inputName}_ids[]" value="0" />
 					<input type="text" name="${inputName}[]" value="" class="flex-1 px-3 py-2 border border-solid border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="${placeholder}" />
 					<button type="button" class="remove-item-btn px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded" title="<?php echo esc_js( __( 'Remove', 'hotel-chain' ) ); ?>">
 						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
@@ -258,28 +257,69 @@ class VideoTaxonomyPage implements ServiceProviderInterface {
 
 		check_admin_referer( 'hotel_chain_save_video_taxonomy' );
 
-		// Categories: array from repeater fields.
+		$taxonomy_repo = new VideoTaxonomyRepository();
+
+		// Get existing items to track what to delete.
+		$existing_categories = $taxonomy_repo->get_categories();
+		$existing_tags       = $taxonomy_repo->get_tags();
+		$existing_cat_ids    = array_map( function( $cat ) {
+			return $cat->id;
+		}, $existing_categories );
+		$existing_tag_ids    = array_map( function( $tag ) {
+			return $tag->id;
+		}, $existing_tags );
+
+		// Process categories.
 		$raw_categories = isset( $_POST['categories'] ) ? (array) wp_unslash( $_POST['categories'] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$categories     = array();
-		foreach ( $raw_categories as $cat ) {
-			$cat = trim( wp_strip_all_tags( (string) $cat ) );
-			if ( '' !== $cat ) {
-				$categories[] = $cat;
+		$raw_cat_ids    = isset( $_POST['category_ids'] ) ? (array) wp_unslash( $_POST['category_ids'] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$submitted_ids  = array();
+
+		foreach ( $raw_categories as $index => $cat_name ) {
+			$cat_name = trim( wp_strip_all_tags( (string) $cat_name ) );
+			if ( '' === $cat_name ) {
+				continue;
 			}
+
+			$cat_id = isset( $raw_cat_ids[ $index ] ) ? absint( $raw_cat_ids[ $index ] ) : 0;
+			if ( $cat_id > 0 ) {
+				$submitted_ids[] = $cat_id;
+			}
+
+			// Create or update category.
+			$taxonomy_repo->create_or_update( $cat_name, 'category', $index );
 		}
 
-		// Tags: array from repeater fields.
-		$raw_tags = isset( $_POST['tags'] ) ? (array) wp_unslash( $_POST['tags'] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-		$tags     = array();
-		foreach ( $raw_tags as $tag ) {
-			$tag = trim( wp_strip_all_tags( (string) $tag ) );
-			if ( '' !== $tag ) {
-				$tags[] = $tag;
-			}
+		// Delete removed categories.
+		$to_delete = array_diff( $existing_cat_ids, $submitted_ids );
+		foreach ( $to_delete as $id ) {
+			$taxonomy_repo->delete( $id );
 		}
 
-		update_option( 'hotel_chain_video_categories', $categories );
-		update_option( 'hotel_chain_video_tags', $tags );
+		// Process tags.
+		$raw_tags      = isset( $_POST['tags'] ) ? (array) wp_unslash( $_POST['tags'] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$raw_tag_ids   = isset( $_POST['tag_ids'] ) ? (array) wp_unslash( $_POST['tag_ids'] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$submitted_ids = array();
+
+		foreach ( $raw_tags as $index => $tag_name ) {
+			$tag_name = trim( wp_strip_all_tags( (string) $tag_name ) );
+			if ( '' === $tag_name ) {
+				continue;
+			}
+
+			$tag_id = isset( $raw_tag_ids[ $index ] ) ? absint( $raw_tag_ids[ $index ] ) : 0;
+			if ( $tag_id > 0 ) {
+				$submitted_ids[] = $tag_id;
+			}
+
+			// Create or update tag.
+			$taxonomy_repo->create_or_update( $tag_name, 'tag', $index );
+		}
+
+		// Delete removed tags.
+		$to_delete = array_diff( $existing_tag_ids, $submitted_ids );
+		foreach ( $to_delete as $id ) {
+			$taxonomy_repo->delete( $id );
+		}
 
 		wp_safe_redirect(
 			add_query_arg(

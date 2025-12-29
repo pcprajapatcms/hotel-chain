@@ -26,6 +26,9 @@ use HotelChain\Admin\VideosPage;
 use HotelChain\Admin\VideoLibraryPage;
 use HotelChain\Admin\VideoTaxonomyPage;
 use HotelChain\Admin\VideoRequestsPage;
+use HotelChain\Admin\DatabaseToolsPage;
+use HotelChain\Admin\AdminDashboardPage;
+use HotelChain\Admin\SystemAnalyticsPage;
 use HotelChain\Frontend\HotelDashboard;
 use HotelChain\Frontend\HotelProfilePage;
 use HotelChain\Frontend\GuestRegistration;
@@ -69,6 +72,9 @@ class Theme {
 			new VideoLibraryPage(),
 			new VideoTaxonomyPage(),
 			new VideoRequestsPage(),
+			new DatabaseToolsPage(),
+			new AdminDashboardPage(),
+			new SystemAnalyticsPage(),
 			new HotelDashboard(),
 			new HotelProfilePage(),
 			new GuestRegistration(),

@@ -366,6 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	const videoId = <?php echo absint( $video_id ); ?>;
 	const hotelId = <?php echo absint( $hotel->id ); ?>;
 	const ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
+	const nonce = '<?php echo esc_js( wp_create_nonce( 'hotel_video_progress' ) ); ?>';
 
 	let savedPercentage = 0;
 
@@ -387,6 +388,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		formData.append('action', 'get_video_progress');
 		formData.append('video_id', videoId);
 		formData.append('hotel_id', hotelId);
+		formData.append('nonce', nonce);
 
 		fetch(ajaxUrl, { method: 'POST', body: formData })
 			.then(response => response.json())
@@ -433,6 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		formData.append('duration', Math.round(current));
 		formData.append('percentage', percent);
 		formData.append('completed', completed);
+		formData.append('nonce', nonce);
 
 		fetch(ajaxUrl, { method: 'POST', body: formData })
 			.then(response => response.json())
@@ -444,11 +447,20 @@ document.addEventListener('DOMContentLoaded', function() {
 			.catch(err => console.log('Error saving progress:', err));
 	}
 
-	// Update time display during playback.
+	// Update time display during playback and save progress periodically.
+	let lastSaveTime = 0;
+	const SAVE_INTERVAL = 5000; // Save every 5 seconds during playback.
+
 	video.addEventListener('timeupdate', function() {
 		const current = video.currentTime;
 		const duration = video.duration || 1;
 		if (progressTime) progressTime.textContent = formatTime(current) + ' / ' + formatTime(duration);
+
+		// Save progress periodically during playback (every 5 seconds).
+		if (!video.paused && current - lastSaveTime >= SAVE_INTERVAL / 1000) {
+			lastSaveTime = current;
+			saveProgress();
+		}
 	});
 
 	// Save progress on pause.

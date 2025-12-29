@@ -34,6 +34,7 @@ class CustomLogin implements ServiceProviderInterface {
 		add_filter( 'authenticate', array( $this, 'validate_guest_login' ), 30, 3 );
 		add_filter( 'wp_login_errors', array( $this, 'handle_login_errors' ), 10, 2 );
 		add_filter( 'logout_redirect', array( $this, 'handle_logout_redirect' ), 10, 3 );
+		add_filter( 'login_redirect', array( $this, 'handle_admin_login_redirect' ), 10, 3 );
 		add_action( 'template_redirect', array( $this, 'handle_guest_login_page' ) );
 	}
 
@@ -408,7 +409,7 @@ class CustomLogin implements ServiceProviderInterface {
 		if ( is_user_logged_in() ) {
 			$user = wp_get_current_user();
 			if ( in_array( 'administrator', $user->roles, true ) ) {
-				wp_safe_redirect( admin_url() );
+				wp_safe_redirect( admin_url( 'admin.php?page=admin-dashboard' ) );
 				exit;
 			} elseif ( in_array( 'hotel', $user->roles, true ) ) {
 				wp_safe_redirect( admin_url( 'admin.php?page=hotel-dashboard' ) );
@@ -781,11 +782,11 @@ class CustomLogin implements ServiceProviderInterface {
 		// Check if user is already logged in (but not for special actions).
 		if ( is_user_logged_in() && ! in_array( $action, $allowed_actions, true ) ) {
 			$user        = wp_get_current_user();
-			$redirect_to = admin_url();
+			$redirect_to = admin_url( 'admin.php?page=admin-dashboard' );
 
 			// Redirect based on user role.
 			if ( in_array( 'administrator', $user->roles, true ) ) {
-				$redirect_to = admin_url();
+				$redirect_to = admin_url( 'admin.php?page=admin-dashboard' );
 			} elseif ( in_array( 'hotel', $user->roles, true ) ) {
 				$redirect_to = admin_url( 'admin.php?page=hotel-dashboard' );
 			} elseif ( in_array( 'guest', $user->roles, true ) ) {
@@ -881,7 +882,7 @@ class CustomLogin implements ServiceProviderInterface {
 		wp_set_auth_cookie( $user->ID, $remember );
 		do_action( 'wp_login', $user->user_login, $user );
 
-		$redirect_to = isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : admin_url(); // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		$redirect_to = isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : admin_url( 'admin.php?page=admin-dashboard' ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		wp_safe_redirect( $redirect_to );
 		exit;
 	}
@@ -1214,7 +1215,7 @@ class CustomLogin implements ServiceProviderInterface {
 		}
 
 		$login_url   = site_url( 'wp-login.php', 'login_post' );
-		$redirect_to = isset( $_GET['redirect_to'] ) ? esc_url_raw( wp_unslash( $_GET['redirect_to'] ) ) : admin_url(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$redirect_to = isset( $_GET['redirect_to'] ) ? esc_url_raw( wp_unslash( $_GET['redirect_to'] ) ) : admin_url( 'admin.php?page=admin-dashboard' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$rememberme  = isset( $_POST['rememberme'] ) ? true : false; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 
 		?>
@@ -1580,6 +1581,26 @@ class CustomLogin implements ServiceProviderInterface {
 			}
 		}
 		return $errors;
+	}
+
+	/**
+	 * Handle admin login redirect - redirect administrators to admin dashboard.
+	 *
+	 * @param string  $redirect_to   Redirect URL.
+	 * @param string  $requested_redirect_to Requested redirect URL.
+	 * @param WP_User $user          User object.
+	 * @return string
+	 */
+	public function handle_admin_login_redirect( string $redirect_to, string $requested_redirect_to, $user ): string {
+		// Only redirect administrators.
+		if ( $user instanceof \WP_User && in_array( 'administrator', $user->roles, true ) ) {
+			// If a specific redirect was requested, use it; otherwise redirect to admin dashboard.
+			if ( ! empty( $requested_redirect_to ) && strpos( $requested_redirect_to, 'admin.php' ) !== false ) {
+				return $requested_redirect_to;
+			}
+			return admin_url( 'admin.php?page=admin-dashboard' );
+		}
+		return $redirect_to;
 	}
 
 	/**

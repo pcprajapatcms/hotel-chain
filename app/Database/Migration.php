@@ -21,7 +21,7 @@ class Migration implements ServiceProviderInterface {
 	/**
 	 * Current database version.
 	 */
-	const DB_VERSION = '1.3.6';
+	const DB_VERSION = '1.4.0';
 
 	/**
 	 * Register service hooks.
@@ -168,6 +168,100 @@ class Migration implements ServiceProviderInterface {
 				"ALTER TABLE {$video_metadata_table} ADD COLUMN practice_tip longtext DEFAULT NULL COMMENT 'Practice tip for this video' AFTER description" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			);
 		}
+
+		// Migrate video taxonomy from options to custom table.
+		$this->migrate_video_taxonomy();
+	}
+
+	/**
+	 * Migrate video categories and tags from WordPress options to custom table.
+	 *
+	 * @return void
+	 */
+	private function migrate_video_taxonomy(): void {
+		global $wpdb;
+		$table = Schema::get_table_name( 'video_taxonomy' );
+
+		// Check if table exists and has data.
+		$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( ! $table_exists ) {
+			return;
+		}
+
+		// Check if migration already done.
+		$has_data = $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $has_data > 0 ) {
+			return; // Already migrated.
+		}
+
+		// Get existing categories and tags from options.
+		$categories = get_option( 'hotel_chain_video_categories', array() );
+		$tags       = get_option( 'hotel_chain_video_tags', array() );
+
+		if ( ! is_array( $categories ) ) {
+			$categories = array();
+		}
+		if ( ! is_array( $tags ) ) {
+			$tags = array();
+		}
+
+		// Normalize categories (split comma-separated values).
+		$normalized_categories = array();
+		foreach ( $categories as $line ) {
+			$parts = explode( ',', (string) $line );
+			foreach ( $parts as $part ) {
+				$part = trim( $part );
+				if ( '' !== $part ) {
+					$normalized_categories[] = $part;
+				}
+			}
+		}
+		$normalized_categories = array_values( array_unique( $normalized_categories ) );
+
+		// Normalize tags (split comma-separated values).
+		$normalized_tags = array();
+		foreach ( $tags as $line ) {
+			$parts = explode( ',', (string) $line );
+			foreach ( $parts as $part ) {
+				$part = trim( $part );
+				if ( '' !== $part ) {
+					$normalized_tags[] = $part;
+				}
+			}
+		}
+		$normalized_tags = array_values( array_unique( $normalized_tags ) );
+
+		// Insert categories.
+		$sort_order = 0;
+		foreach ( $normalized_categories as $category ) {
+			$wpdb->insert(
+				$table,
+				array(
+					'name'       => sanitize_text_field( $category ),
+					'type'       => 'category',
+					'sort_order' => $sort_order++,
+				),
+				array( '%s', '%s', '%d' )
+			);
+		}
+
+		// Insert tags.
+		$sort_order = 0;
+		foreach ( $normalized_tags as $tag ) {
+			$wpdb->insert(
+				$table,
+				array(
+					'name'       => sanitize_text_field( $tag ),
+					'type'       => 'tag',
+					'sort_order' => $sort_order++,
+				),
+				array( '%s', '%s', '%d' )
+			);
+		}
+
+		// Optionally delete old options after migration (commented out for safety).
+		// delete_option( 'hotel_chain_video_categories' );
+		// delete_option( 'hotel_chain_video_tags' );
 	}
 
 	/**

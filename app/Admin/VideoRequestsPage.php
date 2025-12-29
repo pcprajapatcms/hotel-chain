@@ -28,7 +28,7 @@ class VideoRequestsPage implements ServiceProviderInterface {
 	}
 
 	/**
-	 * Register submenu under Hotel Accounts.
+	 * Register main menu page.
 	 *
 	 * @return void
 	 */
@@ -41,13 +41,14 @@ class VideoRequestsPage implements ServiceProviderInterface {
 			$menu_title .= sprintf( ' <span class="awaiting-mod">%d</span>', $pending_count );
 		}
 
-		add_submenu_page(
-			'hotel-chain-accounts',
+		add_menu_page(
 			__( 'Video Requests', 'hotel-chain' ),
 			$menu_title,
 			'manage_options',
 			'hotel-video-requests',
-			array( $this, 'render_page' )
+			array( $this, 'render_page' ),
+			'dashicons-email-alt',
+			8
 		);
 	}
 

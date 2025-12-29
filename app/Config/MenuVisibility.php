@@ -24,6 +24,20 @@ class MenuVisibility {
 	 */
 	public static function get_hidden_menus(): array {
 		return array(
+			// Hide menus for admin role.
+			'administrator' => array(
+				'index.php',
+				'edit.php?post_type=page',
+				'edit.php',
+				'upload.php',
+				'edit-comments.php',
+				'themes.php',
+				'plugins.php',
+				'users.php',
+				'tools.php',
+				'options-general.php',
+				'hotel-database-tools',
+			),
 			// Hide menus for Hotel role.
 			'hotel' => array(
 				'index.php',

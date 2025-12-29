@@ -264,3 +264,7 @@ li.wp-menu-separator {
 		padding-right: 15px;
     }
 }
+
+#adminmenu, #adminmenu .wp-submenu, #adminmenuback, #adminmenuwrap {
+    width: 210px;
+}

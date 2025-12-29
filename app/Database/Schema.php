@@ -34,6 +34,7 @@ class Schema {
 			'video_metadata'          => self::get_table_name( 'video_metadata' ),
 			'guests'                  => self::get_table_name( 'guests' ),
 			'video_views'             => self::get_table_name( 'video_views' ),
+			'video_taxonomy'          => self::get_table_name( 'video_taxonomy' ),
 		);
 	}
 
@@ -219,6 +220,30 @@ class Schema {
 	}
 
 	/**
+	 * Get SQL for creating video_taxonomy table.
+	 *
+	 * @return string SQL statement.
+	 */
+	public static function get_video_taxonomy_table_sql(): string {
+		global $wpdb;
+		$table_name      = self::get_table_name( 'video_taxonomy' );
+		$charset_collate = $wpdb->get_charset_collate();
+
+		return "CREATE TABLE IF NOT EXISTS {$table_name} (
+			id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			name varchar(255) NOT NULL,
+			type varchar(20) NOT NULL COMMENT 'category or tag',
+			sort_order int(11) DEFAULT 0,
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id),
+			UNIQUE KEY name_type (name, type),
+			KEY type (type),
+			KEY sort_order (sort_order)
+		) {$charset_collate};";
+	}
+
+	/**
 	 * Get all table creation SQL statements.
 	 *
 	 * @return array Array of SQL statements.
@@ -230,6 +255,7 @@ class Schema {
 			'video_metadata'          => self::get_video_metadata_table_sql(),
 			'guests'                  => self::get_guests_table_sql(),
 			'video_views'             => self::get_video_views_table_sql(),
+			'video_taxonomy'          => self::get_video_taxonomy_table_sql(),
 		);
 	}
 }

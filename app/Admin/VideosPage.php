@@ -30,16 +30,14 @@ class VideosPage implements ServiceProviderInterface {
 		 * @return void
 		 */
 	public function register_menu(): void {
-		// Attach under the main Hotel Accounts menu for consistency.
-		$parent_slug = 'hotel-chain-accounts';
-
-		add_submenu_page(
-			$parent_slug,
+		add_menu_page(
 			__( 'Upload Videos', 'hotel-chain' ),
 			__( 'Upload Videos', 'hotel-chain' ),
 			'manage_options',
 			'hotel-video-upload',
-			array( $this, 'render_page' )
+			array( $this, 'render_page' ),
+			'dashicons-upload',
+			6
 		);
 	}
 
@@ -218,27 +216,9 @@ class VideosPage implements ServiceProviderInterface {
 		$video_err = isset( $_GET['video_err'] ) ? sanitize_text_field( wp_unslash( $_GET['video_err'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		// Categories & suggested tags come from the dedicated Video Taxonomy settings page.
-		$raw_categories   = get_option( 'hotel_chain_video_categories', array() );
-		$tags_suggestions = get_option( 'hotel_chain_video_tags', array() );
-
-		// Normalise categories so a line like \"Onboarding, Safety\" becomes two options.
-		$categories = array();
-		if ( is_array( $raw_categories ) ) {
-			foreach ( $raw_categories as $line ) {
-				$parts = explode( ',', (string) $line );
-				foreach ( $parts as $part ) {
-					$part = trim( $part );
-					if ( '' !== $part ) {
-						$categories[] = $part;
-					}
-				}
-			}
-		}
-		$categories = array_values( array_unique( $categories ) );
-
-		if ( ! is_array( $tags_suggestions ) ) {
-			$tags_suggestions = array();
-		}
+		$taxonomy_repository = new \HotelChain\Repositories\VideoTaxonomyRepository();
+		$categories          = $taxonomy_repository->get_category_names();
+		$tags_suggestions    = $taxonomy_repository->get_tag_names();
 		?>
 		<div class="wrap w-8/12 mx-auto">
 			<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Upload New Video', 'hotel-chain' ); ?></h1>
