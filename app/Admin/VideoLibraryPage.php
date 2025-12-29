@@ -11,6 +11,7 @@ use HotelChain\Contracts\ServiceProviderInterface;
 use HotelChain\Repositories\VideoRepository;
 use HotelChain\Repositories\HotelVideoAssignmentRepository;
 use HotelChain\Repositories\HotelRepository;
+use HotelChain\Repositories\VideoTaxonomyRepository;
 use HotelChain\Database\Schema;
 
 /**
@@ -35,18 +36,19 @@ class VideoLibraryPage implements ServiceProviderInterface {
 	}
 
 	/**
-	 * Register submenu under Hotel Accounts.
+	 * Register main menu page.
 	 *
 	 * @return void
 	 */
 	public function register_menu(): void {
-		add_submenu_page(
-			'hotel-chain-accounts',
+		add_menu_page(
 			__( 'System Video Library', 'hotel-chain' ),
 			__( 'System Library', 'hotel-chain' ),
 			'manage_options',
 			'hotel-video-library',
-			array( $this, 'render_page' )
+			array( $this, 'render_page' ),
+			'dashicons-video-alt3',
+			5
 		);
 	}
 
@@ -72,6 +74,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		$video_repository      = new VideoRepository();
 		$assignment_repository = new HotelVideoAssignmentRepository();
 		$hotel_repository      = new HotelRepository();
+		$taxonomy_repository   = new VideoTaxonomyRepository();
 
 		$video = $video_repository->get_by_video_id( $video_id );
 
@@ -119,26 +122,8 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		$avg_completion = $video->avg_completion_rate ? number_format( $video->avg_completion_rate, 1 ) . '%' : '0%';
 
 		// Categories and tags for form.
-		$categories = get_option( 'hotel_chain_video_categories', array() );
-		if ( ! is_array( $categories ) ) {
-			$categories = array();
-		}
-		$normalised_categories = array();
-		foreach ( $categories as $line ) {
-			$parts = explode( ',', (string) $line );
-			foreach ( $parts as $part ) {
-				$part = trim( $part );
-				if ( '' !== $part ) {
-					$normalised_categories[] = $part;
-				}
-			}
-		}
-		$normalised_categories = array_values( array_unique( $normalised_categories ) );
-
-		$tags_suggestions = get_option( 'hotel_chain_video_tags', array() );
-		if ( ! is_array( $tags_suggestions ) ) {
-			$tags_suggestions = array();
-		}
+		$normalised_categories = $taxonomy_repository->get_category_names();
+		$tags_suggestions      = $taxonomy_repository->get_tag_names();
 
 		// Hotels for assignment table.
 		$all_hotels      = $hotel_repository->get_all(
@@ -964,23 +949,9 @@ class VideoLibraryPage implements ServiceProviderInterface {
 
 		$total_videos = $video_repository->get_count( $selected_cat );
 
-		// Get categories from options (Video Taxonomy page).
-		$categories = get_option( 'hotel_chain_video_categories', array() );
-		if ( ! is_array( $categories ) ) {
-			$categories = array();
-		}
-		// Normalise categories (split comma-separated).
-		$normalised_categories = array();
-		foreach ( $categories as $line ) {
-			$parts = explode( ',', (string) $line );
-			foreach ( $parts as $part ) {
-				$part = trim( $part );
-				if ( '' !== $part ) {
-					$normalised_categories[] = $part;
-				}
-			}
-		}
-		$normalised_categories = array_values( array_unique( $normalised_categories ) );
+		// Get categories from custom table.
+		$taxonomy_repository   = new VideoTaxonomyRepository();
+		$normalised_categories = $taxonomy_repository->get_category_names();
 		?>
 		<div class="wrap w-8/12 mx-auto">
 			<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'System Video Library', 'hotel-chain' ); ?></h1>
@@ -1323,38 +1294,59 @@ class VideoLibraryPage implements ServiceProviderInterface {
 						// Mark as being initialized to prevent double initialization
 						textarea.setAttribute('data-mce-initialized', 'true');
 						
-						// Wait for WordPress editor API to be available
-						const initEditor = function() {
+						// Function to initialize editor with proper error handling
+						const initEditor = function(attempts) {
+							attempts = attempts || 0;
+							
+							// Give up after 30 attempts (1.5 seconds)
+							if (attempts > 30) {
+								console.warn('TinyMCE initialization timeout - editor will remain as textarea');
+								return;
+							}
+							
+							// Check if WordPress editor API is available
 							if (typeof wp === 'undefined' || !wp.editor || !wp.editor.initialize) {
-								setTimeout(initEditor, 50);
+								setTimeout(function() { initEditor(attempts + 1); }, 50);
+								return;
+							}
+							
+							// Check if TinyMCE base is loaded
+							if (typeof tinymce === 'undefined') {
+								setTimeout(function() { initEditor(attempts + 1); }, 50);
 								return;
 							}
 							
 							// Remove any existing editor instance
-							if (typeof tinymce !== 'undefined' && tinymce.get(editorId)) {
+							if (tinymce.get(editorId)) {
 								tinymce.remove('#' + editorId);
 							}
 							
-							// Initialize using WordPress's editor API
-							wp.editor.initialize(editorId, {
-								tinymce: {
-									wpautop: true,
-									plugins: 'WordPress, wplink, textcolor, colorpicker, paste',
-									toolbar1: 'bold,italic,underline,strikethrough,|,bullist,numlist,|,blockquote,|,alignleft,aligncenter,alignright,|,link,unlink,|,forecolor,|,undo,redo,|,fullscreen',
-									menubar: false,
-									height: 300,
-									setup: function(editor) {
-										editor.on('init', function() {
-											textarea.classList.add('mce-initialized');
-										});
-									}
-								},
-								quicktags: true
-							});
+							// Initialize using WordPress's editor API with default settings
+							try {
+								// Use default WordPress editor settings (similar to wp_editor)
+								wp.editor.initialize(editorId, {
+									tinymce: {
+										wpautop: true,
+										menubar: false,
+										height: 300,
+										setup: function(editor) {
+											editor.on('init', function() {
+												textarea.classList.add('mce-initialized');
+											});
+										}
+									},
+									quicktags: true
+								});
+							} catch (e) {
+								console.warn('TinyMCE initialization error:', e);
+								// Editor will remain as plain textarea on error
+							}
 						};
 						
-						// Start initialization
-						initEditor();
+						// Start initialization after a short delay to ensure DOM is ready
+						setTimeout(function() {
+							initEditor(0);
+						}, 100);
 					}
 				}
 

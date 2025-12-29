@@ -242,24 +242,15 @@ class HotelDashboard implements ServiceProviderInterface {
 				)
 			);
 
-			// Get total views and completions for completion rate.
-			$total_views = $wpdb->get_var(
+			// Get average completion percentage (based on actual progress, not just completed views).
+			$avg_completion_pct = (float) $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$video_views_table} WHERE video_id = %d AND hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT COALESCE(AVG(completion_percentage), 0) FROM {$video_views_table} WHERE video_id = %d AND hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$video->video_id,
 					$hotel->id
 				)
 			);
-
-			$total_completions = $wpdb->get_var(
-				$wpdb->prepare(
-					"SELECT COUNT(*) FROM {$video_views_table} WHERE video_id = %d AND hotel_id = %d AND completed = 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					$video->video_id,
-					$hotel->id
-				)
-			);
-
-			$completion_rate = $total_views > 0 ? round( ( (int) $total_completions / (int) $total_views ) * 100 ) : 0;
+			$completion_rate = round( $avg_completion_pct, 0 );
 
 			$top_meditations_data[] = array(
 				'video_id'   => $video->video_id,

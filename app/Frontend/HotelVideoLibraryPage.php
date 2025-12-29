@@ -59,11 +59,13 @@ class HotelVideoLibraryPage {
 		}
 
 		// Apply filters and calculate statistics.
-		$videos                 = array();
+		global $wpdb;
+		$video_views_table    = $wpdb->prefix . 'hotel_chain_video_views';
+		$videos                = array();
 		$total_duration_seconds = 0;
-		$total_completions      = 0;
-		$total_views            = 0;
-		$active_videos          = 0;
+		$total_completions     = 0;
+		$total_views           = 0;
+		$active_videos         = 0;
 
 		foreach ( $all_videos as $video_meta ) {
 			$video_id_key = (string) $video_meta->video_id;
@@ -97,8 +99,25 @@ class HotelVideoLibraryPage {
 
 			$videos[]                = $video_meta;
 			$total_duration_seconds += (int) $video_meta->duration_seconds;
-			$total_completions      += (int) $video_meta->total_completions;
-			$total_views            += (int) $video_meta->total_views;
+			
+			// Get completion stats for this video for this hotel.
+			$video_completions = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$video_views_table} WHERE video_id = %d AND hotel_id = %d AND completed = 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$video_meta->video_id,
+					$hotel->id
+				)
+			);
+			$video_views = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$video_views_table} WHERE video_id = %d AND hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$video_meta->video_id,
+					$hotel->id
+				)
+			);
+			
+			$total_completions += $video_completions;
+			$total_views       += $video_views;
 
 			if ( $effectively_active ) {
 				++$active_videos;
@@ -108,7 +127,15 @@ class HotelVideoLibraryPage {
 		// Calculate statistics.
 		$total_videos         = count( $videos );
 		$total_duration_hours = round( $total_duration_seconds / 3600, 1 );
-		$avg_completion       = $total_videos > 0 && $total_views > 0 ? round( ( $total_completions / $total_views ) * 100, 0 ) : 0;
+		
+		// Calculate average completion percentage across all videos for this hotel (based on actual progress).
+		$avg_completion = (float) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COALESCE(AVG(completion_percentage), 0) FROM {$video_views_table} WHERE hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$hotel->id
+			)
+		);
+		$avg_completion = round( $avg_completion, 0 );
 
 		// Get distinct categories from all videos.
 		$categories = array();
@@ -130,7 +157,10 @@ class HotelVideoLibraryPage {
 		};
 
 		// Prepare video data for JavaScript (for dynamic panel display).
-		$videos_data = array();
+		global $wpdb;
+		$video_views_table = $wpdb->prefix . 'hotel_chain_video_views';
+		$videos_data       = array();
+		
 		foreach ( $all_videos as $vid ) {
 			$video_id_key = (string) $vid->video_id;
 
@@ -140,11 +170,28 @@ class HotelVideoLibraryPage {
 			} elseif ( $vid->thumbnail_url ) {
 				$thumb_url = $vid->thumbnail_url;
 			}
-			
+
 			// Get video file URL.
 			$video_url = $vid->video_file_id ? wp_get_attachment_url( $vid->video_file_id ) : '';
-			
-			$completion = $vid->total_views > 0 ? round( ( $vid->total_completions / $vid->total_views ) * 100, 0 ) : 0;
+
+			// Get average completion percentage for this video for this hotel (based on actual progress, not just completed).
+			$avg_completion_pct = (float) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COALESCE(AVG(completion_percentage), 0) FROM {$video_views_table} WHERE video_id = %d AND hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$vid->video_id,
+					$hotel->id
+				)
+			);
+			$completion = round( $avg_completion_pct, 0 );
+
+			// Get total completions (100% complete) for this video for this hotel.
+			$total_completions = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$video_views_table} WHERE video_id = %d AND hotel_id = %d AND completed = 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$vid->video_id,
+					$hotel->id
+				)
+			);
 
 			// Get assignment status for this hotel.
 			$assignment        = isset( $assignment_map[ $video_id_key ] ) ? $assignment_map[ $video_id_key ] : null;
@@ -159,7 +206,7 @@ class HotelVideoLibraryPage {
 				'duration'          => $format_duration( $vid->duration_seconds ),
 				'thumbnail_url'     => $thumb_url,
 				'video_url'         => $video_url,
-				'total_completions' => number_format_i18n( $vid->total_completions ),
+				'total_completions' => number_format_i18n( $total_completions ),
 				'avg_completion'    => $completion . '%',
 				'assignment_status' => $assignment_status,
 				'status_by_hotel'   => $status_by_hotel,

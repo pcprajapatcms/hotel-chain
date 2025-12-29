@@ -136,7 +136,7 @@ class HotelsPage implements ServiceProviderInterface {
 			'hotel-chain-accounts',
 			array( $this, 'render_page' ),
 			'dashicons-building',
-			30
+			4
 		);
 	}
 
