@@ -13,6 +13,7 @@ use HotelChain\Repositories\GuestRepository;
 use HotelChain\Repositories\VideoRepository;
 use HotelChain\Repositories\HotelVideoAssignmentRepository;
 use HotelChain\Database\Schema;
+use HotelChain\Support\StyleSettings;
 
 /**
  * Admin Dashboard page.
@@ -147,14 +148,24 @@ class AdminDashboardPage implements ServiceProviderInterface {
 		);
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
+		$logo_url = StyleSettings::get_logo_url();
 		?>
-		<div class="flex-1 overflow-auto p-4 lg:p-8">
-			<div class="w-12/12 md:w-10/12 xl:w-9/12 mx-auto p-0">
-				<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'ADMIN – Dashboard', 'hotel-chain' ); ?></h1>
-				<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'System-wide overview and key metrics across all hotels', 'hotel-chain' ); ?></p>
+		<div class="flex-1 overflow-auto p-4 lg:p-8 lg:px-0">
+			<div class="w-12/12 md:w-10/12 mx-auto p-0">
+				<div class="flex items-center gap-4 mb-6 pb-3 border-b border-solid border-gray-400">
+					<?php if ( ! empty( $logo_url ) ) : ?>
+						<div class="flex-shrink-0">
+							<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php esc_attr_e( 'Logo', 'hotel-chain' ); ?>" class="h-12 md:h-16 w-auto object-contain" />
+						</div>
+					<?php endif; ?>
+					<div class="flex-1">
+						<h1><?php esc_html_e( 'ADMIN – Dashboard', 'hotel-chain' ); ?></h1>
+						<p class="text-slate-600"><?php esc_html_e( 'System-wide overview and key metrics across all hotels', 'hotel-chain' ); ?></p>
+					</div>
+				</div>
 				<div class="space-y-6">
 					<!-- Statistics Cards -->
-					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+					<div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
 						<!-- Total Hotels -->
 						<div class="bg-white rounded p-4 border border-solid border-gray-400">
 							<div class="flex items-center gap-3 mb-2">
@@ -323,8 +334,8 @@ class AdminDashboardPage implements ServiceProviderInterface {
 									<?php
 									$watch_hours = round( (int) $hotel->total_watch_seconds / 3600 );
 									?>
-									<div class="border-2 border-gray-300 rounded-lg p-4 bg-white">
-										<div class="mb-3 pb-3 border-b-2 border-gray-300">
+									<div class="border border-solid border-gray-400 rounded-lg p-4 bg-white">
+										<div class="mb-3 pb-3 border-b border-gray-400">
 											<div class="font-semibold text-base mb-1" style="color: rgb(60, 56, 55);"><?php echo esc_html( $hotel->hotel_name ); ?></div>
 											<div class="text-sm" style="color: rgb(122, 122, 122);"><?php echo esc_html( $hotel->hotel_code ); ?></div>
 										</div>
@@ -354,7 +365,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 							<!-- Desktop Table View -->
 							<div class="hidden md:block overflow-x-auto">
 								<div class="border border-solid border-gray-400 rounded overflow-hidden min-w-[600px]">
-									<div class="bg-gray-200 border-b-2 border-gray-300 grid grid-cols-6 gap-4 p-3">
+									<div class="bg-gray-200 border-b border-solid border-gray-400 grid grid-cols-6 gap-4 p-3">
 										<div class="col-span-2 font-semibold"><?php esc_html_e( 'Hotel Name', 'hotel-chain' ); ?></div>
 										<div class="font-semibold"><?php esc_html_e( 'Total Guests', 'hotel-chain' ); ?></div>
 										<div class="font-semibold"><?php esc_html_e( 'Active Guests', 'hotel-chain' ); ?></div>

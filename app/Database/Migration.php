@@ -21,7 +21,7 @@ class Migration implements ServiceProviderInterface {
 	/**
 	 * Current database version.
 	 */
-	const DB_VERSION = '1.4.0';
+	const DB_VERSION = '1.5.0';
 
 	/**
 	 * Register service hooks.
@@ -262,6 +262,128 @@ class Migration implements ServiceProviderInterface {
 		// Optionally delete old options after migration (commented out for safety).
 		// delete_option( 'hotel_chain_video_categories' );
 		// delete_option( 'hotel_chain_video_tags' );
+
+		// Migrate system settings from wp_options to system_settings table.
+		$this->migrate_system_settings();
+	}
+
+	/**
+	 * Migrate system settings from wp_options to system_settings table.
+	 *
+	 * @return void
+	 */
+	private function migrate_system_settings(): void {
+		global $wpdb;
+
+		$settings_table = Schema::get_table_name( 'system_settings' );
+
+		// Check if table exists and has data.
+		$existing = $wpdb->get_row( "SELECT * FROM {$settings_table} LIMIT 1" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		// If settings already exist in table, skip migration.
+		if ( $existing ) {
+			return;
+		}
+
+		// Get settings from wp_options.
+		$old_settings = get_option( 'hotel_chain_system_settings', array() );
+
+		if ( empty( $old_settings ) || ! is_array( $old_settings ) ) {
+			// Insert empty row with default structure.
+			$wpdb->insert(
+				$settings_table,
+				array(
+					'account_settings' => wp_json_encode( array() ),
+					'content_settings' => wp_json_encode( array() ),
+					'email_settings'   => wp_json_encode( array() ),
+					'style_settings'   => wp_json_encode( array() ),
+				),
+				array( '%s', '%s', '%s', '%s' )
+			);
+			return;
+		}
+
+		// Organize settings into categories.
+		$account_settings = array(
+			'default_guest_duration'    => $old_settings['default_guest_duration'] ?? 30,
+			'expiry_warning_period'      => $old_settings['expiry_warning_period'] ?? 3,
+			'allow_guest_registration'   => $old_settings['allow_guest_registration'] ?? true,
+			'require_email_verification' => $old_settings['require_email_verification'] ?? true,
+			'auto_approve_requests'       => $old_settings['auto_approve_requests'] ?? false,
+			'allow_reactivation'         => $old_settings['allow_reactivation'] ?? true,
+		);
+
+		$content_settings = array(
+			'max_video_size'        => $old_settings['max_video_size'] ?? 2,
+			'signed_url_expiration' => $old_settings['signed_url_expiration'] ?? 1,
+			'supported_formats'      => $old_settings['supported_formats'] ?? array( 'MP4', 'MOV', 'AVI', 'WebM' ),
+			'enable_download'        => $old_settings['enable_download'] ?? false,
+			'auto_play_next'         => $old_settings['auto_play_next'] ?? true,
+			'track_analytics'        => $old_settings['track_analytics'] ?? true,
+		);
+
+		$email_settings = array(
+			'from_email'                      => $old_settings['from_email'] ?? 'noreply@videoplatform.com',
+			'from_name'                       => $old_settings['from_name'] ?? 'Video Platform',
+			'email_registration_confirmation' => $old_settings['email_registration_confirmation'] ?? true,
+			'email_access_approved'            => $old_settings['email_access_approved'] ?? true,
+			'email_expiry_warning'             => $old_settings['email_expiry_warning'] ?? true,
+			'email_admin_alerts'               => $old_settings['email_admin_alerts'] ?? true,
+		);
+
+		// Migrate old font settings to new typography structure.
+		$old_primary_font = $old_settings['primary_font'] ?? 'Inter';
+		$old_primary_font_url = $old_settings['primary_font_url'] ?? '';
+		$old_secondary_font = $old_settings['secondary_font'] ?? 'Playfair Display';
+		$old_secondary_font_url = $old_settings['secondary_font_url'] ?? '';
+
+		$style_settings = array(
+			'typography_h1_font'    => $old_secondary_font,
+			'typography_h1_font_url' => $old_secondary_font_url,
+			'typography_h2_font'    => $old_secondary_font,
+			'typography_h2_font_url' => $old_secondary_font_url,
+			'typography_h3_font'    => $old_secondary_font,
+			'typography_h3_font_url' => $old_secondary_font_url,
+			'typography_h4_font'    => $old_secondary_font,
+			'typography_h4_font_url' => $old_secondary_font_url,
+			'typography_h5_font'    => $old_secondary_font,
+			'typography_h5_font_url' => $old_secondary_font_url,
+			'typography_h6_font'    => $old_secondary_font,
+			'typography_h6_font_url' => $old_secondary_font_url,
+			'typography_p_font'     => $old_primary_font,
+			'typography_p_font_url'  => $old_primary_font_url,
+			'logo_id'               => $old_settings['logo_id'] ?? 0,
+			'logo_url'              => $old_settings['logo_url'] ?? '',
+			'favicon_id'            => $old_settings['favicon_id'] ?? 0,
+			'favicon_url'           => $old_settings['favicon_url'] ?? '',
+			'font_size_base'        => $old_settings['font_size_base'] ?? 16,
+			'font_size_small'       => $old_settings['font_size_small'] ?? 14,
+			'font_size_large'       => $old_settings['font_size_large'] ?? 18,
+			'font_size_h1'          => $old_settings['font_size_h1'] ?? 32,
+			'font_size_h2'          => $old_settings['font_size_h2'] ?? 28,
+			'font_size_h3'          => $old_settings['font_size_h3'] ?? 24,
+			'font_size_h4'          => $old_settings['font_size_h4'] ?? 20,
+			'font_size_h5'          => $old_settings['font_size_h5'] ?? 18,
+			'font_size_h6'          => $old_settings['font_size_h6'] ?? 16,
+			'button_primary_color'  => $old_settings['button_primary_color'] ?? '#1f88ff',
+			'button_secondary_color' => $old_settings['button_secondary_color'] ?? '#6b7280',
+			'button_success_color'  => $old_settings['button_success_color'] ?? '#10b981',
+			'button_info_color'     => $old_settings['button_info_color'] ?? '#3b82f6',
+			'button_warning_color'  => $old_settings['button_warning_color'] ?? '#f59e0b',
+			'button_danger_color'   => $old_settings['button_danger_color'] ?? '#ef4444',
+		);
+
+		// Insert into new table.
+		$wpdb->insert(
+			$settings_table,
+			array(
+				'account_settings' => wp_json_encode( $account_settings ),
+				'content_settings' => wp_json_encode( $content_settings ),
+				'email_settings'   => wp_json_encode( $email_settings ),
+				'style_settings'   => wp_json_encode( $style_settings ),
+			),
+			array( '%s', '%s', '%s', '%s' )
+		);
 	}
 
 	/**

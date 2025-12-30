@@ -13,6 +13,7 @@ use HotelChain\Repositories\GuestRepository;
 use HotelChain\Repositories\VideoRepository;
 use HotelChain\Repositories\HotelVideoAssignmentRepository;
 use HotelChain\Database\Schema;
+use HotelChain\Support\StyleSettings;
 
 /**
  * System Analytics page.
@@ -250,13 +251,23 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 			)
 		);
 
+		$logo_url = StyleSettings::get_logo_url();
 		?>
-		<div class="flex-1 overflow-auto p-4 lg:p-8">
-			<div class="w-12/12 md:w-10/12 xl:w-9/12 mx-auto">
+		<div class="flex-1 overflow-auto p-4 lg:p-8 lg:px-0">
+			<div class="w-12/12 md:w-10/12 mx-auto p-0">
 				<div class="space-y-6">
 					<div class="mb-6 pb-4 border-b border-solid border-gray-400">
-						<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'ADMIN – System Analytics', 'hotel-chain' ); ?></h1>
-						<p class="text-slate-600 text-lg"><?php esc_html_e( 'Cross-hotel analytics and engagement metrics', 'hotel-chain' ); ?></p>
+						<div class="flex items-center gap-4">
+							<?php if ( ! empty( $logo_url ) ) : ?>
+								<div class="flex-shrink-0">
+									<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php esc_attr_e( 'Logo', 'hotel-chain' ); ?>" class="h-12 md:h-16 w-auto object-contain" />
+								</div>
+							<?php endif; ?>
+							<div class="flex-1">
+								<h1><?php esc_html_e( 'ADMIN – System Analytics', 'hotel-chain' ); ?></h1>
+								<p class="text-slate-600"><?php esc_html_e( 'Cross-hotel analytics and engagement metrics', 'hotel-chain' ); ?></p>
+							</div>
+						</div>
 					</div>
 
 					<!-- Date Range Selector -->

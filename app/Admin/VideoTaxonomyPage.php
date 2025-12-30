@@ -9,6 +9,7 @@ namespace HotelChain\Admin;
 
 use HotelChain\Contracts\ServiceProviderInterface;
 use HotelChain\Repositories\VideoTaxonomyRepository;
+use HotelChain\Support\StyleSettings;
 
 /**
  * Video taxonomy settings (categories & tags stored in custom table).
@@ -56,11 +57,21 @@ class VideoTaxonomyPage implements ServiceProviderInterface {
 		$tags          = $taxonomy_repo->get_tags();
 
 		$updated = isset( $_GET['updated'] ) ? absint( $_GET['updated'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$logo_url = StyleSettings::get_logo_url();
 		?>
-		<div class="flex-1 overflow-auto p-4 lg:p-8">
-			<div class="wrap w-12/12 md:w-10/12 xl:w-9/12 mx-auto mt-0">
-				<h1 class="ext-2xl font-bold mb-2 pt-0"><?php esc_html_e( 'Video Categories & Tags', 'hotel-chain' ); ?></h1>
-				<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-300 pb-3"><?php esc_html_e( 'Manage reusable categories and tags for training videos. Drag to reorder.', 'hotel-chain' ); ?></p>
+		<div class="flex-1 overflow-auto p-4 lg:p-8 lg:px-0">
+			<div class="w-12/12 md:w-10/12 mx-auto p-0">
+				<div class="flex items-center gap-4 mb-6 pb-3 border-b border-solid border-gray-300">
+					<?php if ( ! empty( $logo_url ) ) : ?>
+						<div class="flex-shrink-0">
+							<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php esc_attr_e( 'Logo', 'hotel-chain' ); ?>" class="h-12 md:h-16 w-auto object-contain" />
+						</div>
+					<?php endif; ?>
+					<div class="flex-1">
+						<h1><?php esc_html_e( 'Video Categories & Tags', 'hotel-chain' ); ?></h1>
+						<p class="text-slate-600"><?php esc_html_e( 'Manage reusable categories and tags for training videos. Drag to reorder.', 'hotel-chain' ); ?></p>
+					</div>
+				</div>
 
 				<?php if ( $updated ) : ?>
 					<div class="bg-green-50 border border-solid border-green-300 rounded p-3 mb-4 text-sm text-green-900">

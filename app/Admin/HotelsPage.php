@@ -9,6 +9,7 @@ namespace HotelChain\Admin;
 
 use HotelChain\Contracts\ServiceProviderInterface;
 use HotelChain\Repositories\HotelRepository;
+use HotelChain\Support\StyleSettings;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
@@ -477,11 +478,21 @@ class HotelsPage implements ServiceProviderInterface {
 			delete_transient( $form_data_key );
 		}
 
-		?>
-		<div class="flex-1 overflow-auto p-4 lg:p-8">
-			<div class="wrap w-12/12 md:w-10/12 xl:w-9/12 mx-auto mt-0">
-				<h1 class="text-2xl font-bold mb-2 pt-0"><?php esc_html_e( 'Hotel Account Management', 'hotel-chain' ); ?></h1>
-				<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'Create and manage hotel accounts with unique registration URLs.', 'hotel-chain' ); ?></p>
+		$logo_url = StyleSettings::get_logo_url();
+		?>	
+		<div class="flex-1 overflow-auto p-4 lg:p-8 lg:px-0">
+			<div class="w-12/12 md:w-10/12 mx-auto p-0">
+				<div class="flex items-center gap-4 mb-6 pb-3 border-b border-solid border-gray-400">
+					<?php if ( ! empty( $logo_url ) ) : ?>
+						<div class="flex-shrink-0">
+							<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php esc_attr_e( 'Logo', 'hotel-chain' ); ?>" class="h-12 md:h-16 w-auto object-contain" />
+						</div>
+					<?php endif; ?>
+					<div class="flex-1">
+						<h1><?php esc_html_e( 'Hotel Account Management', 'hotel-chain' ); ?></h1>
+						<p class="text-slate-600"><?php esc_html_e( 'Create and manage hotel accounts with unique registration URLs.', 'hotel-chain' ); ?></p>
+					</div>
+				</div>
 
 				<?php if ( $created_id ) : ?>
 					<?php
@@ -759,7 +770,7 @@ class HotelsPage implements ServiceProviderInterface {
 						</p>
 					<?php else : ?>
 						<div class="border border-solid border-gray-400 rounded overflow-x-auto">
-							<div class="min-w-full hotel-table-desktop">
+							<div class="min-w-full hidden md:block hotel-table-desktop">
 								<div class="bg-gray-200 border-b-2 border-gray-300 grid grid-cols-12 gap-4 p-3">
 									<div class="col-span-3"><?php esc_html_e( 'Hotel Name', 'hotel-chain' ); ?></div>
 									<div class="col-span-2"><?php esc_html_e( 'Code', 'hotel-chain' ); ?></div>
@@ -855,7 +866,7 @@ class HotelsPage implements ServiceProviderInterface {
 								<?php endforeach; ?>
 							</div>
 
-							<div class="divide-y-2 divide-gray-300 hotel-table-mobile">
+							<div class="divide-y-2 divide-gray-300 block md:hidden hotel-table-mobile">
 								<?php foreach ( $hotels as $hotel ) : ?>
 									<?php
 									$code            = $hotel->hotel_code ?? '';

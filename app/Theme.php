@@ -16,6 +16,7 @@ use HotelChain\Setup\HotelRoutes;
 use HotelChain\Setup\MenuVisibility;
 use HotelChain\Setup\Roles;
 use HotelChain\Setup\Sidebars;
+use HotelChain\Setup\StyleSettingsService;
 use HotelChain\Setup\ThemeSupport;
 use HotelChain\Setup\Videos;
 use HotelChain\Support\AssetResolver;
@@ -29,6 +30,7 @@ use HotelChain\Admin\VideoRequestsPage;
 use HotelChain\Admin\DatabaseToolsPage;
 use HotelChain\Admin\AdminDashboardPage;
 use HotelChain\Admin\SystemAnalyticsPage;
+use HotelChain\Admin\SystemSettingsPage;
 use HotelChain\Frontend\HotelDashboard;
 use HotelChain\Frontend\HotelProfilePage;
 use HotelChain\Frontend\GuestRegistration;
@@ -75,6 +77,7 @@ class Theme {
 			new DatabaseToolsPage(),
 			new AdminDashboardPage(),
 			new SystemAnalyticsPage(),
+			new SystemSettingsPage(),
 			new HotelDashboard(),
 			new HotelProfilePage(),
 			new GuestRegistration(),
@@ -83,6 +86,7 @@ class Theme {
 			new Roles(),
 			new Sidebars(),
 			new MenuVisibility(),
+			new StyleSettingsService(),
 		);
 	}
 
