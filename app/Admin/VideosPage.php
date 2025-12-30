@@ -9,6 +9,7 @@ namespace HotelChain\Admin;
 
 use HotelChain\Contracts\ServiceProviderInterface;
 use HotelChain\Repositories\VideoRepository;
+use HotelChain\Support\StyleSettings;
 
 /**
  * Render Video upload admin page.
@@ -219,11 +220,21 @@ class VideosPage implements ServiceProviderInterface {
 		$taxonomy_repository = new \HotelChain\Repositories\VideoTaxonomyRepository();
 		$categories          = $taxonomy_repository->get_category_names();
 		$tags_suggestions    = $taxonomy_repository->get_tag_names();
+		$logo_url            = StyleSettings::get_logo_url();
 		?>
-		<div class="flex-1 overflow-auto p-4 lg:p-8">
-			<div class="wrap w-12/12 md:w-10/12 xl:w-9/12 mx-auto mt-0">
-				<h1 class="text-2xl font-bold mb-2 pt-0"><?php esc_html_e( 'Upload New Video', 'hotel-chain' ); ?></h1>
-				<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'Upload training and onboarding videos and organize them by category and tags.', 'hotel-chain' ); ?></p>
+		<div class="flex-1 overflow-auto p-4 lg:p-8 lg:px-0">
+			<div class="w-12/12 md:w-10/12 mx-auto p-0">
+				<div class="flex items-center gap-4 mb-6 pb-3 border-b border-solid border-gray-400">
+					<?php if ( ! empty( $logo_url ) ) : ?>
+						<div class="flex-shrink-0">
+							<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php esc_attr_e( 'Logo', 'hotel-chain' ); ?>" class="h-12 md:h-16 w-auto object-contain" />
+						</div>
+					<?php endif; ?>
+					<div class="flex-1">
+						<h1><?php esc_html_e( 'Upload New Video', 'hotel-chain' ); ?></h1>
+						<p class="text-slate-600"><?php esc_html_e( 'Upload training and onboarding videos and organize them by category and tags.', 'hotel-chain' ); ?></p>
+					</div>
+				</div>
 
 				<?php if ( $video_ok ) : ?>
 					<div class="bg-green-50 border-2 border-green-400 rounded p-4 mb-4">

@@ -92,7 +92,7 @@ class HotelEdit implements ServiceProviderInterface {
 			$message_type = 'error';
 		}
 		?>
-		<div class="wrap w-12/12 md:w-10/12 xl:w-8/12 mx-auto">
+		<div class="w-12/12 md:w-10/12 xl:w-8/12 mx-auto">
 			<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Edit Hotel Information', 'hotel-chain' ); ?></h1>
 			<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'Update hotel details and information.', 'hotel-chain' ); ?></p>
 

@@ -10,6 +10,7 @@ namespace HotelChain\Admin;
 use HotelChain\Contracts\ServiceProviderInterface;
 use HotelChain\Database\Schema;
 use HotelChain\Database\Migration;
+use HotelChain\Support\StyleSettings;
 
 /**
  * Database Tools admin page.
@@ -95,12 +96,22 @@ class DatabaseToolsPage implements ServiceProviderInterface {
 		$current_version = Migration::DB_VERSION;
 
 		$recreated = isset( $_GET['recreated'] ) ? absint( $_GET['recreated'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$logo_url  = StyleSettings::get_logo_url();
 		?>
-		<div class="wrap w-12/12 md:w-10/12 xl:w-8/12 mx-auto">
-			<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Database Tools', 'hotel-chain' ); ?></h1>
-			<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-300 pb-3">
-				<?php esc_html_e( 'View and manage custom database tables for the Hotel Chain theme.', 'hotel-chain' ); ?>
-			</p>
+		<div class="w-12/12 md:w-10/12 xl:w-8/12 mx-auto">
+			<div class="flex items-start gap-4 mb-6 pb-3 border-b border-solid border-gray-300">
+				<?php if ( ! empty( $logo_url ) ) : ?>
+					<div class="flex-shrink-0">
+						<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php esc_attr_e( 'Logo', 'hotel-chain' ); ?>" class="h-12 md:h-16 w-auto object-contain" />
+					</div>
+				<?php endif; ?>
+				<div class="flex-1">
+					<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Database Tools', 'hotel-chain' ); ?></h1>
+					<p class="text-slate-600 text-lg">
+						<?php esc_html_e( 'View and manage custom database tables for the Hotel Chain theme.', 'hotel-chain' ); ?>
+					</p>
+				</div>
+			</div>
 
 			<?php if ( $recreated ) : ?>
 				<div class="bg-green-50 border border-solid border-green-300 rounded p-3 mb-4 text-sm text-green-900">

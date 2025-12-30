@@ -13,6 +13,7 @@ use HotelChain\Repositories\HotelVideoAssignmentRepository;
 use HotelChain\Repositories\HotelRepository;
 use HotelChain\Repositories\VideoTaxonomyRepository;
 use HotelChain\Database\Schema;
+use HotelChain\Support\StyleSettings;
 
 /**
  * Render Video library admin page.
@@ -1015,11 +1016,21 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		// Get categories from custom table.
 		$taxonomy_repository   = new VideoTaxonomyRepository();
 		$normalised_categories = $taxonomy_repository->get_category_names();
+		$logo_url              = StyleSettings::get_logo_url();
 		?>
 		<div class="flex-1 overflow-auto p-4 lg:p-8">
-			<div class="w-12/12 md:w-10/12 xl:w-9/12 mx-auto mt-0">
-				<h1 class="text-2xl font-bold mb-2 pt-0"><?php esc_html_e( 'System Video Library', 'hotel-chain' ); ?></h1>
-				<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'Browse all videos available across the hotel chain.', 'hotel-chain' ); ?></p>
+			<div class="w-12/12 md:w-10/12 mx-auto p-0">
+				<div class="flex items-center gap-4 mb-6 pb-3 border-b border-solid border-gray-400">
+					<?php if ( ! empty( $logo_url ) ) : ?>
+						<div class="flex-shrink-0">
+							<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php esc_attr_e( 'Logo', 'hotel-chain' ); ?>" class="h-12 md:h-16 w-auto object-contain" />
+						</div>
+					<?php endif; ?>
+					<div class="flex-1">
+						<h1><?php esc_html_e( 'System Video Library', 'hotel-chain' ); ?></h1>
+						<p class="text-slate-600"><?php esc_html_e( 'Browse all videos available across the hotel chain.', 'hotel-chain' ); ?></p>
+					</div>
+				</div>
 
 				<?php if ( $video_updated ) : ?>
 					<div class="bg-green-50 border border-solid border-green-300 rounded p-3 mb-2 text-sm text-green-900">

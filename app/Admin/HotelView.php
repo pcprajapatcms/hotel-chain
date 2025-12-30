@@ -100,7 +100,7 @@ class HotelView implements ServiceProviderInterface {
 		$hotel_videos          = $assignment_repository->get_hotel_videos( $detail_hotel->id, array( 'status' => 'active' ) );
 		$videos_assigned       = count( $hotel_videos );
 		?>
-		<div class="wrap w-12/12 md:w-10/12 xl:w-8/12 mx-auto">
+		<div class="w-12/12 md:w-10/12 xl:w-8/12 mx-auto">
 		<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Hotel Detail View', 'hotel-chain' ); ?></h1>
 			<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'View and manage hotel details.', 'hotel-chain' ); ?></p>
 

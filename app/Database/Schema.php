@@ -35,6 +35,7 @@ class Schema {
 			'guests'                  => self::get_table_name( 'guests' ),
 			'video_views'             => self::get_table_name( 'video_views' ),
 			'video_taxonomy'          => self::get_table_name( 'video_taxonomy' ),
+			'system_settings'         => self::get_table_name( 'system_settings' ),
 		);
 	}
 
@@ -244,6 +245,28 @@ class Schema {
 	}
 
 	/**
+	 * Get SQL for creating system_settings table.
+	 *
+	 * @return string SQL statement.
+	 */
+	public static function get_system_settings_table_sql(): string {
+		global $wpdb;
+		$table_name      = self::get_table_name( 'system_settings' );
+		$charset_collate = $wpdb->get_charset_collate();
+
+		return "CREATE TABLE IF NOT EXISTS {$table_name} (
+			id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+			account_settings longtext DEFAULT NULL COMMENT 'JSON: Account & Access Settings',
+			content_settings longtext DEFAULT NULL COMMENT 'JSON: Video & Content Settings',
+			email_settings longtext DEFAULT NULL COMMENT 'JSON: Email & Notification Settings',
+			style_settings longtext DEFAULT NULL COMMENT 'JSON: Style Settings',
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			PRIMARY KEY (id)
+		) {$charset_collate};";
+	}
+
+	/**
 	 * Get all table creation SQL statements.
 	 *
 	 * @return array Array of SQL statements.
@@ -256,6 +279,7 @@ class Schema {
 			'guests'                  => self::get_guests_table_sql(),
 			'video_views'             => self::get_video_views_table_sql(),
 			'video_taxonomy'          => self::get_video_taxonomy_table_sql(),
+			'system_settings'         => self::get_system_settings_table_sql(),
 		);
 	}
 }
