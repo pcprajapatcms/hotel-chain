@@ -148,18 +148,15 @@ class AdminDashboardPage implements ServiceProviderInterface {
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		?>
-		<div class="flex-1 overflow-auto p-4 lg:p-8" style="background-color: rgb(240, 231, 215);">
-			<div class="max-w-7xl mx-auto">
+		<div class="flex-1 overflow-auto p-4 lg:p-8">
+			<div class="w-12/12 md:w-10/12 xl:w-9/12 mx-auto p-0">
+				<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'ADMIN – Dashboard', 'hotel-chain' ); ?></h1>
+				<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'System-wide overview and key metrics across all hotels', 'hotel-chain' ); ?></p>
 				<div class="space-y-6">
-					<div class="mb-6 pb-4" style="border-bottom: 2px solid rgb(196, 196, 196);">
-						<h1 class="mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-serif);"><?php esc_html_e( 'ADMIN – Dashboard', 'hotel-chain' ); ?></h1>
-						<p style="color: rgb(122, 122, 122); font-family: var(--font-sans);"><?php esc_html_e( 'System-wide overview and key metrics across all hotels', 'hotel-chain' ); ?></p>
-					</div>
-
 					<!-- Statistics Cards -->
 					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
 						<!-- Total Hotels -->
-						<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+						<div class="bg-white rounded p-4 border border-solid border-gray-400">
 							<div class="flex items-center gap-3 mb-2">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart w-8 h-8 text-blue-400" aria-hidden="true">
 									<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"></path>
@@ -179,7 +176,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 						</div>
 
 						<!-- Total Guests -->
-						<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+						<div class="bg-white rounded p-4 border border-solid border-gray-400">
 							<div class="flex items-center gap-3 mb-2">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles w-8 h-8 text-green-400" aria-hidden="true">
 									<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path>
@@ -202,7 +199,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 						</div>
 
 						<!-- Total Videos -->
-						<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+						<div class="bg-white rounded p-4 border border-solid border-gray-400">
 							<div class="flex items-center gap-3 mb-2">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-8 h-8 text-purple-400" aria-hidden="true">
 									<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
@@ -218,7 +215,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 						</div>
 
 						<!-- Total Views -->
-						<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+						<div class="bg-white rounded p-4 border border-solid border-gray-400">
 							<div class="flex items-center gap-3 mb-2">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sunrise w-8 h-8 text-orange-400" aria-hidden="true">
 									<path d="M12 2v8"></path>
@@ -255,7 +252,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 						</div>
 
 						<!-- Watch Hours -->
-						<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+						<div class="bg-white rounded p-4 border border-solid border-gray-400">
 							<div class="flex items-center gap-3 mb-2">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hand-heart w-8 h-8 text-teal-400" aria-hidden="true">
 									<path d="M11 14h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16"></path>
@@ -271,17 +268,17 @@ class AdminDashboardPage implements ServiceProviderInterface {
 					</div>
 
 					<!-- Quick Actions -->
-					<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
-						<h3 class="mb-4 pb-3 border-b-2 border-gray-300"><?php esc_html_e( 'Quick Actions', 'hotel-chain' ); ?></h3>
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
+						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400"><?php esc_html_e( 'Quick Actions', 'hotel-chain' ); ?></h3>
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-chain-accounts' ) ); ?>" class="border-2 border-gray-300 rounded p-4 text-center hover:bg-gray-50 cursor-pointer no-underline">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-chain-accounts' ) ); ?>" class="border border-solid border-gray-400 rounded p-4 text-center hover:bg-gray-50 cursor-pointer no-underline">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart w-12 h-12 text-blue-500 mx-auto mb-2" aria-hidden="true">
 									<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"></path>
 								</svg>
 								<div><?php esc_html_e( 'Create Hotel', 'hotel-chain' ); ?></div>
 								<div class="text-gray-600 mt-1"><?php esc_html_e( 'Add new hotel account', 'hotel-chain' ); ?></div>
 							</a>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-video-upload' ) ); ?>" class="border-2 border-gray-300 rounded p-4 text-center hover:bg-gray-50 cursor-pointer no-underline">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-video-upload' ) ); ?>" class="border border-solid border-gray-400 rounded p-4 text-center hover:bg-gray-50 cursor-pointer no-underline">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-12 h-12 text-purple-500 mx-auto mb-2" aria-hidden="true">
 									<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
 									<circle cx="12" cy="8" r="2"></circle>
@@ -292,7 +289,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 								<div><?php esc_html_e( 'Upload Video', 'hotel-chain' ); ?></div>
 								<div class="text-gray-600 mt-1"><?php esc_html_e( 'Add to library', 'hotel-chain' ); ?></div>
 							</a>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=system-analytics' ) ); ?>" class="border-2 border-gray-300 rounded p-4 text-center hover:bg-gray-50 cursor-pointer no-underline">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=system-analytics' ) ); ?>" class="border border-solid border-gray-400 rounded p-4 text-center hover:bg-gray-50 cursor-pointer no-underline">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sunrise w-12 h-12 text-green-500 mx-auto mb-2" aria-hidden="true">
 									<path d="M12 2v8"></path>
 									<path d="m4.93 10.93 1.41 1.41"></path>
@@ -306,7 +303,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 								<div><?php esc_html_e( 'System Analytics', 'hotel-chain' ); ?></div>
 								<div class="text-gray-600 mt-1"><?php esc_html_e( 'View all metrics', 'hotel-chain' ); ?></div>
 							</a>
-							<div class="border-2 border-gray-300 rounded p-4 text-center hover:bg-gray-50 cursor-pointer">
+							<div class="border border-solid border-gray-400 rounded p-4 text-center hover:bg-gray-50 cursor-pointer">
 								<div class="w-12 h-12 bg-gray-300 rounded mx-auto mb-2 flex items-center justify-center">
 									<div class="text-gray-600">⚙</div>
 								</div>
@@ -317,36 +314,73 @@ class AdminDashboardPage implements ServiceProviderInterface {
 					</div>
 
 					<!-- Top Hotels by Engagement -->
-					<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
-						<h3 class="mb-4 pb-3 border-b-2 border-gray-300"><?php esc_html_e( 'Top Hotels by Engagement (This Month)', 'hotel-chain' ); ?></h3>
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
+						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400"><?php esc_html_e( 'Top Hotels by Engagement (This Month)', 'hotel-chain' ); ?></h3>
 						<?php if ( ! empty( $top_hotels ) ) : ?>
-							<div class="border-2 border-gray-300 rounded overflow-hidden">
-								<div class="bg-gray-200 border-b-2 border-gray-300 grid grid-cols-6 gap-4 p-3">
-									<div class="col-span-2 font-semibold"><?php esc_html_e( 'Hotel Name', 'hotel-chain' ); ?></div>
-									<div class="font-semibold"><?php esc_html_e( 'Total Guests', 'hotel-chain' ); ?></div>
-									<div class="font-semibold"><?php esc_html_e( 'Active Guests', 'hotel-chain' ); ?></div>
-									<div class="font-semibold"><?php esc_html_e( 'Total Views', 'hotel-chain' ); ?></div>
-									<div class="font-semibold"><?php esc_html_e( 'Watch Hours', 'hotel-chain' ); ?></div>
-								</div>
+							<!-- Mobile Card View -->
+							<div class="md:hidden space-y-3">
 								<?php foreach ( $top_hotels as $hotel ) : ?>
 									<?php
 									$watch_hours = round( (int) $hotel->total_watch_seconds / 3600 );
 									?>
-									<div class="grid grid-cols-6 gap-4 p-3 border-b-2 border-gray-300 last:border-b-0">
-										<div class="col-span-2">
-											<div class="font-medium"><?php echo esc_html( $hotel->hotel_name ); ?></div>
-											<div class="text-gray-600 text-sm"><?php echo esc_html( $hotel->hotel_code ); ?></div>
+									<div class="border-2 border-gray-300 rounded-lg p-4 bg-white">
+										<div class="mb-3 pb-3 border-b-2 border-gray-300">
+											<div class="font-semibold text-base mb-1" style="color: rgb(60, 56, 55);"><?php echo esc_html( $hotel->hotel_name ); ?></div>
+											<div class="text-sm" style="color: rgb(122, 122, 122);"><?php echo esc_html( $hotel->hotel_code ); ?></div>
 										</div>
-										<div class="flex items-center"><?php echo esc_html( number_format_i18n( (int) $hotel->total_guests ) ); ?></div>
-										<div class="flex items-center">
-											<span class="px-3 py-1 bg-green-100 border border-green-300 rounded text-green-900">
-												<?php echo esc_html( number_format_i18n( (int) $hotel->active_guests ) ); ?>
-											</span>
+										<div class="space-y-2">
+											<div class="flex justify-between items-center py-2 border-b border-gray-200">
+												<span class="text-sm" style="color: rgb(122, 122, 122);"><?php esc_html_e( 'Total Guests', 'hotel-chain' ); ?></span>
+												<span class="font-semibold"><?php echo esc_html( number_format_i18n( (int) $hotel->total_guests ) ); ?></span>
+											</div>
+											<div class="flex justify-between items-center py-2 border-b border-gray-200">
+												<span class="text-sm" style="color: rgb(122, 122, 122);"><?php esc_html_e( 'Active Guests', 'hotel-chain' ); ?></span>
+												<span class="px-3 py-1 bg-green-100 border border-green-300 rounded text-green-900 text-sm font-semibold">
+													<?php echo esc_html( number_format_i18n( (int) $hotel->active_guests ) ); ?>
+												</span>
+											</div>
+											<div class="flex justify-between items-center py-2 border-b border-gray-200">
+												<span class="text-sm" style="color: rgb(122, 122, 122);"><?php esc_html_e( 'Total Views', 'hotel-chain' ); ?></span>
+												<span class="font-semibold"><?php echo esc_html( number_format_i18n( (int) $hotel->total_views ) ); ?></span>
+											</div>
+											<div class="flex justify-between items-center py-2">
+												<span class="text-sm" style="color: rgb(122, 122, 122);"><?php esc_html_e( 'Watch Hours', 'hotel-chain' ); ?></span>
+												<span class="font-semibold"><?php echo esc_html( number_format_i18n( $watch_hours ) ); ?> <?php esc_html_e( 'hrs', 'hotel-chain' ); ?></span>
+											</div>
 										</div>
-										<div class="flex items-center"><?php echo esc_html( number_format_i18n( (int) $hotel->total_views ) ); ?></div>
-										<div class="flex items-center"><?php echo esc_html( number_format_i18n( $watch_hours ) ); ?> <?php esc_html_e( 'hrs', 'hotel-chain' ); ?></div>
 									</div>
 								<?php endforeach; ?>
+							</div>
+							<!-- Desktop Table View -->
+							<div class="hidden md:block overflow-x-auto">
+								<div class="border border-solid border-gray-400 rounded overflow-hidden min-w-[600px]">
+									<div class="bg-gray-200 border-b-2 border-gray-300 grid grid-cols-6 gap-4 p-3">
+										<div class="col-span-2 font-semibold"><?php esc_html_e( 'Hotel Name', 'hotel-chain' ); ?></div>
+										<div class="font-semibold"><?php esc_html_e( 'Total Guests', 'hotel-chain' ); ?></div>
+										<div class="font-semibold"><?php esc_html_e( 'Active Guests', 'hotel-chain' ); ?></div>
+										<div class="font-semibold"><?php esc_html_e( 'Total Views', 'hotel-chain' ); ?></div>
+										<div class="font-semibold"><?php esc_html_e( 'Watch Hours', 'hotel-chain' ); ?></div>
+									</div>
+									<?php foreach ( $top_hotels as $hotel ) : ?>
+										<?php
+										$watch_hours = round( (int) $hotel->total_watch_seconds / 3600 );
+										?>
+										<div class="grid grid-cols-6 gap-4 p-3 border-b border-solid border-gray-400 last:border-b-0">
+											<div class="col-span-2">
+												<div class="font-medium"><?php echo esc_html( $hotel->hotel_name ); ?></div>
+												<div class="text-gray-600 text-sm"><?php echo esc_html( $hotel->hotel_code ); ?></div>
+											</div>
+											<div class="flex items-center"><?php echo esc_html( number_format_i18n( (int) $hotel->total_guests ) ); ?></div>
+											<div class="flex items-center">
+												<span class="px-3 py-1 bg-green-100 border border-green-300 rounded text-green-900">
+													<?php echo esc_html( number_format_i18n( (int) $hotel->active_guests ) ); ?>
+												</span>
+											</div>
+											<div class="flex items-center"><?php echo esc_html( number_format_i18n( (int) $hotel->total_views ) ); ?></div>
+											<div class="flex items-center"><?php echo esc_html( number_format_i18n( $watch_hours ) ); ?> <?php esc_html_e( 'hrs', 'hotel-chain' ); ?></div>
+										</div>
+									<?php endforeach; ?>
+								</div>
 							</div>
 						<?php else : ?>
 							<div class="p-4 text-center text-gray-500">
@@ -356,8 +390,8 @@ class AdminDashboardPage implements ServiceProviderInterface {
 					</div>
 
 					<!-- Guest Activity Status -->
-					<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
-						<h3 class="mb-4 pb-3 border-b-2 border-gray-300"><?php esc_html_e( 'Guest Activity Status', 'hotel-chain' ); ?></h3>
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
+						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400"><?php esc_html_e( 'Guest Activity Status', 'hotel-chain' ); ?></h3>
 						<?php
 						// Calculate guest activity status.
 						$active_guests = (int) $wpdb->get_var(
@@ -381,7 +415,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 						);
 						?>
 						<div class="space-y-3">
-							<div class="p-3 bg-green-50 border-2 border-green-300 rounded">
+								<div class="p-3 bg-green-50 border border-solid border-green-300 rounded">
 								<div class="text-green-900 mb-1 font-semibold"><?php esc_html_e( 'Active Guests', 'hotel-chain' ); ?></div>
 								<div class="text-gray-900">
 									<?php
@@ -394,7 +428,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 									?>
 								</div>
 							</div>
-							<div class="p-3 bg-orange-50 border-2 border-orange-300 rounded">
+							<div class="p-3 bg-orange-50 border border-solid border-orange-300 rounded">
 								<div class="text-orange-900 mb-1 font-semibold"><?php esc_html_e( 'Expiring Soon', 'hotel-chain' ); ?></div>
 								<div class="text-gray-900">
 									<?php
@@ -407,7 +441,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 									?>
 								</div>
 							</div>
-							<div class="p-3 bg-red-50 border-2 border-red-300 rounded">
+							<div class="p-3 bg-red-50 border border-solid border-red-300 rounded">
 								<div class="text-red-900 mb-1 font-semibold"><?php esc_html_e( 'Expired', 'hotel-chain' ); ?></div>
 								<div class="text-gray-900">
 									<?php
@@ -424,8 +458,8 @@ class AdminDashboardPage implements ServiceProviderInterface {
 					</div>
 
 					<!-- Recent System Activity -->
-					<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
-						<h3 class="mb-4 pb-3 border-b-2 border-gray-300"><?php esc_html_e( 'Recent System Activity', 'hotel-chain' ); ?></h3>
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
+						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400"><?php esc_html_e( 'Recent System Activity', 'hotel-chain' ); ?></h3>
 						<div class="space-y-2">
 							<?php
 							// Get recent hotels created.

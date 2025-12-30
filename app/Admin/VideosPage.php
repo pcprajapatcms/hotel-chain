@@ -220,206 +220,204 @@ class VideosPage implements ServiceProviderInterface {
 		$categories          = $taxonomy_repository->get_category_names();
 		$tags_suggestions    = $taxonomy_repository->get_tag_names();
 		?>
-		<div class="wrap w-8/12 mx-auto">
-			<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Upload New Video', 'hotel-chain' ); ?></h1>
-			<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'Upload training and onboarding videos and organize them by category and tags.', 'hotel-chain' ); ?></p>
+		<div class="flex-1 overflow-auto p-4 lg:p-8">
+			<div class="wrap w-12/12 md:w-10/12 xl:w-9/12 mx-auto mt-0">
+				<h1 class="text-2xl font-bold mb-2 pt-0"><?php esc_html_e( 'Upload New Video', 'hotel-chain' ); ?></h1>
+				<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'Upload training and onboarding videos and organize them by category and tags.', 'hotel-chain' ); ?></p>
 
-			<?php if ( $video_ok ) : ?>
-				<div class="bg-green-50 border-2 border-green-400 rounded p-4 mb-4">
-					<p class="text-green-900 font-medium mb-1"><?php esc_html_e( 'Video uploaded successfully.', 'hotel-chain' ); ?></p>
-					<p class="text-green-800 text-sm"><?php esc_html_e( 'You can assign this video to hotels or guests from the Videos list.', 'hotel-chain' ); ?></p>
-				</div>
-			<?php endif; ?>
+				<?php if ( $video_ok ) : ?>
+					<div class="bg-green-50 border-2 border-green-400 rounded p-4 mb-4">
+						<p class="text-green-900 font-medium mb-1"><?php esc_html_e( 'Video uploaded successfully.', 'hotel-chain' ); ?></p>
+						<p class="text-green-800 text-sm"><?php esc_html_e( 'You can assign this video to hotels or guests from the Videos list.', 'hotel-chain' ); ?></p>
+					</div>
+				<?php endif; ?>
 
-			<?php if ( $video_err ) : ?>
-				<div class="bg-red-50 border-2 border-red-400 rounded p-4 mb-4">
-					<p class="text-red-900 font-medium">
-						<?php
-						switch ( $video_err ) {
-							case 'missing_required':
-								esc_html_e( 'Please provide a video title and select a video file.', 'hotel-chain' );
-								break;
-							case 'create_failed':
-								esc_html_e( 'Failed to create video entry. Please try again.', 'hotel-chain' );
-								break;
-							default:
-								esc_html_e( 'An error occurred while uploading the video.', 'hotel-chain' );
-						}
-						?>
-					</p>
-				</div>
-			<?php endif; ?>
+				<?php if ( $video_err ) : ?>
+					<div class="bg-red-50 border-2 border-red-400 rounded p-4 mb-4">
+						<p class="text-red-900 font-medium">
+							<?php
+							switch ( $video_err ) {
+								case 'missing_required':
+									esc_html_e( 'Please provide a video title and select a video file.', 'hotel-chain' );
+									break;
+								case 'create_failed':
+									esc_html_e( 'Failed to create video entry. Please try again.', 'hotel-chain' );
+									break;
+								default:
+									esc_html_e( 'An error occurred while uploading the video.', 'hotel-chain' );
+							}
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
 
-			<form id="hotel-video-upload-form" class="bg-white rounded p-4 border border-solid border-gray-400 bg-blue-50 mb-6" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
-				<?php wp_nonce_field( 'hotel_chain_upload_video' ); ?>
-				<input type="hidden" name="action" value="hotel_chain_upload_video" />
+				<form id="hotel-video-upload-form" class="bg-white rounded p-4 border border-solid border-gray-400 mb-6" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
+					<?php wp_nonce_field( 'hotel_chain_upload_video' ); ?>
+					<input type="hidden" name="action" value="hotel_chain_upload_video" />
 
-				<div class="mb-4 pb-3 border-b border-gray-300 flex items-center justify-between">
-					<h3 class="text-lg font-semibold"><?php esc_html_e( 'Upload New Video', 'hotel-chain' ); ?></h3>
-					<button type="submit" class="px-4 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 flex items-center gap-2">
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus w-4 h-4" aria-hidden="true">
-							<path d="M5 12h14"></path>
-							<path d="M12 5v14"></path>
-						</svg>
-						<?php esc_html_e( 'Start Upload', 'hotel-chain' ); ?>
-					</button>
-				</div>
-
-				<div class="bg-white border border-solid border-gray-400 rounded p-6">
-					<div class="mb-6">
-						<div class="mb-2 text-gray-700"><?php esc_html_e( 'Video File', 'hotel-chain' ); ?></div>
-						<label id="hotel-video-drop-zone" class="border border-solid border-gray-400 border-dashed rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer block">
-							<input type="file" name="video_file" id="hotel-video-file-input" class="hidden" accept="video/mp4,video/quicktime,video/x-msvideo" required />
-							
-							<!-- Preview (hidden by default) -->
-							<div id="hotel-video-upload-preview-wrapper" class="hidden mb-4">
-								<video
-									id="hotel-video-upload-player"
-									class="w-full rounded bg-black"
-									style="max-height: 200px;"
-									controls
-								></video>
-								<button type="button" id="hotel-video-upload-remove" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
-									<?php esc_html_e( 'Remove Video', 'hotel-chain' ); ?>
-								</button>
-							</div>
-
-							<!-- Placeholder (shown by default) -->
-							<div id="hotel-video-upload-placeholder">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-16 h-16 text-gray-400 mx-auto mb-4" aria-hidden="true">
-									<path d="M12 3v12"></path>
-									<path d="m17 8-5-5-5 5"></path>
-									<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-								</svg>
-								<div class="mb-2"><?php esc_html_e( 'Drag and drop video file here', 'hotel-chain' ); ?></div>
-								<div class="text-gray-600 mb-4"><?php esc_html_e( 'or click to browse', 'hotel-chain' ); ?></div>
-								<span class="px-6 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 inline-block"><?php esc_html_e( 'Select Video File', 'hotel-chain' ); ?></span>
-								<div class="text-gray-600 mt-3 text-sm">
-									<?php esc_html_e( 'Supported formats: MP4, MOV, AVI • Max size depends on server limits', 'hotel-chain' ); ?>
-								</div>
-							</div>
-						</label>
+					<div class="mb-4 pb-3 border-b border-gray-300 flex items-center justify-between">
+						<h3 class="text-lg font-semibold"><?php esc_html_e( 'Upload New Video', 'hotel-chain' ); ?></h3>
 					</div>
 
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<div>
-							<div class="mb-4">
-								<label class="mb-1 block font-semibold text-sm text-slate-800" for="video_title"><?php esc_html_e( 'Video Title', 'hotel-chain' ); ?></label>
-								<input type="text" id="video_title" name="video_title" required placeholder="<?php esc_attr_e( 'e.g., Welcome & Hotel Tour', 'hotel-chain' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
-							</div>
-							<div class="mb-4">
-								<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_category"><?php esc_html_e( 'Category', 'hotel-chain' ); ?></label>
-								<select id="video_category" name="video_category" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 max-w-full">
-									<option value=""><?php esc_html_e( 'Select category...', 'hotel-chain' ); ?></option>
-									<?php foreach ( $categories as $category_name ) : ?>
-										<option value="<?php echo esc_attr( $category_name ); ?>"><?php echo esc_html( $category_name ); ?></option>
-									<?php endforeach; ?>
-								</select>
-							</div>
-							<div class="mb-4">
-								<label class="mb-1 block text-gray-700 text-sm font-semibold"><?php esc_html_e( 'Tags', 'hotel-chain' ); ?></label>
-								<?php if ( ! empty( $tags_suggestions ) ) : ?>
-									<div class="flex flex-wrap gap-2">
-										<?php foreach ( $tags_suggestions as $tag_name ) : ?>
-											<label class="inline-flex items-center gap-1 text-sm text-slate-800 border border-slate-300 rounded px-2 py-1 bg-white">
-												<input type="checkbox" name="video_tags[]" value="<?php echo esc_attr( $tag_name ); ?>" />
-												<span><?php echo esc_html( $tag_name ); ?></span>
-											</label>
-										<?php endforeach; ?>
+					<div class="bg-white border border-solid border-gray-400 rounded p-6">
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+							<!-- Video File Uploader (Left Side) -->
+							<div class="flex flex-col">
+								<div class="mb-2 text-gray-700 font-semibold text-sm"><?php esc_html_e( 'Video File', 'hotel-chain' ); ?></div>
+								<label id="hotel-video-drop-zone" class="border border-dashed border-gray-400 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer flex-1 flex flex-col justify-center min-h-[300px]">
+									<input type="file" name="video_file" id="hotel-video-file-input" class="hidden" accept="video/mp4,video/quicktime,video/x-msvideo" required />
+									
+									<!-- Preview (hidden by default) -->
+									<div id="hotel-video-upload-preview-wrapper" class="hidden mb-4">
+										<video
+											id="hotel-video-upload-player"
+											class="w-full rounded bg-black"
+											style="max-height: 200px;"
+											controls
+										></video>
+										<button type="button" id="hotel-video-upload-remove" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
+											<?php esc_html_e( 'Remove Video', 'hotel-chain' ); ?>
+										</button>
 									</div>
-								<?php else : ?>
-									<p class="text-xs text-gray-600"><?php esc_html_e( 'No tags defined yet. Add tags in the Video Taxonomy page.', 'hotel-chain' ); ?></p>
-								<?php endif; ?>
-							</div>
-						</div>
-						<div>
-							<div class="mb-3">
-								<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_description"><?php esc_html_e( 'Description', 'hotel-chain' ); ?></label>
-								<?php
-								wp_editor(
-									'',
-									'video_description',
-									array(
-										'textarea_name' => 'video_description',
-										'textarea_rows' => 10,
-										'media_buttons' => false,
-										'teeny'         => false,
-										'quicktags'     => true,
-									)
-								);
-								?>
-							</div>
-							<div class="mb-3">
-								<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_practice_tip"><?php esc_html_e( 'Practice Tip', 'hotel-chain' ); ?></label>
-								<textarea id="video_practice_tip" name="video_practice_tip" rows="3" placeholder="<?php esc_attr_e( 'Enter a helpful practice tip for viewers...', 'hotel-chain' ); ?>" class="w-full border border-solid border-slate-300 rounded p-3 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
-							</div>
-							<div class="mb-4">
-								<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_language"><?php esc_html_e( 'Default Language', 'hotel-chain' ); ?></label>
-								<input type="text" id="video_language" name="video_language" placeholder="<?php esc_attr_e( 'English', 'hotel-chain' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
-							</div>
-						</div>
-					</div>
 
-					<div class="mb-6 pt-6 border-t border-solid border-gray-300">
-						<div class="mb-3 text-gray-700 font-semibold text-sm"><?php esc_html_e( 'Video Thumbnail (Optional)', 'hotel-chain' ); ?></div>
-						<div class="grid grid-cols-4 gap-4">
-							<label id="hotel-thumbnail-drop-zone" class="border border-solid border-gray-400 border-dashed rounded p-4 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer">
-								<input type="file" name="video_thumbnail" id="hotel-thumbnail-file-input" class="hidden" accept="image/*" />
-								
-								<!-- Preview (hidden by default) -->
-								<div id="hotel-thumbnail-upload-preview-wrapper" class="hidden mb-2">
-									<img
-										id="hotel-thumbnail-upload-preview"
-										class="w-full aspect-video rounded object-cover"
-										alt="Thumbnail preview"
-									/>
-									<button type="button" id="hotel-thumbnail-upload-remove" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
-										<?php esc_html_e( 'Remove Thumbnail', 'hotel-chain' ); ?>
-									</button>
-								</div>
-
-								<!-- Placeholder (shown by default) -->
-								<div id="hotel-thumbnail-upload-placeholder">
-									<div class="w-full aspect-video bg-gray-200 border-2 border-gray-300 rounded mb-2 flex items-center justify-center">
-										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-8 h-8 text-gray-400" aria-hidden="true">
+									<!-- Placeholder (shown by default) -->
+									<div id="hotel-video-upload-placeholder" class="flex flex-col items-center justify-center">
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-16 h-16 text-gray-400 mx-auto mb-4" aria-hidden="true">
 											<path d="M12 3v12"></path>
 											<path d="m17 8-5-5-5 5"></path>
 											<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
 										</svg>
+										<div class="mb-2"><?php esc_html_e( 'Drag and drop video file here', 'hotel-chain' ); ?></div>
+										<div class="text-gray-600 mb-4"><?php esc_html_e( 'or click to browse', 'hotel-chain' ); ?></div>
+										<span class="px-6 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 inline-block"><?php esc_html_e( 'Select Video File', 'hotel-chain' ); ?></span>
+										<div class="text-gray-600 mt-3 text-sm">
+											<?php esc_html_e( 'Supported formats: MP4, MOV, AVI • Max size depends on server limits', 'hotel-chain' ); ?>
+										</div>
 									</div>
-									<div class="text-gray-600 text-sm"><?php esc_html_e( 'Upload thumbnail', 'hotel-chain' ); ?></div>
+								</label>
+							</div>
+
+							<!-- Video Thumbnail Uploader (Right Side) -->
+							<div class="flex flex-col">
+								<div class="mb-2 text-gray-700 font-semibold text-sm"><?php esc_html_e( 'Video Thumbnail (Optional)', 'hotel-chain' ); ?></div>
+								<label id="hotel-thumbnail-drop-zone" class="border border-dashed border-gray-400 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer flex-1 flex flex-col justify-center min-h-[300px]">
+									<input type="file" name="video_thumbnail" id="hotel-thumbnail-file-input" class="hidden" accept="image/*" />
+									
+									<!-- Preview (hidden by default) -->
+									<div id="hotel-thumbnail-upload-preview-wrapper" class="hidden mb-2">
+										<img
+											id="hotel-thumbnail-upload-preview"
+											class="w-full aspect-video rounded object-cover"
+											alt="Thumbnail preview"
+										/>
+										<button type="button" id="hotel-thumbnail-upload-remove" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
+											<?php esc_html_e( 'Remove Thumbnail', 'hotel-chain' ); ?>
+										</button>
+									</div>
+
+									<!-- Placeholder (shown by default) -->
+									<div id="hotel-thumbnail-upload-placeholder" class="flex flex-col items-center justify-center">
+										<div class="w-full aspect-video bg-gray-200 border-2 border-gray-300 rounded mb-2 flex items-center justify-center">
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-8 h-8 text-gray-400" aria-hidden="true">
+												<path d="M12 3v12"></path>
+												<path d="m17 8-5-5-5 5"></path>
+												<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+											</svg>
+										</div>
+										<div class="text-gray-600 text-sm"><?php esc_html_e( 'Upload thumbnail', 'hotel-chain' ); ?></div>
+									</div>
+								</label>
+							</div>
+						</div>
+
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+							<div>
+								<div class="mb-4">
+									<label class="mb-1 block font-semibold text-sm text-slate-800" for="video_title"><?php esc_html_e( 'Video Title', 'hotel-chain' ); ?></label>
+									<input type="text" id="video_title" name="video_title" required placeholder="<?php esc_attr_e( 'e.g., Welcome & Hotel Tour', 'hotel-chain' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
 								</div>
-							</label>
+								<div class="mb-4">
+									<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_category"><?php esc_html_e( 'Category', 'hotel-chain' ); ?></label>
+									<select id="video_category" name="video_category" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500 max-w-full">
+										<option value=""><?php esc_html_e( 'Select category...', 'hotel-chain' ); ?></option>
+										<?php foreach ( $categories as $category_name ) : ?>
+											<option value="<?php echo esc_attr( $category_name ); ?>"><?php echo esc_html( $category_name ); ?></option>
+										<?php endforeach; ?>
+									</select>
+								</div>
+								<div class="mb-4">
+									<label class="mb-1 block text-gray-700 text-sm font-semibold"><?php esc_html_e( 'Tags', 'hotel-chain' ); ?></label>
+									<?php if ( ! empty( $tags_suggestions ) ) : ?>
+										<div class="flex flex-wrap gap-2">
+											<?php foreach ( $tags_suggestions as $tag_name ) : ?>
+												<label class="inline-flex items-center gap-1 text-sm text-slate-800 border border-slate-300 rounded px-2 py-1 bg-white">
+													<input type="checkbox" name="video_tags[]" value="<?php echo esc_attr( $tag_name ); ?>" />
+													<span><?php echo esc_html( $tag_name ); ?></span>
+												</label>
+											<?php endforeach; ?>
+										</div>
+									<?php else : ?>
+										<p class="text-xs text-gray-600"><?php esc_html_e( 'No tags defined yet. Add tags in the Video Taxonomy page.', 'hotel-chain' ); ?></p>
+									<?php endif; ?>
+								</div>
+								<div class="mb-4">
+									<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_language"><?php esc_html_e( 'Default Language', 'hotel-chain' ); ?></label>
+									<input type="text" id="video_language" name="video_language" placeholder="<?php esc_attr_e( 'English', 'hotel-chain' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
+								</div>
+							</div>
+							<div>
+								<div class="mb-3">
+									<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_description"><?php esc_html_e( 'Description', 'hotel-chain' ); ?></label>
+									<?php
+									wp_editor(
+										'',
+										'video_description',
+										array(
+											'textarea_name' => 'video_description',
+											'textarea_rows' => 10,
+											'media_buttons' => false,
+											'teeny'         => false,
+											'quicktags'     => true,
+										)
+									);
+									?>
+								</div>
+								<div class="mb-3">
+									<label class="mb-1 block text-gray-700 text-sm font-semibold" for="video_practice_tip"><?php esc_html_e( 'Practice Tip', 'hotel-chain' ); ?></label>
+									<textarea id="video_practice_tip" name="video_practice_tip" rows="3" placeholder="<?php esc_attr_e( 'Enter a helpful practice tip for viewers...', 'hotel-chain' ); ?>" class="w-full border border-solid border-slate-300 rounded p-3 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+								</div>
+							</div>
+						</div>
+
+
+						<div class="flex flex-col sm:flex-row gap-3">
+							<button type="submit" class="w-full px-6 py-3 bg-green-200 border-2 border-green-400 rounded text-green-900 flex items-center justify-center gap-2 hover:bg-green-300">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-4 h-4" aria-hidden="true">
+									<path d="M12 3v12"></path>
+									<path d="m17 8-5-5-5 5"></path>
+									<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+								</svg>
+								<?php esc_html_e( 'Upload Video', 'hotel-chain' ); ?>
+							</button>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-video-upload' ) ); ?>" class="w-full sm:w-auto px-6 py-3 bg-gray-200 border-2 border-gray-400 rounded text-gray-900 flex items-center justify-center hover:bg-gray-300">
+								<?php esc_html_e( 'Cancel', 'hotel-chain' ); ?>
+							</a>
 						</div>
 					</div>
+				</form>
 
-					<div class="flex gap-3">
-						<button type="submit" class="flex-1 px-6 py-3 bg-green-200 border-2 border-green-400 rounded text-green-900 flex items-center justify-center gap-2 hover:bg-green-300">
-							<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-4 h-4" aria-hidden="true">
-								<path d="M12 3v12"></path>
-								<path d="m17 8-5-5-5 5"></path>
-								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-							</svg>
-							<?php esc_html_e( 'Upload Video', 'hotel-chain' ); ?>
-						</button>
-						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=video' ) ); ?>" class="px-6 py-3 bg-gray-200 border-2 border-gray-400 rounded text-gray-900 flex items-center justify-center hover:bg-gray-300">
-							<?php esc_html_e( 'Cancel', 'hotel-chain' ); ?>
-						</a>
+				<div id="hotel-video-upload-progress" class="mt-6 hidden">
+					<h3 class="text-lg font-semibold mb-3 border-b border-gray-300 pb-2"><?php esc_html_e( 'Upload Progress', 'hotel-chain' ); ?></h3>
+					<div class="border border-solid border-gray-300 rounded p-4 bg-white">
+						<div class="flex justify-between mb-2 text-sm text-gray-700">
+							<span id="hotel-video-upload-filename"></span>
+							<span id="hotel-video-upload-percent">0%</span>
+						</div>
+						<div class="w-full bg-gray-100 rounded h-3 overflow-hidden border border-solid border-gray-300">
+							<div id="hotel-video-upload-bar" class="h-3 bg-blue-400" style="width:0%;"></div>
+						</div>
+						<p id="hotel-video-upload-status" class="mt-2 text-xs text-gray-600"><?php esc_html_e( 'Preparing upload...', 'hotel-chain' ); ?></p>
 					</div>
-				</div>
-			</form>
-
-			<div id="hotel-video-upload-progress" class="mt-6 hidden">
-				<h3 class="text-lg font-semibold mb-3 border-b border-gray-300 pb-2"><?php esc_html_e( 'Upload Progress', 'hotel-chain' ); ?></h3>
-				<div class="border border-solid border-gray-300 rounded p-4 bg-white">
-					<div class="flex justify-between mb-2 text-sm text-gray-700">
-						<span id="hotel-video-upload-filename"></span>
-						<span id="hotel-video-upload-percent">0%</span>
-					</div>
-					<div class="w-full bg-gray-100 rounded h-3 overflow-hidden border border-solid border-gray-300">
-						<div id="hotel-video-upload-bar" class="h-3 bg-blue-400" style="width:0%;"></div>
-					</div>
-					<p id="hotel-video-upload-status" class="mt-2 text-xs text-gray-600"><?php esc_html_e( 'Preparing upload...', 'hotel-chain' ); ?></p>
 				</div>
 			</div>
 		</div>
