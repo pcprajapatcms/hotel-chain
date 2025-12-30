@@ -275,8 +275,8 @@ class VideoLibraryPage implements ServiceProviderInterface {
 					<input type="hidden" name="video_id" value="<?php echo esc_attr( $video->video_id ); ?>" />
 					<input type="hidden" name="video_cat" value="<?php echo esc_attr( $selected_cat ); ?>" />
 					<input type="file" name="replace_video_file" accept="video/*" class="hidden" data-hotel-replace-input="1" />
-					<div class="grid grid-cols-3 gap-6">
-						<div class="col-span-1">
+					<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+						<div class="lg:col-span-1">
 							<div class="bg-gray-200 border border-solid border-gray-300 rounded h-48 flex items-center justify-center mb-4 overflow-hidden relative">
 								<?php if ( $video_attachment_id ) : ?>
 									<?php if ( $thumbnail_url ) : ?>
@@ -332,7 +332,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 							<div class="mt-6 pt-4 border-t border-solid border-gray-200">
 								<div class="mb-2 text-gray-700 font-semibold text-sm"><?php esc_html_e( 'Video Thumbnail (Optional)', 'hotel-chain' ); ?></div>
 								<div class="grid grid-cols-1 gap-3">
-									<label class="border border-solid border-gray-400 border-dashed rounded p-4 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer">
+									<label class="border border-dashed border-gray-400 rounded p-4 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer">
 										<div class="w-full aspect-video bg-gray-200 border-2 border-gray-300 rounded mb-2 flex items-center justify-center overflow-hidden">
 											<?php if ( $thumbnail_url ) : ?>
 												<img src="<?php echo esc_url( $thumbnail_url ); ?>" alt="" class="w-full h-full object-cover" />
@@ -352,14 +352,14 @@ class VideoLibraryPage implements ServiceProviderInterface {
 								</div>
 							</div>
 						</div>
-						<div class="col-span-2">
+						<div class="lg:col-span-2">
 							<div class="mb-4 mt-0">
 								<label class="mb-1 text-sm font-semibold text-slate-800 block" for="video_title_inline"><?php esc_html_e( 'Video Title', 'hotel-chain' ); ?></label>
 								<input type="text" id="video_title_inline" name="video_title" value="<?php echo esc_attr( $title ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
 							</div>
 							<div class="mb-4">
 								<label class="mb-1 text-sm font-semibold text-slate-800 block" for="video_category_inline"><?php esc_html_e( 'Category', 'hotel-chain' ); ?></label>
-								<select id="video_category_inline" name="video_category" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500">
+								<select id="video_category_inline" name="video_category" class="w-full max-w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500">
 									<option value=""><?php esc_html_e( 'Uncategorized', 'hotel-chain' ); ?></option>
 									<?php foreach ( $normalised_categories as $cat_name ) : ?>
 										<option value="<?php echo esc_attr( $cat_name ); ?>" <?php selected( $video->category, $cat_name ); ?>>
@@ -396,14 +396,14 @@ class VideoLibraryPage implements ServiceProviderInterface {
 								<?php endif; ?>
 							</div>
 
-							<div class="grid grid-cols-2 gap-3 pt-2">
-								<button type="submit" class="px-4 py-2 bg-green-200 border-2 border-green-400 rounded text-green-900">
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+								<button type="submit" class="px-4 py-2 bg-green-200 border-2 border-green-400 rounded text-green-900 w-full sm:w-auto">
 									<?php esc_html_e( 'Save Changes', 'hotel-chain' ); ?>
 								</button>
-								<a href="#hotel-assignments-section" class="px-4 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 text-center">
+								<a href="#hotel-assignments-section" class="px-4 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 text-center w-full sm:w-auto">
 									<?php esc_html_e( 'View Assignments', 'hotel-chain' ); ?>
 								</a>
-								<button type="button" class="px-4 py-2 bg-purple-200 border-2 border-purple-400 rounded text-purple-900" data-hotel-replace-button="1">
+								<button type="button" class="px-4 py-2 bg-purple-200 border-2 border-purple-400 rounded text-purple-900 w-full sm:w-auto" data-hotel-replace-button="1">
 									<?php esc_html_e( 'Replace Video', 'hotel-chain' ); ?>
 								</button>
 								<a href="
@@ -422,14 +422,14 @@ class VideoLibraryPage implements ServiceProviderInterface {
 									)
 								);
 								?>
-											" class="px-4 py-2 bg-red-200 border-2 border-red-400 rounded text-red-900 text-center" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to delete this video?', 'hotel-chain' ) ); ?>');">
+											" class="px-4 py-2 bg-red-200 border-2 border-red-400 rounded text-red-900 text-center w-full sm:w-auto" onclick="return confirm('<?php echo esc_js( __( 'Are you sure you want to delete this video?', 'hotel-chain' ) ); ?>');">
 									<?php esc_html_e( 'Delete Video', 'hotel-chain' ); ?>
 								</a>
 							</div>
-							<div class="mb-6 p-4 bg-gray-50 border-2 border-gray-300 rounded mt-4">
+							<div class="mb-6 p-4 bg-gray-50 border border-solid border-gray-400 rounded mt-4">
 								<div class="mb-2 text-sm font-semibold text-gray-800"><?php esc_html_e( 'Assignment Statistics:', 'hotel-chain' ); ?></div>
-								<div class="grid grid-cols-3 gap-4 text-sm">
-									<div class="text-center">
+								<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+									<div class="text-left">
 										<div class="text-gray-600"><?php esc_html_e( 'Assigned To', 'hotel-chain' ); ?></div>
 										<div class="text-gray-900">
 											<?php
@@ -441,11 +441,11 @@ class VideoLibraryPage implements ServiceProviderInterface {
 											?>
 										</div>
 									</div>
-									<div class="text-center">
+									<div class="text-left">
 										<div class="text-gray-600"><?php esc_html_e( 'Total Views', 'hotel-chain' ); ?></div>
 										<div class="text-gray-900"><?php echo esc_html( number_format_i18n( $total_views ) ); ?></div>
 									</div>
-									<div class="text-center">
+									<div class="text-left">
 										<div class="text-gray-600"><?php esc_html_e( 'Avg. Completion', 'hotel-chain' ); ?></div>
 										<div class="text-gray-900"><?php echo esc_html( $avg_completion ); ?></div>
 									</div>
@@ -465,28 +465,21 @@ class VideoLibraryPage implements ServiceProviderInterface {
 			<?php if ( empty( $all_hotels ) ) : ?>
 				<p class="text-gray-600 py-4 text-center"><?php esc_html_e( 'No hotels found.', 'hotel-chain' ); ?></p>
 			<?php else : ?>
-			<table class="w-full">
-				<thead>
-					<tr class="border-b border-solid border-gray-200">
-						<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Hotel', 'hotel-chain' ); ?></th>
-						<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Status', 'hotel-chain' ); ?></th>
-						<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Hotel Status', 'hotel-chain' ); ?></th>
-						<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Assigned', 'hotel-chain' ); ?></th>
-						<th class="text-right py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Actions', 'hotel-chain' ); ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php foreach ( $all_hotels as $hotel ) : ?>
-						<?php
-						$assignment  = isset( $assigned_map[ $hotel->id ] ) ? $assigned_map[ $hotel->id ] : null;
-						$is_assigned = $assignment && in_array( $assignment->status, array( 'active', 'pending' ), true );
-						?>
-						<tr class="border-b border-solid border-gray-100 hover:bg-gray-50">
-							<td class="py-3 px-2">
-								<div class="font-medium text-gray-900"><?php echo esc_html( $hotel->hotel_name ); ?></div>
-								<div class="text-xs text-gray-500"><?php echo esc_html( $hotel->hotel_code ); ?></div>
-							</td>
-							<td class="py-3 px-2">
+			<!-- Mobile Card View -->
+			<div class="md:hidden space-y-3">
+				<?php foreach ( $all_hotels as $hotel ) : ?>
+					<?php
+					$assignment  = isset( $assigned_map[ $hotel->id ] ) ? $assigned_map[ $hotel->id ] : null;
+					$is_assigned = $assignment && in_array( $assignment->status, array( 'active', 'pending' ), true );
+					?>
+					<div class="border border-solid border-gray-300 rounded-lg p-4 bg-white">
+						<div class="mb-3 pb-3 border-b border-solid border-gray-300">
+							<div class="font-semibold text-base mb-1" style="color: rgb(60, 56, 55);"><?php echo esc_html( $hotel->hotel_name ); ?></div>
+							<div class="text-sm" style="color: rgb(122, 122, 122);"><?php echo esc_html( $hotel->hotel_code ); ?></div>
+						</div>
+						<div class="space-y-2">
+							<div class="flex justify-between items-center py-2 border-b border-gray-200">
+								<span class="text-sm" style="color: rgb(122, 122, 122);"><?php esc_html_e( 'Status', 'hotel-chain' ); ?></span>
 								<?php if ( $assignment ) : ?>
 									<?php if ( 'active' === $assignment->status ) : ?>
 										<span class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></span>
@@ -498,9 +491,10 @@ class VideoLibraryPage implements ServiceProviderInterface {
 								<?php else : ?>
 									<span class="inline-block px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded"><?php esc_html_e( 'Not Assigned', 'hotel-chain' ); ?></span>
 								<?php endif; ?>
-							</td>
-							<td class="py-3 px-2">
-								<?php if ( $assignment ) : ?>
+							</div>
+							<?php if ( $assignment ) : ?>
+								<div class="flex justify-between items-center py-2 border-b border-gray-200">
+									<span class="text-sm" style="color: rgb(122, 122, 122);"><?php esc_html_e( 'Hotel Status', 'hotel-chain' ); ?></span>
 									<?php
 									$status_by_hotel = isset( $assignment->status_by_hotel ) ? $assignment->status_by_hotel : 'active';
 									if ( 'active' === $status_by_hotel ) :
@@ -509,18 +503,14 @@ class VideoLibraryPage implements ServiceProviderInterface {
 									<?php else : ?>
 										<span class="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"><?php esc_html_e( 'Inactive', 'hotel-chain' ); ?></span>
 									<?php endif; ?>
-								<?php else : ?>
-									<span class="text-gray-400">—</span>
-								<?php endif; ?>
-							</td>
-							<td class="py-3 px-2 text-gray-600 text-sm">
-								<?php if ( $assignment ) : ?>
-									<?php echo esc_html( date_i18n( 'M j, Y', strtotime( $assignment->assigned_at ) ) ); ?>
-								<?php else : ?>
-									<span class="text-gray-400">—</span>
-								<?php endif; ?>
-							</td>
-							<td class="py-3 px-2 text-right">
+								</div>
+								<div class="flex justify-between items-center py-2 border-b border-gray-200">
+									<span class="text-sm" style="color: rgb(122, 122, 122);"><?php esc_html_e( 'Assigned', 'hotel-chain' ); ?></span>
+									<span class="text-sm font-semibold"><?php echo esc_html( date_i18n( 'M j, Y', strtotime( $assignment->assigned_at ) ) ); ?></span>
+								</div>
+							<?php endif; ?>
+							<div class="flex justify-between items-center py-2">
+								<span class="text-sm" style="color: rgb(122, 122, 122);"><?php esc_html_e( 'Actions', 'hotel-chain' ); ?></span>
 								<?php if ( $is_assigned ) : ?>
 									<button type="button" class="ajax-unassign-btn inline-block px-3 py-1 bg-red-200 border border-solid border-red-400 rounded text-red-900 text-sm hover:bg-red-300" data-assignment-id="<?php echo esc_attr( $assignment->id ); ?>" data-video-id="<?php echo esc_attr( $video->video_id ); ?>">
 										<?php esc_html_e( 'Unassign', 'hotel-chain' ); ?>
@@ -530,11 +520,84 @@ class VideoLibraryPage implements ServiceProviderInterface {
 										<?php esc_html_e( 'Assign', 'hotel-chain' ); ?>
 									</button>
 								<?php endif; ?>
-							</td>
+							</div>
+						</div>
+					</div>
+				<?php endforeach; ?>
+			</div>
+			<!-- Desktop Table View -->
+			<div class="hidden md:block overflow-x-auto">
+				<table class="w-full min-w-[600px]">
+					<thead>
+						<tr class="border-b border-solid border-gray-200">
+							<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Hotel', 'hotel-chain' ); ?></th>
+							<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Status', 'hotel-chain' ); ?></th>
+							<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Hotel Status', 'hotel-chain' ); ?></th>
+							<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Assigned', 'hotel-chain' ); ?></th>
+							<th class="text-right py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Actions', 'hotel-chain' ); ?></th>
 						</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						<?php foreach ( $all_hotels as $hotel ) : ?>
+							<?php
+							$assignment  = isset( $assigned_map[ $hotel->id ] ) ? $assigned_map[ $hotel->id ] : null;
+							$is_assigned = $assignment && in_array( $assignment->status, array( 'active', 'pending' ), true );
+							?>
+							<tr class="border-b border-solid border-gray-100 hover:bg-gray-50">
+								<td class="py-3 px-2">
+									<div class="font-medium text-gray-900"><?php echo esc_html( $hotel->hotel_name ); ?></div>
+									<div class="text-xs text-gray-500"><?php echo esc_html( $hotel->hotel_code ); ?></div>
+								</td>
+								<td class="py-3 px-2">
+									<?php if ( $assignment ) : ?>
+										<?php if ( 'active' === $assignment->status ) : ?>
+											<span class="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></span>
+										<?php elseif ( 'pending' === $assignment->status ) : ?>
+											<span class="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded"><?php esc_html_e( 'Pending', 'hotel-chain' ); ?></span>
+										<?php else : ?>
+											<span class="inline-block px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded"><?php esc_html_e( 'Inactive', 'hotel-chain' ); ?></span>
+										<?php endif; ?>
+									<?php else : ?>
+										<span class="inline-block px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded"><?php esc_html_e( 'Not Assigned', 'hotel-chain' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td class="py-3 px-2">
+									<?php if ( $assignment ) : ?>
+										<?php
+										$status_by_hotel = isset( $assignment->status_by_hotel ) ? $assignment->status_by_hotel : 'active';
+										if ( 'active' === $status_by_hotel ) :
+											?>
+											<span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></span>
+										<?php else : ?>
+											<span class="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"><?php esc_html_e( 'Inactive', 'hotel-chain' ); ?></span>
+										<?php endif; ?>
+									<?php else : ?>
+										<span class="text-gray-400">—</span>
+									<?php endif; ?>
+								</td>
+								<td class="py-3 px-2 text-gray-600 text-sm">
+									<?php if ( $assignment ) : ?>
+										<?php echo esc_html( date_i18n( 'M j, Y', strtotime( $assignment->assigned_at ) ) ); ?>
+									<?php else : ?>
+										<span class="text-gray-400">—</span>
+									<?php endif; ?>
+								</td>
+								<td class="py-3 px-2 text-right">
+									<?php if ( $is_assigned ) : ?>
+										<button type="button" class="ajax-unassign-btn inline-block px-3 py-1 bg-red-200 border border-solid border-red-400 rounded text-red-900 text-sm hover:bg-red-300" data-assignment-id="<?php echo esc_attr( $assignment->id ); ?>" data-video-id="<?php echo esc_attr( $video->video_id ); ?>">
+											<?php esc_html_e( 'Unassign', 'hotel-chain' ); ?>
+										</button>
+									<?php else : ?>
+										<button type="button" class="ajax-assign-btn inline-block px-3 py-1 bg-green-200 border border-solid border-green-400 rounded text-green-900 text-sm hover:bg-green-300" data-hotel-id="<?php echo esc_attr( $hotel->id ); ?>" data-video-id="<?php echo esc_attr( $video->video_id ); ?>">
+											<?php esc_html_e( 'Assign', 'hotel-chain' ); ?>
+										</button>
+									<?php endif; ?>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -953,377 +1016,378 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		$taxonomy_repository   = new VideoTaxonomyRepository();
 		$normalised_categories = $taxonomy_repository->get_category_names();
 		?>
-		<div class="wrap w-8/12 mx-auto">
-			<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'System Video Library', 'hotel-chain' ); ?></h1>
-			<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-300 pb-3"><?php esc_html_e( 'Browse all videos available across the hotel chain.', 'hotel-chain' ); ?></p>
+		<div class="flex-1 overflow-auto p-4 lg:p-8">
+			<div class="w-12/12 md:w-10/12 xl:w-9/12 mx-auto mt-0">
+				<h1 class="text-2xl font-bold mb-2 pt-0"><?php esc_html_e( 'System Video Library', 'hotel-chain' ); ?></h1>
+				<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-400 pb-3"><?php esc_html_e( 'Browse all videos available across the hotel chain.', 'hotel-chain' ); ?></p>
 
-			<?php if ( $video_updated ) : ?>
-				<div class="bg-green-50 border border-solid border-green-300 rounded p-3 mb-2 text-sm text-green-900">
-					<?php esc_html_e( 'Video details updated successfully.', 'hotel-chain' ); ?>
-				</div>
-			<?php endif; ?>
-			<?php if ( $video_replaced ) : ?>
-				<div class="bg-blue-50 border border-solid border-blue-300 rounded p-3 mb-4 text-sm text-blue-900">
-					<?php esc_html_e( 'Video file has been replaced successfully.', 'hotel-chain' ); ?>
-				</div>
-			<?php endif; ?>
-			<?php if ( $deleted ) : ?>
-				<div class="bg-red-50 border border-solid border-red-300 rounded p-3 mb-4 text-sm text-red-900">
-					<?php esc_html_e( 'Video has been deleted successfully.', 'hotel-chain' ); ?>
-				</div>
-			<?php endif; ?>
-
-			<?php if ( $unassigned ) : ?>
-				<div class="bg-orange-50 border border-solid border-orange-300 rounded p-3 mb-4 text-sm text-orange-900">
-					<?php esc_html_e( 'Video has been unassigned from the hotel.', 'hotel-chain' ); ?>
-				</div>
-			<?php endif; ?>
-
-			<?php if ( $assigned ) : ?>
-				<div class="bg-green-50 border border-solid border-green-300 rounded p-3 mb-4 text-sm text-green-900">
-					<?php esc_html_e( 'Video has been assigned to the hotel.', 'hotel-chain' ); ?>
-				</div>
-			<?php endif; ?>
-
-			<div class="bg-white rounded p-4 mb-6 border border-solid border-gray-300">
-				<div class="mb-4 pb-3 border-b border-solid border-gray-300 flex items-center justify-between">
-					<h3 class="text-lg font-semibold">
-						<?php
-						printf(
-							/* translators: %d: number of videos. */
-							esc_html__( 'System Video Library (%d videos)', 'hotel-chain' ),
-							esc_html( (string) $total_videos )
-						);
-						?>
-					</h3>
-					<div class="flex gap-3">
-						<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" class="border border-solid border-gray-300 rounded px-4 py-2 flex items-center gap-2 bg-white">
-							<input type="hidden" name="page" value="hotel-video-library" />
-							<span class="text-gray-600 text-sm"><?php esc_html_e( 'Filter:', 'hotel-chain' ); ?></span>
-							<select name="video_cat" class="border-none bg-transparent text-sm text-gray-800 focus:outline-none focus:ring-0" onchange="this.form.submit()">
-								<option value=""><?php esc_html_e( 'All Categories', 'hotel-chain' ); ?></option>
-								<?php foreach ( $normalised_categories as $cat_name ) : ?>
-									<option value="<?php echo esc_attr( $cat_name ); ?>" <?php selected( $selected_cat, $cat_name ); ?>>
-										<?php echo esc_html( $cat_name ); ?>
-									</option>
-								<?php endforeach; ?>
-							</select>
-						</form>
-						<a href="
-						<?php
-						echo esc_url(
-							wp_nonce_url(
-								add_query_arg(
-									array(
-										'action'    => 'hotel_chain_export_videos',
-										'video_cat' => $selected_cat,
-									),
-									admin_url( 'admin-post.php' )
-								),
-								'hotel_chain_export_videos'
-							)
-						);
-						?>
-									" class="px-4 py-2 bg-blue-200 border border-solid border-blue-400 rounded text-blue-900 inline-flex items-center justify-center">
-							<?php esc_html_e( 'Export List', 'hotel-chain' ); ?>
-						</a>
-					</div>
-				</div>
-
-				<?php if ( empty( $videos ) ) : ?>
-					<p class="text-gray-600"><?php esc_html_e( 'No videos found. Upload your first video to see it here.', 'hotel-chain' ); ?></p>
-				<?php else : ?>
-					<div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="video-library-grid">
-						<?php foreach ( $videos as $video ) : ?>
-							<?php
-							$category_label = $video->category ? $video->category : esc_html__( 'Uncategorized', 'hotel-chain' );
-							$duration_label = $video->duration_label ? $video->duration_label : '';
-
-							$thumbnail_url = '';
-							if ( $video->thumbnail_id ) {
-								$thumbnail_url = wp_get_attachment_image_url( $video->thumbnail_id, 'medium' );
-							} elseif ( $video->thumbnail_url ) {
-								$thumbnail_url = $video->thumbnail_url;
-							}
-
-							$hotel_count = $assignment_repository->get_video_assignment_count( $video->video_id );
-							?>
-							<div class="video-card border border-solid border-gray-300 rounded overflow-hidden hover:border-blue-400 cursor-pointer bg-white" data-video-id="<?php echo esc_attr( $video->video_id ); ?>">
-								<div class="bg-gray-200 border-b border-solid border-gray-300 h-32 flex items-center justify-center relative overflow-hidden">
-									<?php if ( $thumbnail_url ) : ?>
-										<img src="<?php echo esc_url( $thumbnail_url ); ?>" alt="" class="w-full h-full object-cover" />
-									<?php else : ?>
-										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-video w-12 h-12 text-gray-400" aria-hidden="true">
-											<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"></path>
-											<rect x="2" y="6" width="14" height="12" rx="2"></rect>
-										</svg>
-									<?php endif; ?>
-									<?php if ( $duration_label ) : ?>
-										<div class="absolute bottom-2 right-2 px-2 py-1 rounded text-xs bg-white border border-gray-300">
-											<?php echo esc_html( $duration_label ); ?>
-										</div>
-									<?php endif; ?>
-								</div>
-								<div class="p-3">
-									<div class="mb-1 text-sm font-medium text-gray-900"><?php echo esc_html( $video->title ); ?></div>
-									<div class="text-gray-600 mb-2 text-xs"><?php echo esc_html( $category_label ); ?></div>
-									<div class="text-gray-700 text-xs">
-										<?php esc_html_e( 'Assigned to hotels: ', 'hotel-chain' ); ?>
-										<?php echo esc_html( $hotel_count ); ?>
-									</div>
-								</div>
-							</div>
-						<?php endforeach; ?>
+				<?php if ( $video_updated ) : ?>
+					<div class="bg-green-50 border border-solid border-green-300 rounded p-3 mb-2 text-sm text-green-900">
+						<?php esc_html_e( 'Video details updated successfully.', 'hotel-chain' ); ?>
 					</div>
 				<?php endif; ?>
-			</div>
+				<?php if ( $video_replaced ) : ?>
+					<div class="bg-blue-50 border border-solid border-blue-300 rounded p-3 mb-4 text-sm text-blue-900">
+						<?php esc_html_e( 'Video file has been replaced successfully.', 'hotel-chain' ); ?>
+					</div>
+				<?php endif; ?>
+				<?php if ( $deleted ) : ?>
+					<div class="bg-red-50 border border-solid border-red-300 rounded p-3 mb-4 text-sm text-red-900">
+						<?php esc_html_e( 'Video has been deleted successfully.', 'hotel-chain' ); ?>
+					</div>
+				<?php endif; ?>
 
-			<!-- AJAX loaded detail panel container -->
-			<div id="video-detail-container"></div>
+				<?php if ( $unassigned ) : ?>
+					<div class="bg-orange-50 border border-solid border-orange-300 rounded p-3 mb-4 text-sm text-orange-900">
+						<?php esc_html_e( 'Video has been unassigned from the hotel.', 'hotel-chain' ); ?>
+					</div>
+				<?php endif; ?>
 
-			<script>
-			(function() {
-				const ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
-				const nonce = '<?php echo esc_js( wp_create_nonce( 'hotel_chain_video_library' ) ); ?>';
-				const selectedCat = '<?php echo esc_js( $selected_cat ); ?>';
-				const detailContainer = document.getElementById('video-detail-container');
-				let currentVideoId = null;
+				<?php if ( $assigned ) : ?>
+					<div class="bg-green-50 border border-solid border-green-300 rounded p-3 mb-4 text-sm text-green-900">
+						<?php esc_html_e( 'Video has been assigned to the hotel.', 'hotel-chain' ); ?>
+					</div>
+				<?php endif; ?>
 
-				// Click handler for video cards
-				document.querySelectorAll('.video-card').forEach(function(card) {
-					card.addEventListener('click', function() {
-						const videoId = this.dataset.videoId;
-						if (!videoId) return;
+				<div class="bg-white rounded p-4 mb-6 border border-solid border-gray-300">
+					<div class="mb-4 pb-3 border-b border-solid border-gray-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+						<h3 class="text-lg font-semibold">
+							<?php
+							printf(
+								/* translators: %d: number of videos. */
+								esc_html__( 'System Video Library (%d videos)', 'hotel-chain' ),
+								esc_html( (string) $total_videos )
+							);
+							?>
+						</h3>
+						<div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+							<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" class="border border-solid border-gray-300 rounded px-4 py-2 flex items-center gap-2 bg-white w-full sm:w-auto">
+								<input type="hidden" name="page" value="hotel-video-library" />
+								<span class="text-gray-600 text-sm"><?php esc_html_e( 'Filter:', 'hotel-chain' ); ?></span>
+								<select name="video_cat" class="border-none bg-transparent text-sm text-gray-800 focus:outline-none focus:ring-0 flex-1 sm:flex-none" onchange="this.form.submit()">
+									<option value=""><?php esc_html_e( 'All Categories', 'hotel-chain' ); ?></option>
+									<?php foreach ( $normalised_categories as $cat_name ) : ?>
+										<option value="<?php echo esc_attr( $cat_name ); ?>" <?php selected( $selected_cat, $cat_name ); ?>>
+											<?php echo esc_html( $cat_name ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+							</form>
+							<a href="
+							<?php
+							echo esc_url(
+								wp_nonce_url(
+									add_query_arg(
+										array(
+											'action'    => 'hotel_chain_export_videos',
+											'video_cat' => $selected_cat,
+										),
+										admin_url( 'admin-post.php' )
+									),
+									'hotel_chain_export_videos'
+								)
+							);
+							?>
+										" class="px-4 py-2 bg-blue-200 border border-solid border-blue-400 rounded text-blue-900 inline-flex items-center justify-center w-full sm:w-auto">
+								<?php esc_html_e( 'Export List', 'hotel-chain' ); ?>
+							</a>
+						</div>
+					</div>
 
-						// Highlight selected card
-						document.querySelectorAll('.video-card').forEach(c => c.classList.remove('ring-2', 'ring-blue-500'));
-						this.classList.add('ring-2', 'ring-blue-500');
+					<?php if ( empty( $videos ) ) : ?>
+						<p class="text-gray-600"><?php esc_html_e( 'No videos found. Upload your first video to see it here.', 'hotel-chain' ); ?></p>
+					<?php else : ?>
+						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="video-library-grid">
+							<?php foreach ( $videos as $video ) : ?>
+								<?php
+								$category_label = $video->category ? $video->category : esc_html__( 'Uncategorized', 'hotel-chain' );
+								$duration_label = $video->duration_label ? $video->duration_label : '';
 
-						// Show loading state
-						detailContainer.innerHTML = '<div class="bg-white rounded p-8 mb-6 border border-solid border-gray-300 text-center"><div class="text-gray-500"><?php echo esc_js( __( 'Loading video details...', 'hotel-chain' ) ); ?></div></div>';
-
-						// Fetch video details via AJAX
-						const formData = new FormData();
-						formData.append('action', 'hotel_chain_get_video_detail');
-						formData.append('video_id', videoId);
-						formData.append('video_cat', selectedCat);
-						formData.append('nonce', nonce);
-
-						fetch(ajaxUrl, {
-							method: 'POST',
-							body: formData
-						})
-						.then(response => response.json())
-						.then(data => {
-							if (data.success && data.data.html) {
-								// Insert HTML directly
-								detailContainer.innerHTML = data.data.html;
-								currentVideoId = videoId;
-
-								// Scroll to detail panel
-								detailContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-								// Initialize panel JS after DOM is ready
-								setTimeout(function() {
-									initDetailPanelJS();
-								}, 100);
-							} else {
-								detailContainer.innerHTML = '<div class="bg-red-50 rounded p-4 mb-6 border border-solid border-red-300 text-red-900">' + (data.data.message || '<?php echo esc_js( __( 'Error loading video details.', 'hotel-chain' ) ); ?>') + '</div>';
-							}
-						})
-						.catch(error => {
-							console.error('Error:', error);
-							detailContainer.innerHTML = '<div class="bg-red-50 rounded p-4 mb-6 border border-solid border-red-300 text-red-900"><?php echo esc_js( __( 'Error loading video details.', 'hotel-chain' ) ); ?></div>';
-						});
-					});
-				});
-
-				// Re-initialize JS for detail panel (play button, replace video, etc.)
-				function initDetailPanelJS() {
-					// Play/Stop preview button
-					const playBtn = detailContainer.querySelector('[data-hotel-video-play]');
-					if (playBtn) {
-						playBtn.addEventListener('click', function() {
-							const videoId = this.dataset.videoPreviewId;
-							const video = document.getElementById(videoId);
-							const poster = detailContainer.querySelector('[data-hotel-video-poster]');
-							
-							if (!video) return;
-
-							if (video.paused) {
-								if (poster) poster.classList.add('hidden');
-								video.classList.remove('hidden');
-								video.play();
-								this.textContent = this.dataset.videoStopLabel;
-							} else {
-								video.pause();
-								video.currentTime = 0;
-								video.classList.add('hidden');
-								if (poster) poster.classList.remove('hidden');
-								this.textContent = this.dataset.videoPlayLabel;
-							}
-						});
-					}
-
-					// Replace video button
-					const replaceBtn = detailContainer.querySelector('[data-hotel-replace-button]');
-					const replaceInput = detailContainer.querySelector('[data-hotel-replace-input]');
-					const replaceLabel = detailContainer.querySelector('[data-hotel-replace-label]');
-					
-					if (replaceBtn && replaceInput) {
-						replaceBtn.addEventListener('click', function() {
-							replaceInput.click();
-						});
-
-						replaceInput.addEventListener('change', function() {
-							if (this.files && this.files[0]) {
-								if (replaceLabel) {
-									replaceLabel.textContent = '<?php echo esc_js( __( 'Selected:', 'hotel-chain' ) ); ?> ' + this.files[0].name;
-									replaceLabel.classList.remove('hidden');
+								$thumbnail_url = '';
+								if ( $video->thumbnail_id ) {
+									$thumbnail_url = wp_get_attachment_image_url( $video->thumbnail_id, 'medium' );
+								} elseif ( $video->thumbnail_url ) {
+									$thumbnail_url = $video->thumbnail_url;
 								}
-							}
-						});
-					}
 
-					// Thumbnail upload preview (mirror Upload Video design).
-					const thumbInput = detailContainer.querySelector('input[name="video_thumbnail"]');
-					if (thumbInput) {
-						thumbInput.addEventListener('change', function () {
-							const card = this.closest('label');
-							if (!card || !this.files || !this.files[0]) return;
+								$hotel_count = $assignment_repository->get_video_assignment_count( $video->video_id );
+								?>
+								<div class="video-card border border-solid border-gray-300 rounded overflow-hidden hover:border-blue-400 cursor-pointer bg-white" data-video-id="<?php echo esc_attr( $video->video_id ); ?>">
+									<div class="bg-gray-200 border-b border-solid border-gray-300 h-32 flex items-center justify-center relative overflow-hidden">
+										<?php if ( $thumbnail_url ) : ?>
+											<img src="<?php echo esc_url( $thumbnail_url ); ?>" alt="" class="w-full h-full object-cover" />
+										<?php else : ?>
+											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-video w-12 h-12 text-gray-400" aria-hidden="true">
+												<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"></path>
+												<rect x="2" y="6" width="14" height="12" rx="2"></rect>
+											</svg>
+										<?php endif; ?>
+										<?php if ( $duration_label ) : ?>
+											<div class="absolute bottom-2 right-2 px-2 py-1 rounded text-xs bg-white border border-gray-300">
+												<?php echo esc_html( $duration_label ); ?>
+											</div>
+										<?php endif; ?>
+									</div>
+									<div class="p-3">
+										<div class="mb-1 text-sm font-medium text-gray-900"><?php echo esc_html( $video->title ); ?></div>
+										<div class="text-gray-600 mb-2 text-xs"><?php echo esc_html( $category_label ); ?></div>
+										<div class="text-gray-700 text-xs">
+											<?php esc_html_e( 'Assigned to hotels: ', 'hotel-chain' ); ?>
+											<?php echo esc_html( $hotel_count ); ?>
+										</div>
+									</div>
+								</div>
+							<?php endforeach; ?>
+						</div>
+					<?php endif; ?>
+				</div>
 
-							const previewContainer = card.querySelector('div.w-full.aspect-video');
-							if (!previewContainer) return;
+				<!-- AJAX loaded detail panel container -->
+				<div id="video-detail-container"></div>
 
-							const file = this.files[0];
-							const reader = new FileReader();
-							reader.onload = function (e) {
-								// Remove existing children and insert new img preview.
-								previewContainer.innerHTML = '';
-								const img = document.createElement('img');
-								img.src = e.target.result;
-								img.alt = '';
-								img.className = 'w-full h-full object-cover';
-								previewContainer.appendChild(img);
-							};
-							reader.readAsDataURL(file);
-						});
-					}
+				<script>
+				(function() {
+					const ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
+					const nonce = '<?php echo esc_js( wp_create_nonce( 'hotel_chain_video_library' ) ); ?>';
+					const selectedCat = '<?php echo esc_js( $selected_cat ); ?>';
+					const detailContainer = document.getElementById('video-detail-container');
+					let currentVideoId = null;
 
-					// AJAX Assign buttons
-					detailContainer.querySelectorAll('.ajax-assign-btn').forEach(function(btn) {
-						btn.addEventListener('click', function() {
-							const hotelId = this.dataset.hotelId;
+					// Click handler for video cards
+					document.querySelectorAll('.video-card').forEach(function(card) {
+						card.addEventListener('click', function() {
 							const videoId = this.dataset.videoId;
-							const row = this.closest('tr');
-							
-							this.disabled = true;
-							this.textContent = '<?php echo esc_js( __( 'Assigning...', 'hotel-chain' ) ); ?>';
+							if (!videoId) return;
 
+							// Highlight selected card
+							document.querySelectorAll('.video-card').forEach(c => c.classList.remove('ring-2', 'ring-blue-500'));
+							this.classList.add('ring-2', 'ring-blue-500');
+
+							// Show loading state
+							detailContainer.innerHTML = '<div class="bg-white rounded p-8 mb-6 border border-solid border-gray-300 text-center"><div class="text-gray-500"><?php echo esc_js( __( 'Loading video details...', 'hotel-chain' ) ); ?></div></div>';
+
+							// Fetch video details via AJAX
 							const formData = new FormData();
-							formData.append('action', 'hotel_chain_ajax_assign_video');
-							formData.append('hotel_id', hotelId);
+							formData.append('action', 'hotel_chain_get_video_detail');
 							formData.append('video_id', videoId);
+							formData.append('video_cat', selectedCat);
 							formData.append('nonce', nonce);
 
-							fetch(ajaxUrl, { method: 'POST', body: formData })
-								.then(r => r.json())
-								.then(data => {
-									if (data.success) {
-										// Reload the detail panel to reflect changes
-										const card = document.querySelector('.video-card[data-video-id="' + videoId + '"]');
-										if (card) card.click();
-									} else {
-										alert(data.data.message || '<?php echo esc_js( __( 'Error assigning video.', 'hotel-chain' ) ); ?>');
+							fetch(ajaxUrl, {
+								method: 'POST',
+								body: formData
+							})
+							.then(response => response.json())
+							.then(data => {
+								if (data.success && data.data.html) {
+									// Insert HTML directly
+									detailContainer.innerHTML = data.data.html;
+									currentVideoId = videoId;
+
+									// Scroll to detail panel
+									detailContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+									// Initialize panel JS after DOM is ready
+									setTimeout(function() {
+										initDetailPanelJS();
+									}, 100);
+								} else {
+									detailContainer.innerHTML = '<div class="bg-red-50 rounded p-4 mb-6 border border-solid border-red-300 text-red-900">' + (data.data.message || '<?php echo esc_js( __( 'Error loading video details.', 'hotel-chain' ) ); ?>') + '</div>';
+								}
+							})
+							.catch(error => {
+								console.error('Error:', error);
+								detailContainer.innerHTML = '<div class="bg-red-50 rounded p-4 mb-6 border border-solid border-red-300 text-red-900"><?php echo esc_js( __( 'Error loading video details.', 'hotel-chain' ) ); ?></div>';
+							});
+						});
+					});
+
+					// Re-initialize JS for detail panel (play button, replace video, etc.)
+					function initDetailPanelJS() {
+						// Play/Stop preview button
+						const playBtn = detailContainer.querySelector('[data-hotel-video-play]');
+						if (playBtn) {
+							playBtn.addEventListener('click', function() {
+								const videoId = this.dataset.videoPreviewId;
+								const video = document.getElementById(videoId);
+								const poster = detailContainer.querySelector('[data-hotel-video-poster]');
+								
+								if (!video) return;
+
+								if (video.paused) {
+									if (poster) poster.classList.add('hidden');
+									video.classList.remove('hidden');
+									video.play();
+									this.textContent = this.dataset.videoStopLabel;
+								} else {
+									video.pause();
+									video.currentTime = 0;
+									video.classList.add('hidden');
+									if (poster) poster.classList.remove('hidden');
+									this.textContent = this.dataset.videoPlayLabel;
+								}
+							});
+						}
+
+						// Replace video button
+						const replaceBtn = detailContainer.querySelector('[data-hotel-replace-button]');
+						const replaceInput = detailContainer.querySelector('[data-hotel-replace-input]');
+						const replaceLabel = detailContainer.querySelector('[data-hotel-replace-label]');
+						
+						if (replaceBtn && replaceInput) {
+							replaceBtn.addEventListener('click', function() {
+								replaceInput.click();
+							});
+
+							replaceInput.addEventListener('change', function() {
+								if (this.files && this.files[0]) {
+									if (replaceLabel) {
+										replaceLabel.textContent = '<?php echo esc_js( __( 'Selected:', 'hotel-chain' ) ); ?> ' + this.files[0].name;
+										replaceLabel.classList.remove('hidden');
+									}
+								}
+							});
+						}
+
+						// Thumbnail upload preview (mirror Upload Video design).
+						const thumbInput = detailContainer.querySelector('input[name="video_thumbnail"]');
+						if (thumbInput) {
+							thumbInput.addEventListener('change', function () {
+								const card = this.closest('label');
+								if (!card || !this.files || !this.files[0]) return;
+
+								const previewContainer = card.querySelector('div.w-full.aspect-video');
+								if (!previewContainer) return;
+
+								const file = this.files[0];
+								const reader = new FileReader();
+								reader.onload = function (e) {
+									// Remove existing children and insert new img preview.
+									previewContainer.innerHTML = '';
+									const img = document.createElement('img');
+									img.src = e.target.result;
+									img.alt = '';
+									img.className = 'w-full h-full object-cover';
+									previewContainer.appendChild(img);
+								};
+								reader.readAsDataURL(file);
+							});
+						}
+
+						// AJAX Assign buttons
+						detailContainer.querySelectorAll('.ajax-assign-btn').forEach(function(btn) {
+							btn.addEventListener('click', function() {
+								const hotelId = this.dataset.hotelId;
+								const videoId = this.dataset.videoId;
+								const row = this.closest('tr');
+								
+								this.disabled = true;
+								this.textContent = '<?php echo esc_js( __( 'Assigning...', 'hotel-chain' ) ); ?>';
+
+								const formData = new FormData();
+								formData.append('action', 'hotel_chain_ajax_assign_video');
+								formData.append('hotel_id', hotelId);
+								formData.append('video_id', videoId);
+								formData.append('nonce', nonce);
+
+								fetch(ajaxUrl, { method: 'POST', body: formData })
+									.then(r => r.json())
+									.then(data => {
+										if (data.success) {
+											// Reload the detail panel to reflect changes
+											const card = document.querySelector('.video-card[data-video-id="' + videoId + '"]');
+											if (card) card.click();
+										} else {
+											alert(data.data.message || '<?php echo esc_js( __( 'Error assigning video.', 'hotel-chain' ) ); ?>');
+											this.disabled = false;
+											this.textContent = '<?php echo esc_js( __( 'Assign', 'hotel-chain' ) ); ?>';
+										}
+									})
+									.catch(() => {
+										alert('<?php echo esc_js( __( 'Error assigning video.', 'hotel-chain' ) ); ?>');
 										this.disabled = false;
 										this.textContent = '<?php echo esc_js( __( 'Assign', 'hotel-chain' ) ); ?>';
-									}
-								})
-								.catch(() => {
-									alert('<?php echo esc_js( __( 'Error assigning video.', 'hotel-chain' ) ); ?>');
-									this.disabled = false;
-									this.textContent = '<?php echo esc_js( __( 'Assign', 'hotel-chain' ) ); ?>';
-								});
+									});
+							});
 						});
-					});
 
-					// AJAX Unassign buttons
-					detailContainer.querySelectorAll('.ajax-unassign-btn').forEach(function(btn) {
-						btn.addEventListener('click', function() {
-							if (!confirm('<?php echo esc_js( __( 'Are you sure you want to unassign this video from this hotel?', 'hotel-chain' ) ); ?>')) {
-								return;
-							}
+						// AJAX Unassign buttons
+						detailContainer.querySelectorAll('.ajax-unassign-btn').forEach(function(btn) {
+							btn.addEventListener('click', function() {
+								if (!confirm('<?php echo esc_js( __( 'Are you sure you want to unassign this video from this hotel?', 'hotel-chain' ) ); ?>')) {
+									return;
+								}
 
-							const assignmentId = this.dataset.assignmentId;
-							const videoId = this.dataset.videoId;
-							
-							this.disabled = true;
-							this.textContent = '<?php echo esc_js( __( 'Removing...', 'hotel-chain' ) ); ?>';
+								const assignmentId = this.dataset.assignmentId;
+								const videoId = this.dataset.videoId;
+								
+								this.disabled = true;
+								this.textContent = '<?php echo esc_js( __( 'Removing...', 'hotel-chain' ) ); ?>';
 
-							const formData = new FormData();
-							formData.append('action', 'hotel_chain_ajax_unassign_video');
-							formData.append('assignment_id', assignmentId);
-							formData.append('nonce', nonce);
+								const formData = new FormData();
+								formData.append('action', 'hotel_chain_ajax_unassign_video');
+								formData.append('assignment_id', assignmentId);
+								formData.append('nonce', nonce);
 
-							fetch(ajaxUrl, { method: 'POST', body: formData })
-								.then(r => r.json())
-								.then(data => {
-									if (data.success) {
-										// Reload the detail panel to reflect changes
-										const card = document.querySelector('.video-card[data-video-id="' + videoId + '"]');
-										if (card) card.click();
-									} else {
-										alert(data.data.message || '<?php echo esc_js( __( 'Error unassigning video.', 'hotel-chain' ) ); ?>');
+								fetch(ajaxUrl, { method: 'POST', body: formData })
+									.then(r => r.json())
+									.then(data => {
+										if (data.success) {
+											// Reload the detail panel to reflect changes
+											const card = document.querySelector('.video-card[data-video-id="' + videoId + '"]');
+											if (card) card.click();
+										} else {
+											alert(data.data.message || '<?php echo esc_js( __( 'Error unassigning video.', 'hotel-chain' ) ); ?>');
+											this.disabled = false;
+											this.textContent = '<?php echo esc_js( __( 'Unassign', 'hotel-chain' ) ); ?>';
+										}
+									})
+									.catch(() => {
+										alert('<?php echo esc_js( __( 'Error unassigning video.', 'hotel-chain' ) ); ?>');
 										this.disabled = false;
 										this.textContent = '<?php echo esc_js( __( 'Unassign', 'hotel-chain' ) ); ?>';
-									}
-								})
-								.catch(() => {
-									alert('<?php echo esc_js( __( 'Error unassigning video.', 'hotel-chain' ) ); ?>');
-									this.disabled = false;
-									this.textContent = '<?php echo esc_js( __( 'Unassign', 'hotel-chain' ) ); ?>';
-								});
+									});
+							});
 						});
-					});
 
-					// Initialize TinyMCE editor for description field after AJAX load
-					const editorId = 'video_description_inline';
-					const textarea = document.getElementById(editorId);
-					
-					if (textarea && !textarea.hasAttribute('data-mce-initialized')) {
-						// Mark as being initialized to prevent double initialization
-						textarea.setAttribute('data-mce-initialized', 'true');
+						// Initialize TinyMCE editor for description field after AJAX load
+						const editorId = 'video_description_inline';
+						const textarea = document.getElementById(editorId);
 						
-						// Function to initialize editor with proper error handling
-						const initEditor = function(attempts) {
-							attempts = attempts || 0;
+						if (textarea && !textarea.hasAttribute('data-mce-initialized')) {
+							// Mark as being initialized to prevent double initialization
+							textarea.setAttribute('data-mce-initialized', 'true');
 							
-							// Give up after 30 attempts (1.5 seconds)
-							if (attempts > 30) {
-								console.warn('TinyMCE initialization timeout - editor will remain as textarea');
-								return;
-							}
-							
-							// Check if WordPress editor API is available
-							if (typeof wp === 'undefined' || !wp.editor || !wp.editor.initialize) {
-								setTimeout(function() { initEditor(attempts + 1); }, 50);
-								return;
-							}
-							
-							// Check if TinyMCE base is loaded
-							if (typeof tinymce === 'undefined') {
-								setTimeout(function() { initEditor(attempts + 1); }, 50);
-								return;
-							}
-							
-							// Remove any existing editor instance
-							if (tinymce.get(editorId)) {
-								tinymce.remove('#' + editorId);
-							}
-							
-							// Initialize using WordPress's editor API with default settings
-							try {
-								// Use default WordPress editor settings (similar to wp_editor)
+							// Function to initialize editor with proper error handling
+							const initEditor = function(attempts) {
+								attempts = attempts || 0;
+								
+								// Give up after 30 attempts (1.5 seconds)
+								if (attempts > 30) {
+									console.warn('TinyMCE initialization timeout - editor will remain as textarea');
+									return;
+								}
+								
+								// Check if WordPress editor API is available
+								if (typeof wp === 'undefined' || !wp.editor || !wp.editor.initialize) {
+									setTimeout(function() { initEditor(attempts + 1); }, 50);
+									return;
+								}
+								
+								// Check if TinyMCE base is loaded
+								if (typeof tinymce === 'undefined') {
+									setTimeout(function() { initEditor(attempts + 1); }, 50);
+									return;
+								}
+								
+								// Remove any existing editor instance
+								if (tinymce.get(editorId)) {
+									tinymce.remove('#' + editorId);
+								}
+								
+								// Initialize using WordPress's editor API with default settings
+								try {
+									// Use default WordPress editor settings (similar to wp_editor)
 								wp.editor.initialize(editorId, {
 									tinymce: {
 										wpautop: true,
@@ -1337,31 +1401,32 @@ class VideoLibraryPage implements ServiceProviderInterface {
 									},
 									quicktags: true
 								});
-							} catch (e) {
-								console.warn('TinyMCE initialization error:', e);
-								// Editor will remain as plain textarea on error
-							}
-						};
-						
-						// Start initialization after a short delay to ensure DOM is ready
-						setTimeout(function() {
-							initEditor(0);
-						}, 100);
+								} catch (e) {
+									console.warn('TinyMCE initialization error:', e);
+									// Editor will remain as plain textarea on error
+								}
+							};
+							
+							// Start initialization after a short delay to ensure DOM is ready
+							setTimeout(function() {
+								initEditor(0);
+							}, 100);
+						}
 					}
-				}
 
-				// Load video if ID is in URL (for page reload after form submit)
-				<?php if ( $selected_video_id ) : ?>
-				(function() {
-					const card = document.querySelector('.video-card[data-video-id="<?php echo esc_js( $selected_video_id ); ?>"]');
-					if (card) {
-						card.click();
-					}
+					// Load video if ID is in URL (for page reload after form submit)
+					<?php if ( $selected_video_id ) : ?>
+					(function() {
+						const card = document.querySelector('.video-card[data-video-id="<?php echo esc_js( $selected_video_id ); ?>"]');
+						if (card) {
+							card.click();
+						}
+					})();
+					<?php endif; ?>
 				})();
-				<?php endif; ?>
-			})();
-			</script>
+				</script>
 
+			</div>
 		</div>
 		<?php
 	}

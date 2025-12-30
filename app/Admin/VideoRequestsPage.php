@@ -186,78 +186,79 @@ class VideoRequestsPage implements ServiceProviderInterface {
 		$assignment_repo  = new HotelVideoAssignmentRepository();
 		$pending_requests = $assignment_repo->get_pending_requests();
 		?>
-		<div class="wrap w-8/12 mx-auto">
-			<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Video Requests', 'hotel-chain' ); ?></h1>
-			<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-300 pb-3"><?php esc_html_e( 'Review and manage video access requests from hotels.', 'hotel-chain' ); ?></p>
+		<div class="flex-1 overflow-auto p-4 lg:p-8">
+			<div class="wrap w-12/12 md:w-10/12 xl:w-9/12 mx-auto mt-0">
+				<h1 class="text-2xl font-bold mb-2 pt-0"><?php esc_html_e( 'Video Requests', 'hotel-chain' ); ?></h1>
+				<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-300 pb-3"><?php esc_html_e( 'Review and manage video access requests from hotels.', 'hotel-chain' ); ?></p>
 
-			<?php if ( $approved ) : ?>
-				<div class="bg-green-50 border border-solid border-green-300 rounded p-3 mb-4 text-sm text-green-900">
-					<?php esc_html_e( 'Request approved successfully. Video has been assigned to the hotel.', 'hotel-chain' ); ?>
-				</div>
-			<?php endif; ?>
+				<?php if ( $approved ) : ?>
+					<div class="bg-green-50 border border-solid border-green-300 rounded p-3 mb-4 text-sm text-green-900">
+						<?php esc_html_e( 'Request approved successfully. Video has been assigned to the hotel.', 'hotel-chain' ); ?>
+					</div>
+				<?php endif; ?>
 
-			<?php if ( $rejected ) : ?>
-				<div class="bg-red-50 border border-solid border-red-300 rounded p-3 mb-4 text-sm text-red-900">
-					<?php esc_html_e( 'Request rejected successfully.', 'hotel-chain' ); ?>
-				</div>
-			<?php endif; ?>
+				<?php if ( $rejected ) : ?>
+					<div class="bg-red-50 border border-solid border-red-300 rounded p-3 mb-4 text-sm text-red-900">
+						<?php esc_html_e( 'Request rejected successfully.', 'hotel-chain' ); ?>
+					</div>
+				<?php endif; ?>
 
-			<div class="bg-white rounded p-4 border border-solid border-gray-300">
-				<div class="mb-4 pb-3 border-b border-solid border-gray-300">
-					<h3 class="text-lg font-semibold">
-						<?php
-						printf(
-							/* translators: %d: number of pending requests. */
-							esc_html__( 'Pending Requests (%d)', 'hotel-chain' ),
-							count( $pending_requests )
-						);
-						?>
-					</h3>
-				</div>
+				<div class="bg-white rounded p-4 border border-solid border-gray-300">
+					<div class="mb-4 pb-3 border-b border-solid border-gray-300">
+						<h3 class="text-lg font-semibold">
+							<?php
+							printf(
+								/* translators: %d: number of pending requests. */
+								esc_html__( 'Pending Requests (%d)', 'hotel-chain' ),
+								count( $pending_requests )
+							);
+							?>
+						</h3>
+					</div>
 
-				<div id="requests-empty-message" class="text-gray-600 py-8 text-center <?php echo empty( $pending_requests ) ? '' : 'hidden'; ?>">
-					<?php esc_html_e( 'No pending video requests.', 'hotel-chain' ); ?>
-				</div>
+					<div id="requests-empty-message" class="text-gray-600 py-8 text-center <?php echo empty( $pending_requests ) ? '' : 'hidden'; ?>">
+						<?php esc_html_e( 'No pending video requests.', 'hotel-chain' ); ?>
+					</div>
 
-				<table id="requests-table" class="w-full <?php echo empty( $pending_requests ) ? 'hidden' : ''; ?>">
-					<thead>
-						<tr class="border-b border-solid border-gray-200">
-							<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Hotel', 'hotel-chain' ); ?></th>
-							<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Video', 'hotel-chain' ); ?></th>
-							<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Requested', 'hotel-chain' ); ?></th>
-							<th class="text-right py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Actions', 'hotel-chain' ); ?></th>
-						</tr>
-					</thead>
-					<tbody id="requests-tbody">
-						<?php foreach ( $pending_requests as $request ) : ?>
-							<tr class="border-b border-solid border-gray-100 hover:bg-gray-50" data-request-id="<?php echo esc_attr( $request->id ); ?>">
-								<td class="py-3 px-2">
-									<div class="font-medium text-gray-900"><?php echo esc_html( $request->hotel_name ); ?></div>
-									<div class="text-xs text-gray-500"><?php echo esc_html( $request->hotel_code ); ?></div>
-								</td>
-								<td class="py-3 px-2">
-									<div class="text-gray-900"><?php echo esc_html( $request->video_title ? $request->video_title : __( 'Unknown Video', 'hotel-chain' ) ); ?></div>
-								</td>
-								<td class="py-3 px-2 text-gray-600 text-sm">
-									<?php echo esc_html( date_i18n( 'M j, Y g:i A', strtotime( $request->assigned_at ) ) ); ?>
-								</td>
-								<td class="py-3 px-2 text-right">
-									<button type="button" class="ajax-approve-btn inline-block px-3 py-1 bg-green-200 border border-solid border-green-400 rounded text-green-900 text-sm mr-2 hover:bg-green-300" data-request-id="<?php echo esc_attr( $request->id ); ?>">
-										<?php esc_html_e( 'Approve', 'hotel-chain' ); ?>
-									</button>
-									<button type="button" class="ajax-reject-btn inline-block px-3 py-1 bg-red-200 border border-solid border-red-400 rounded text-red-900 text-sm hover:bg-red-300" data-request-id="<?php echo esc_attr( $request->id ); ?>">
-										<?php esc_html_e( 'Reject', 'hotel-chain' ); ?>
-									</button>
-								</td>
+					<table id="requests-table" class="w-full <?php echo empty( $pending_requests ) ? 'hidden' : ''; ?>">
+						<thead>
+							<tr class="border-b border-solid border-gray-200">
+								<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Hotel', 'hotel-chain' ); ?></th>
+								<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Video', 'hotel-chain' ); ?></th>
+								<th class="text-left py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Requested', 'hotel-chain' ); ?></th>
+								<th class="text-right py-3 px-2 text-sm font-semibold text-gray-700"><?php esc_html_e( 'Actions', 'hotel-chain' ); ?></th>
 							</tr>
-						<?php endforeach; ?>
-					</tbody>
-				</table>
+						</thead>
+						<tbody id="requests-tbody">
+							<?php foreach ( $pending_requests as $request ) : ?>
+								<tr class="border-b border-solid border-gray-100 hover:bg-gray-50" data-request-id="<?php echo esc_attr( $request->id ); ?>">
+									<td class="py-3 px-2">
+										<div class="font-medium text-gray-900"><?php echo esc_html( $request->hotel_name ); ?></div>
+										<div class="text-xs text-gray-500"><?php echo esc_html( $request->hotel_code ); ?></div>
+									</td>
+									<td class="py-3 px-2">
+										<div class="text-gray-900"><?php echo esc_html( $request->video_title ? $request->video_title : __( 'Unknown Video', 'hotel-chain' ) ); ?></div>
+									</td>
+									<td class="py-3 px-2 text-gray-600 text-sm">
+										<?php echo esc_html( date_i18n( 'M j, Y g:i A', strtotime( $request->assigned_at ) ) ); ?>
+									</td>
+									<td class="py-3 px-2 text-right">
+										<button type="button" class="ajax-approve-btn inline-block px-3 py-1 bg-green-200 border border-solid border-green-400 rounded text-green-900 text-sm mr-2 hover:bg-green-300" data-request-id="<?php echo esc_attr( $request->id ); ?>">
+											<?php esc_html_e( 'Approve', 'hotel-chain' ); ?>
+										</button>
+										<button type="button" class="ajax-reject-btn inline-block px-3 py-1 bg-red-200 border border-solid border-red-400 rounded text-red-900 text-sm hover:bg-red-300" data-request-id="<?php echo esc_attr( $request->id ); ?>">
+											<?php esc_html_e( 'Reject', 'hotel-chain' ); ?>
+										</button>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+
+				<div id="ajax-message" class="hidden rounded p-3 mb-4 text-sm"></div>
 			</div>
-
-			<div id="ajax-message" class="hidden rounded p-3 mb-4 text-sm"></div>
 		</div>
-
 		<script>
 		(function() {
 			const ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';

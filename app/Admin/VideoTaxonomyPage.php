@@ -57,86 +57,83 @@ class VideoTaxonomyPage implements ServiceProviderInterface {
 
 		$updated = isset( $_GET['updated'] ) ? absint( $_GET['updated'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		?>
-		<div class="wrap w-8/12 mx-auto">
-			<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Video Categories & Tags', 'hotel-chain' ); ?></h1>
-			<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-300 pb-3"><?php esc_html_e( 'Manage reusable categories and tags for training videos. Drag to reorder.', 'hotel-chain' ); ?></p>
+		<div class="flex-1 overflow-auto p-4 lg:p-8">
+			<div class="wrap w-12/12 md:w-10/12 xl:w-9/12 mx-auto mt-0">
+				<h1 class="ext-2xl font-bold mb-2 pt-0"><?php esc_html_e( 'Video Categories & Tags', 'hotel-chain' ); ?></h1>
+				<p class="text-slate-600 mb-6 text-lg border-b border-solid border-gray-300 pb-3"><?php esc_html_e( 'Manage reusable categories and tags for training videos. Drag to reorder.', 'hotel-chain' ); ?></p>
 
-			<?php if ( $updated ) : ?>
-				<div class="bg-green-50 border border-solid border-green-300 rounded p-3 mb-4 text-sm text-green-900">
-					<?php esc_html_e( 'Taxonomy saved successfully.', 'hotel-chain' ); ?>
-				</div>
-			<?php endif; ?>
-
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" id="taxonomy-form">
-				<?php wp_nonce_field( 'hotel_chain_save_video_taxonomy' ); ?>
-				<input type="hidden" name="action" value="hotel_chain_save_video_taxonomy" />
-
-				<!-- Categories Section -->
-				<div class="bg-white rounded p-4 mb-6 border border-solid border-gray-300">
-					<div class="mb-4 pb-3 border-b border-solid border-gray-300 flex items-center justify-between">
-						<h3 class="text-lg font-semibold"><?php esc_html_e( 'Video Categories', 'hotel-chain' ); ?></h3>
-						<button type="button" id="add-category-btn" class="px-4 py-2 bg-green-200 border border-solid border-green-400 rounded text-green-900 text-sm hover:bg-green-300">
-							+ <?php esc_html_e( 'Add Category', 'hotel-chain' ); ?>
-						</button>
+				<?php if ( $updated ) : ?>
+					<div class="bg-green-50 border border-solid border-green-300 rounded p-3 mb-4 text-sm text-green-900">
+						<?php esc_html_e( 'Taxonomy saved successfully.', 'hotel-chain' ); ?>
 					</div>
-					<div id="categories-list" class="space-y-2">
-						<?php if ( empty( $categories ) ) : ?>
-							<p class="text-gray-500 text-sm py-4 text-center" id="no-categories-msg"><?php esc_html_e( 'No categories yet. Click "Add Category" to create one.', 'hotel-chain' ); ?></p>
-						<?php else : ?>
-							<?php foreach ( $categories as $category ) : ?>
-								<div class="taxonomy-item flex items-center gap-2 bg-gray-50 border border-solid border-gray-200 rounded p-2" draggable="true" data-id="<?php echo esc_attr( $category->id ); ?>">
-									<input type="hidden" name="category_ids[]" value="<?php echo esc_attr( $category->id ); ?>" />
-									<span class="drag-handle cursor-move text-gray-400 hover:text-gray-600 px-1">
-										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-									</span>
-									<input type="text" name="categories[]" value="<?php echo esc_attr( $category->name ); ?>" class="flex-1 px-3 py-2 border border-solid border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="<?php esc_attr_e( 'Category name', 'hotel-chain' ); ?>" />
-									<button type="button" class="remove-item-btn px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded" title="<?php esc_attr_e( 'Remove', 'hotel-chain' ); ?>">
-										<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-									</button>
-								</div>
-							<?php endforeach; ?>
-						<?php endif; ?>
-					</div>
-				</div>
+				<?php endif; ?>
 
-				<!-- Tags Section -->
-				<div class="bg-white rounded p-4 mb-6 border border-solid border-gray-300">
-					<div class="mb-4 pb-3 border-b border-solid border-gray-300 flex items-center justify-between">
-						<h3 class="text-lg font-semibold"><?php esc_html_e( 'Suggested Tags', 'hotel-chain' ); ?></h3>
-						<button type="button" id="add-tag-btn" class="px-4 py-2 bg-blue-200 border border-solid border-blue-400 rounded text-blue-900 text-sm hover:bg-blue-300">
-							+ <?php esc_html_e( 'Add Tag', 'hotel-chain' ); ?>
-						</button>
-					</div>
-					<div id="tags-list" class="space-y-2">
-						<?php if ( empty( $tags ) ) : ?>
-							<p class="text-gray-500 text-sm py-4 text-center" id="no-tags-msg"><?php esc_html_e( 'No tags yet. Click "Add Tag" to create one.', 'hotel-chain' ); ?></p>
-						<?php else : ?>
-							<?php foreach ( $tags as $tag ) : ?>
-								<div class="taxonomy-item flex items-center gap-2 bg-gray-50 border border-solid border-gray-200 rounded p-2" draggable="true" data-id="<?php echo esc_attr( $tag->id ); ?>">
-									<input type="hidden" name="tag_ids[]" value="<?php echo esc_attr( $tag->id ); ?>" />
-									<span class="drag-handle cursor-move text-gray-400 hover:text-gray-600 px-1">
-										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-									</span>
-									<input type="text" name="tags[]" value="<?php echo esc_attr( $tag->name ); ?>" class="flex-1 px-3 py-2 border border-solid border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="<?php esc_attr_e( 'Tag name', 'hotel-chain' ); ?>" />
-									<button type="button" class="remove-item-btn px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded" title="<?php esc_attr_e( 'Remove', 'hotel-chain' ); ?>">
-										<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-									</button>
-								</div>
-							<?php endforeach; ?>
-						<?php endif; ?>
-					</div>
-				</div>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" id="taxonomy-form">
+					<?php wp_nonce_field( 'hotel_chain_save_video_taxonomy' ); ?>
+					<input type="hidden" name="action" value="hotel_chain_save_video_taxonomy" />
 
-				<button type="submit" class="px-6 py-3 bg-green-200 border-2 border-green-400 rounded text-green-900 font-medium hover:bg-green-300">
-					<?php esc_html_e( 'Save Changes', 'hotel-chain' ); ?>
-				</button>
-			</form>
+					<!-- Categories Section -->
+					<div class="bg-white rounded p-4 mb-6 border border-solid border-gray-300">
+						<div class="mb-4 pb-3 border-b border-solid border-gray-300 flex items-center justify-between">
+							<h3 class="text-lg font-semibold"><?php esc_html_e( 'Video Categories', 'hotel-chain' ); ?></h3>
+							<button type="button" id="add-category-btn" class="px-4 py-2 bg-green-200 border border-solid border-green-400 rounded text-green-900 text-sm hover:bg-green-300">
+								+ <?php esc_html_e( 'Add Category', 'hotel-chain' ); ?>
+							</button>
+						</div>
+						<div id="categories-list" class="space-y-2">
+							<?php if ( empty( $categories ) ) : ?>
+								<p class="text-gray-500 text-sm py-4 text-center" id="no-categories-msg"><?php esc_html_e( 'No categories yet. Click "Add Category" to create one.', 'hotel-chain' ); ?></p>
+							<?php else : ?>
+								<?php foreach ( $categories as $category ) : ?>
+									<div class="taxonomy-item flex items-center gap-2 bg-gray-50 border border-solid border-gray-200 rounded p-2" draggable="true" data-id="<?php echo esc_attr( $category->id ); ?>">
+										<input type="hidden" name="category_ids[]" value="<?php echo esc_attr( $category->id ); ?>" />
+										<span class="drag-handle cursor-move text-gray-400 hover:text-gray-600 px-1">
+											<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+										</span>
+										<input type="text" name="categories[]" value="<?php echo esc_attr( $category->name ); ?>" class="flex-1 px-3 py-2 border border-solid border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="<?php esc_attr_e( 'Category name', 'hotel-chain' ); ?>" />
+										<button type="button" class="remove-item-btn px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded" title="<?php esc_attr_e( 'Remove', 'hotel-chain' ); ?>">
+											<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+										</button>
+									</div>
+								<?php endforeach; ?>
+							<?php endif; ?>
+						</div>
+					</div>
+
+					<!-- Tags Section -->
+					<div class="bg-white rounded p-4 mb-6 border border-solid border-gray-300">
+						<div class="mb-4 pb-3 border-b border-solid border-gray-300 flex items-center justify-between">
+							<h3 class="text-lg font-semibold"><?php esc_html_e( 'Suggested Tags', 'hotel-chain' ); ?></h3>
+							<button type="button" id="add-tag-btn" class="px-4 py-2 bg-blue-200 border border-solid border-blue-400 rounded text-blue-900 text-sm hover:bg-blue-300">
+								+ <?php esc_html_e( 'Add Tag', 'hotel-chain' ); ?>
+							</button>
+						</div>
+						<div id="tags-list" class="space-y-2">
+							<?php if ( empty( $tags ) ) : ?>
+								<p class="text-gray-500 text-sm py-4 text-center" id="no-tags-msg"><?php esc_html_e( 'No tags yet. Click "Add Tag" to create one.', 'hotel-chain' ); ?></p>
+							<?php else : ?>
+								<?php foreach ( $tags as $tag ) : ?>
+									<div class="taxonomy-item flex items-center gap-2 bg-gray-50 border border-solid border-gray-200 rounded p-2" draggable="true" data-id="<?php echo esc_attr( $tag->id ); ?>">
+										<input type="hidden" name="tag_ids[]" value="<?php echo esc_attr( $tag->id ); ?>" />
+										<span class="drag-handle cursor-move text-gray-400 hover:text-gray-600 px-1">
+											<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+										</span>
+										<input type="text" name="tags[]" value="<?php echo esc_attr( $tag->name ); ?>" class="flex-1 px-3 py-2 border border-solid border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="<?php esc_attr_e( 'Tag name', 'hotel-chain' ); ?>" />
+										<button type="button" class="remove-item-btn px-2 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded" title="<?php esc_attr_e( 'Remove', 'hotel-chain' ); ?>">
+											<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+										</button>
+									</div>
+								<?php endforeach; ?>
+							<?php endif; ?>
+						</div>
+					</div>
+
+					<button type="submit" class="px-6 py-3 bg-green-200 border-2 border-green-400 rounded text-green-900 font-medium hover:bg-green-300">
+						<?php esc_html_e( 'Save Changes', 'hotel-chain' ); ?>
+					</button>
+				</form>
+			</div>
 		</div>
-
-		<style>
-			.taxonomy-item.dragging { opacity: 0.5; background: #e0e7ff; }
-			.taxonomy-item.drag-over { border-color: #3b82f6; border-style: dashed; }
-		</style>
 
 		<script>
 		(function() {
