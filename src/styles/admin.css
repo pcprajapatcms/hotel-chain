@@ -242,8 +242,10 @@ li#wp-admin-bar-comments, li#wp-admin-bar-new-content, li#wp-admin-bar-updates, 
 	transform: translateX(0) !important;
 }
 
-/* Video format checkbox styling */
-.wrap input[type="checkbox"]:checked + span {
-	background-color: rgb(221 214 254) !important;
-	border-color: rgb(167 139 250) !important;
+.bg-primary{
+	background-color: #f0e7d7 !important;
+}
+
+.bg-secondary{
+	background-color: rgb(61, 61, 68) !important;
 }

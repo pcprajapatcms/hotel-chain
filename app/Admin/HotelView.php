@@ -11,6 +11,8 @@ use HotelChain\Contracts\ServiceProviderInterface;
 use HotelChain\Repositories\HotelRepository;
 use HotelChain\Repositories\HotelVideoAssignmentRepository;
 use HotelChain\Repositories\VideoRepository;
+use HotelChain\Repositories\GuestRepository;
+use HotelChain\Database\Schema;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
@@ -99,6 +101,34 @@ class HotelView implements ServiceProviderInterface {
 		$assignment_repository = new HotelVideoAssignmentRepository();
 		$hotel_videos          = $assignment_repository->get_hotel_videos( $detail_hotel->id, array( 'status' => 'active' ) );
 		$videos_assigned       = count( $hotel_videos );
+
+		// Get guest statistics.
+		$guest_repository = new GuestRepository();
+		$total_guests     = $guest_repository->count_hotel_guests( $detail_hotel->id );
+		$active_guests    = $guest_repository->count_hotel_guests( $detail_hotel->id, 'active' );
+
+		// Get video views and watch time statistics.
+		global $wpdb;
+		$video_views_table = Schema::get_table_name( 'video_views' );
+		
+		// Total views for this hotel.
+		$total_views = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$video_views_table} WHERE hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$detail_hotel->id
+			)
+		);
+
+		// Total watch time in seconds.
+		$total_watch_seconds = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COALESCE(SUM(view_duration), 0) FROM {$video_views_table} WHERE hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$detail_hotel->id
+			)
+		);
+
+		// Convert to hours (rounded to 1 decimal place).
+		$watch_hours = $total_watch_seconds > 0 ? round( $total_watch_seconds / 3600, 1 ) : 0;
 		?>
 		<div class="w-12/12 md:w-10/12 xl:w-8/12 mx-auto">
 		<h1 class="text-2xl font-bold mb-2"><?php esc_html_e( 'Hotel Detail View', 'hotel-chain' ); ?></h1>
@@ -191,11 +221,11 @@ class HotelView implements ServiceProviderInterface {
 							<div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
 								<div class="p-3 bg-gray-50 border border-solid border-gray-400 rounded text-center">
 									<div class="text-gray-600 mb-1"><?php esc_html_e( 'Total Guests', 'hotel-chain' ); ?></div>
-									<div class="text-gray-900">0</div>
+									<div class="text-gray-900"><?php echo esc_html( number_format_i18n( $total_guests ) ); ?></div>
 								</div>
 								<div class="p-3 bg-gray-50 border border-solid border-gray-400 rounded text-center">
 									<div class="text-gray-600 mb-1"><?php esc_html_e( 'Active Guests', 'hotel-chain' ); ?></div>
-									<div class="text-green-700">0</div>
+									<div class="text-green-700"><?php echo esc_html( number_format_i18n( $active_guests ) ); ?></div>
 								</div>
 								<div class="p-3 bg-gray-50 border border-solid border-gray-400 rounded text-center">
 									<div class="text-gray-600 mb-1"><?php esc_html_e( 'Videos Assigned', 'hotel-chain' ); ?></div>
@@ -203,11 +233,11 @@ class HotelView implements ServiceProviderInterface {
 								</div>
 								<div class="p-3 bg-gray-50 border border-solid border-gray-400 rounded text-center">
 									<div class="text-gray-600 mb-1"><?php esc_html_e( 'Total Views', 'hotel-chain' ); ?></div>
-									<div class="text-gray-900">0</div>
+									<div class="text-gray-900"><?php echo esc_html( number_format_i18n( $total_views ) ); ?></div>
 								</div>
 								<div class="p-3 bg-gray-50 border border-solid border-gray-400 rounded text-center">
 									<div class="text-gray-600 mb-1"><?php esc_html_e( 'Watch Hours', 'hotel-chain' ); ?></div>
-									<div class="text-gray-900">0</div>
+									<div class="text-gray-900"><?php echo esc_html( number_format_i18n( $watch_hours, 1 ) ); ?></div>
 								</div>
 								<div class="p-3 bg-gray-50 border border-solid border-gray-400 rounded text-center">
 									<div class="text-gray-600 mb-1"><?php esc_html_e( 'Created', 'hotel-chain' ); ?></div>

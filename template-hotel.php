@@ -30,12 +30,24 @@ if ( ! $hotel ) {
 $is_guest        = false;
 $guest           = null;
 $current_user_id = get_current_user_id();
+$guest_status_message = '';
 
 if ( $current_user_id ) {
 	$guest_repo = new GuestRepository();
 	$guest      = $guest_repo->get_by_hotel_and_user( $hotel->id, $current_user_id );
 	// Check if guest has valid access (status is active AND access_end hasn't passed).
 	$is_guest = GuestExpiration::is_guest_access_valid( $guest );
+	
+	// Set status message for locked/expired guests.
+	if ( $guest && ! $is_guest ) {
+		if ( 'revoked' === $guest->status || 'locked' === $guest->status ) {
+			$guest_status_message = __( 'Your account has been deactivated or locked. Please contact the hotel for assistance.', 'hotel-chain' );
+		} elseif ( 'expired' === $guest->status ) {
+			$guest_status_message = __( 'Your access has expired. Please contact the hotel to extend your access.', 'hotel-chain' );
+		} elseif ( 'pending' === $guest->status ) {
+			$guest_status_message = __( 'Your account is pending email verification. Please check your email.', 'hotel-chain' );
+		}
+	}
 }
 
 // Get current page/tab.
@@ -252,15 +264,18 @@ wp_enqueue_style(
 				</div>
 
 				<!-- Navigation -->
+				<?php
+				// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Local variable for navigation tabs.
+				$tabs = array(
+					'home'      => __( 'Home', 'hotel-chain' ),
+					'videos'    => __( 'Videos', 'hotel-chain' ),
+					'analytics' => __( 'Analytics', 'hotel-chain' ),
+					'account'   => __( 'Account', 'hotel-chain' ),
+				);
+				?>
+				<?php if ( $is_guest ) : ?>
 				<nav class="hidden md:flex items-center gap-1">
 					<?php
-					// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Local variable for navigation tabs.
-					$tabs = array(
-						'home'      => __( 'Home', 'hotel-chain' ),
-						'videos'    => __( 'Videos', 'hotel-chain' ),
-						'analytics' => __( 'Analytics', 'hotel-chain' ),
-						'account'   => __( 'Account', 'hotel-chain' ),
-					);
 					foreach ( $tabs as $tab_key => $tab_label ) :
 						$is_active = ( $current_tab === $tab_key );
 						$tab_url   = add_query_arg( 'tab', $tab_key, home_url( '/hotel/' . $hotel->hotel_slug . '/' ) );
@@ -273,6 +288,7 @@ wp_enqueue_style(
 						</a>
 					<?php endforeach; ?>
 				</nav>
+				<?php endif; ?>
 
 				<!-- User Menu -->
 				<div class="flex items-center gap-3">
@@ -295,6 +311,7 @@ wp_enqueue_style(
 			</div>
 
 			<!-- Mobile Navigation -->
+			<?php if ( $is_guest ) : ?>
 			<nav class="md:hidden flex items-center gap-1 pb-3 overflow-x-auto">
 				<?php
 				foreach ( $tabs as $tab_key => $tab_label ) :
@@ -309,10 +326,11 @@ wp_enqueue_style(
 					</a>
 				<?php endforeach; ?>
 			</nav>
+			<?php endif; ?>
 		</div>
 	</header>
 
-	<?php if ( 'home' === $current_tab ) : ?>
+	<?php if ( 'home' === $current_tab && $is_guest ) : ?>
 	<!-- Hero Welcome Section -->
 	<div class="py-20 px-8" style="background-color: rgb(61, 61, 68);">
 		<div class="max-w-5xl mx-auto">
@@ -584,9 +602,9 @@ wp_enqueue_style(
 	<!-- Main Content -->
 	<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-		<?php if ( ! $is_guest && is_user_logged_in() ) : ?>
-			<!-- Not Registered as Guest Banner -->
-			<div class="bg-yellow-50 border border-solid border-yellow-300 rounded-lg p-4 mb-6">
+		<?php if ( ! $is_guest ) : ?>
+			<!-- Access Denied Message -->
+			<div class="bg-yellow-50 border border-solid border-yellow-300 rounded-lg p-6 mb-6">
 				<div class="flex items-center gap-3">
 					<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 						<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
@@ -594,16 +612,20 @@ wp_enqueue_style(
 						<line x1="12" y1="17" x2="12.01" y2="17"></line>
 					</svg>
 					<div>
-						<p class="text-yellow-800 font-medium"><?php esc_html_e( 'You are not registered as a guest at this hotel.', 'hotel-chain' ); ?></p>
-						<a href="<?php echo esc_url( add_query_arg( 'hotel', $hotel->hotel_code, home_url( '/register' ) ) ); ?>" class="text-yellow-700 underline text-sm">
-							<?php esc_html_e( 'Register now to access the meditation series', 'hotel-chain' ); ?>
-						</a>
+						<?php if ( is_user_logged_in() && $guest && ! empty( $guest_status_message ) ) : ?>
+							<p class="text-yellow-800 font-medium"><?php echo esc_html( $guest_status_message ); ?></p>
+						<?php else : ?>
+							<p class="text-yellow-800 font-medium"><?php esc_html_e( 'You are not registered as a guest at this hotel.', 'hotel-chain' ); ?></p>
+							<a href="<?php echo esc_url( add_query_arg( 'hotel', $hotel->hotel_code, home_url( '/register' ) ) ); ?>" class="text-yellow-700 underline text-sm">
+								<?php esc_html_e( 'Register now to access the meditation series', 'hotel-chain' ); ?>
+							</a>
+						<?php endif; ?>
 					</div>
 				</div>
 			</div>
 		<?php endif; ?>
 
-		<?php if ( 'videos' === $current_tab ) : ?>
+		<?php if ( 'videos' === $current_tab && $is_guest ) : ?>
 			<!-- Videos Tab -->
 			<h2 class="text-2xl font-semibold mb-6"><?php esc_html_e( 'Meditation Library', 'hotel-chain' ); ?></h2>
 			
@@ -661,7 +683,7 @@ wp_enqueue_style(
 				</div>
 			<?php endif; ?>
 
-		<?php elseif ( 'analytics' === $current_tab ) : ?>
+		<?php elseif ( 'analytics' === $current_tab && $is_guest ) : ?>
 			<!-- Analytics Tab -->
 			<h2 class="text-2xl font-semibold mb-6"><?php esc_html_e( 'Your Analytics', 'hotel-chain' ); ?></h2>
 			

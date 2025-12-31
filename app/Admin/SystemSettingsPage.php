@@ -10,6 +10,7 @@ namespace HotelChain\Admin;
 use HotelChain\Contracts\ServiceProviderInterface;
 use HotelChain\Database\Schema;
 use HotelChain\Support\StyleSettings;
+use HotelChain\Support\AccountSettings;
 
 /**
  * System Settings page.
@@ -26,6 +27,8 @@ class SystemSettingsPage implements ServiceProviderInterface {
 		add_action( 'admin_post_hotel_chain_save_system_settings', array( $this, 'handle_save_settings' ) );
 		add_action( 'admin_post_hotel_chain_reset_system_settings', array( $this, 'handle_reset_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_media_uploader' ) );
+		add_action( 'wp_ajax_system_settings_upload_media', array( $this, 'handle_media_upload' ) );
+		add_action( 'wp_ajax_system_settings_delete_media', array( $this, 'handle_media_delete' ) );
 	}
 
 	/**
@@ -295,6 +298,10 @@ class SystemSettingsPage implements ServiceProviderInterface {
 			);
 		}
 
+		// Clear caches.
+		AccountSettings::clear_cache();
+		StyleSettings::clear_cache();
+
 		wp_safe_redirect(
 			add_query_arg(
 				array(
@@ -353,6 +360,10 @@ class SystemSettingsPage implements ServiceProviderInterface {
 				array( '%s', '%s', '%s', '%s' )
 			);
 		}
+
+		// Clear caches.
+		AccountSettings::clear_cache();
+		StyleSettings::clear_cache();
 
 		wp_safe_redirect(
 			add_query_arg(
@@ -546,12 +557,12 @@ class SystemSettingsPage implements ServiceProviderInterface {
 											__( 'Auto-Approve Video Requests', 'hotel-chain' ),
 											__( 'Automatically approve all guest video requests', 'hotel-chain' )
 										);
-										$this->render_toggle(
+										/* $this->render_toggle(
 											'allow_reactivation',
 											$s['allow_reactivation'],
 											__( 'Allow Reactivation Requests', 'hotel-chain' ),
 											__( 'Guests can request account reactivation after expiry', 'hotel-chain' )
-										);
+										); */
 										?>
 									</div>
 								</div>
@@ -703,83 +714,89 @@ class SystemSettingsPage implements ServiceProviderInterface {
 									<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 										<!-- Logo Uploader -->
 										<div>
-											<div class="mb-2 text-gray-700 text-sm"><?php esc_html_e( 'Logo', 'hotel-chain' ); ?></div>
-											<input type="hidden" name="logo_id" id="logo_id" value="<?php echo esc_attr( (string) $s['logo_id'] ); ?>" />
-											<input type="hidden" name="logo_url" id="logo_url" value="<?php echo esc_attr( $s['logo_url'] ); ?>" />
-											
-											<label id="logo-drop-zone" class="border border-dashed border-gray-400 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer flex-1 flex flex-col justify-center min-h-[200px]">
-												<!-- Preview (shown when logo exists) -->
-												<div id="logo-preview-wrapper" class="<?php echo empty( $s['logo_url'] ) ? 'hidden' : ''; ?> mb-2">
-													<img
-														id="logo-preview"
-														src="<?php echo esc_url( $s['logo_url'] ); ?>"
-														alt="Logo preview"
-														class="max-w-full max-h-48 h-auto rounded object-contain mx-auto"
-													/>
-													<button type="button" id="remove_logo_btn" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
+											<label class="block mb-2 text-gray-700"><?php esc_html_e( 'Logo', 'hotel-chain' ); ?></label>
+											<div id="logo-drop-zone" class="border border-solid border-gray-400 border-dashed rounded p-6 text-center bg-gray-50 transition-colors cursor-pointer hover:border-blue-400 hover:bg-blue-50">
+												<input type="hidden" name="logo_id" id="logo_id" value="<?php echo esc_attr( (string) $s['logo_id'] ); ?>" />
+												<input type="hidden" name="logo_url" id="logo_url" value="<?php echo esc_attr( $s['logo_url'] ); ?>" />
+												<input type="file" id="logo-file" accept="image/png,image/jpeg,image/jpg,image/svg+xml" class="hidden" />
+												<div id="logo-preview" class="<?php echo ! empty( $s['logo_url'] ) ? '' : 'hidden '; ?>mb-4">
+													<img id="logo-img" src="<?php echo esc_url( $s['logo_url'] ); ?>" alt="Logo" class="w-full rounded object-contain mx-auto" style="max-height: 200px;" />
+													<button type="button" id="remove-logo-btn" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
 														<?php esc_html_e( 'Remove Logo', 'hotel-chain' ); ?>
 													</button>
 												</div>
-
-												<!-- Placeholder (shown when no logo) -->
-												<div id="logo-placeholder" class="<?php echo empty( $s['logo_url'] ) ? '' : 'hidden'; ?> flex flex-col items-center justify-center">
-													<div class="w-full aspect-video bg-gray-200 border-2 border-gray-300 rounded mb-2 flex items-center justify-center">
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-8 h-8 text-gray-400" aria-hidden="true">
-															<path d="M12 3v12"></path>
-															<path d="m17 8-5-5-5 5"></path>
-															<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+												<div id="logo-uploading" class="hidden mb-4">
+													<div class="w-16 h-16 mx-auto mb-3">
+														<svg class="animate-spin w-full h-full text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+															<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+															<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
 														</svg>
 													</div>
-													<div class="text-gray-600 text-sm"><?php esc_html_e( 'Upload logo', 'hotel-chain' ); ?></div>
+													<p class="text-blue-600 text-sm font-medium"><?php esc_html_e( 'Uploading logo...', 'hotel-chain' ); ?></p>
+													<div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+														<div id="logo-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+													</div>
+													<p id="logo-progress-text" class="text-gray-500 text-xs mt-1">0%</p>
 												</div>
-											</label>
-											<button type="button" id="upload_logo_btn" class="mt-2 w-full px-4 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 text-sm hover:bg-blue-300">
-												<?php echo $s['logo_url'] ? esc_html__( 'Change Logo', 'hotel-chain' ) : esc_html__( 'Select Logo', 'hotel-chain' ); ?>
-											</button>
+												<div id="logo-placeholder" class="<?php echo empty( $s['logo_url'] ) ? '' : 'hidden '; ?>mb-4">
+													<div class="w-16 h-16 mx-auto bg-gray-200 border border-solid border-gray-400 rounded flex items-center justify-center mb-3">
+														<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+															<rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+															<circle cx="9" cy="9" r="2"></circle>
+															<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+														</svg>
+													</div>
+													<p class="text-gray-700 text-sm font-medium"><?php esc_html_e( 'Drop logo here or click to browse', 'hotel-chain' ); ?></p>
+													<p class="text-gray-500 text-xs mt-1"><?php esc_html_e( 'PNG, JPG or SVG. Recommended 300x100px', 'hotel-chain' ); ?></p>
+												</div>
+											</div>
 										</div>
 										
 										<!-- Favicon Uploader -->
 										<div>
-											<div class="mb-2 text-gray-700 text-sm"><?php esc_html_e( 'Favicon', 'hotel-chain' ); ?></div>
-											<input type="hidden" name="favicon_id" id="favicon_id" value="<?php echo esc_attr( (string) $s['favicon_id'] ); ?>" />
-											<input type="hidden" name="favicon_url" id="favicon_url" value="<?php echo esc_attr( $s['favicon_url'] ); ?>" />
-											
-											<label id="favicon-drop-zone" class="border border-dashed border-gray-400 rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 cursor-pointer flex-1 flex flex-col justify-center min-h-[200px]">
-												<!-- Preview (shown when favicon exists) -->
-												<div id="favicon-preview-wrapper" class="<?php echo empty( $s['favicon_url'] ) ? 'hidden' : ''; ?> mb-2">
-													<img
-														id="favicon-preview"
-														src="<?php echo esc_url( $s['favicon_url'] ); ?>"
-														alt="Favicon preview"
-														class="w-32 h-32 rounded object-contain mx-auto"
-													/>
-													<button type="button" id="remove_favicon_btn" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
+											<label class="block mb-2 text-gray-700"><?php esc_html_e( 'Favicon', 'hotel-chain' ); ?></label>
+											<div id="favicon-drop-zone" class="border border-solid border-gray-400 border-dashed rounded p-6 text-center bg-gray-50 transition-colors cursor-pointer hover:border-blue-400 hover:bg-blue-50">
+												<input type="hidden" name="favicon_id" id="favicon_id" value="<?php echo esc_attr( (string) $s['favicon_id'] ); ?>" />
+												<input type="hidden" name="favicon_url" id="favicon_url" value="<?php echo esc_attr( $s['favicon_url'] ); ?>" />
+												<input type="file" id="favicon-file" accept="image/png,image/jpeg,image/jpg,image/x-icon,image/svg+xml" class="hidden" />
+												<div id="favicon-preview" class="<?php echo ! empty( $s['favicon_url'] ) ? '' : 'hidden '; ?>mb-4">
+													<img id="favicon-img" src="<?php echo esc_url( $s['favicon_url'] ); ?>" alt="Favicon" class="w-32 h-32 rounded object-contain mx-auto" />
+													<button type="button" id="remove-favicon-btn" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
 														<?php esc_html_e( 'Remove Favicon', 'hotel-chain' ); ?>
 													</button>
 												</div>
-
-												<!-- Placeholder (shown when no favicon) -->
-												<div id="favicon-placeholder" class="<?php echo empty( $s['favicon_url'] ) ? '' : 'hidden'; ?> flex flex-col items-center justify-center">
-													<div class="w-full aspect-video bg-gray-200 border-2 border-gray-300 rounded mb-2 flex items-center justify-center">
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-upload w-8 h-8 text-gray-400" aria-hidden="true">
-															<path d="M12 3v12"></path>
-															<path d="m17 8-5-5-5 5"></path>
-															<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+												<div id="favicon-uploading" class="hidden mb-4">
+													<div class="w-16 h-16 mx-auto mb-3">
+														<svg class="animate-spin w-full h-full text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+															<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+															<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
 														</svg>
 													</div>
-													<div class="text-gray-600 text-sm"><?php esc_html_e( 'Upload favicon', 'hotel-chain' ); ?></div>
+													<p class="text-blue-600 text-sm font-medium"><?php esc_html_e( 'Uploading favicon...', 'hotel-chain' ); ?></p>
+													<div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+														<div id="favicon-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+													</div>
+													<p id="favicon-progress-text" class="text-gray-500 text-xs mt-1">0%</p>
 												</div>
-											</label>
-											<button type="button" id="upload_favicon_btn" class="mt-2 w-full px-4 py-2 bg-blue-200 border-2 border-blue-400 rounded text-blue-900 text-sm hover:bg-blue-300">
-												<?php echo $s['favicon_url'] ? esc_html__( 'Change Favicon', 'hotel-chain' ) : esc_html__( 'Select Favicon', 'hotel-chain' ); ?>
-											</button>
+												<div id="favicon-placeholder" class="<?php echo empty( $s['favicon_url'] ) ? '' : 'hidden '; ?>mb-4">
+													<div class="w-16 h-16 mx-auto bg-gray-200 border border-solid border-gray-400 rounded flex items-center justify-center mb-3">
+														<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+															<rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+															<circle cx="9" cy="9" r="2"></circle>
+															<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+														</svg>
+													</div>
+													<p class="text-gray-700 text-sm font-medium"><?php esc_html_e( 'Drop favicon here or click to browse', 'hotel-chain' ); ?></p>
+													<p class="text-gray-500 text-xs mt-1"><?php esc_html_e( 'PNG, JPG, ICO or SVG. Recommended 32x32px or 64x64px', 'hotel-chain' ); ?></p>
+												</div>
+											</div>
 										</div>
 									</div>
 								</div>
 								<!-- Typography -->
-								<div>
+								<div class="border-t border-solid border-gray-400 pt-4">
 									<h4 class="mb-3 text-gray-700 text-sm pb-2 border-b border-gray-300"><?php esc_html_e( 'Typography', 'hotel-chain' ); ?></h4>
-									<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+									<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
 										<?php
 										$google_fonts = $this->get_google_fonts();
 										$typography_elements = array(
@@ -789,7 +806,7 @@ class SystemSettingsPage implements ServiceProviderInterface {
 											'h4' => __( 'H4', 'hotel-chain' ),
 											'h5' => __( 'H5', 'hotel-chain' ),
 											'h6' => __( 'H6', 'hotel-chain' ),
-											'p'  => __( 'Paragraph (P)', 'hotel-chain' ),
+											'p'  => __( 'P', 'hotel-chain' ),
 										);
 										foreach ( $typography_elements as $element => $label ) :
 											$font_key = 'typography_' . $element . '_font';
@@ -799,20 +816,20 @@ class SystemSettingsPage implements ServiceProviderInterface {
 											$current_font_url = $s[ $font_url_key ] ?? '';
 											$current_font_weight = $s[ $font_weight_key ] ?? ( 'p' === $element ? '400' : '600' );
 											$font_weights = array(
-												'100' => __( 'Thin (100)', 'hotel-chain' ),
-												'200' => __( 'Extra Light (200)', 'hotel-chain' ),
-												'300' => __( 'Light (300)', 'hotel-chain' ),
-												'400' => __( 'Regular (400)', 'hotel-chain' ),
-												'500' => __( 'Medium (500)', 'hotel-chain' ),
-												'600' => __( 'Semi Bold (600)', 'hotel-chain' ),
-												'700' => __( 'Bold (700)', 'hotel-chain' ),
-												'800' => __( 'Extra Bold (800)', 'hotel-chain' ),
-												'900' => __( 'Black (900)', 'hotel-chain' ),
+												'100' => __( '100', 'hotel-chain' ),
+												'200' => __( '200', 'hotel-chain' ),
+												'300' => __( '300', 'hotel-chain' ),
+												'400' => __( '400', 'hotel-chain' ),
+												'500' => __( '500', 'hotel-chain' ),
+												'600' => __( '600', 'hotel-chain' ),
+												'700' => __( '700', 'hotel-chain' ),
+												'800' => __( '800', 'hotel-chain' ),
+												'900' => __( '900', 'hotel-chain' ),
 											);
 											?>
-											<div>
-												<div class="mb-2 text-gray-700 text-sm"><?php echo esc_html( $label ); ?></div>
-												<select name="typography_<?php echo esc_attr( $element ); ?>_font" id="typography_<?php echo esc_attr( $element ); ?>_font" class="typography-font-select w-full border border-solid border-gray-400 rounded p-2 bg-white mb-2">
+											<div class="border border-solid border-gray-300 rounded p-3 bg-white">
+												<div class="mb-2 text-gray-700 text-xs font-semibold"><?php echo esc_html( $label ); ?></div>
+												<select name="typography_<?php echo esc_attr( $element ); ?>_font" id="typography_<?php echo esc_attr( $element ); ?>_font" class="typography-font-select w-full border border-solid border-gray-300 rounded p-1.5 bg-white text-sm mb-2">
 													<?php
 													foreach ( $google_fonts as $font_name => $font_url ) :
 														?>
@@ -822,7 +839,7 @@ class SystemSettingsPage implements ServiceProviderInterface {
 													<?php endforeach; ?>
 												</select>
 												<input type="hidden" name="typography_<?php echo esc_attr( $element ); ?>_font_url" id="typography_<?php echo esc_attr( $element ); ?>_font_url" value="<?php echo esc_attr( $current_font_url ); ?>" />
-												<select name="typography_<?php echo esc_attr( $element ); ?>_font_weight" id="typography_<?php echo esc_attr( $element ); ?>_font_weight" class="w-full border border-solid border-gray-400 rounded p-2 bg-white">
+												<select name="typography_<?php echo esc_attr( $element ); ?>_font_weight" id="typography_<?php echo esc_attr( $element ); ?>_font_weight" class="typography-weight-select w-full border border-solid border-gray-300 rounded p-1.5 bg-white text-sm">
 													<?php
 													foreach ( $font_weights as $weight => $weight_label ) :
 														?>
@@ -837,9 +854,9 @@ class SystemSettingsPage implements ServiceProviderInterface {
 								</div>
 
 								<!-- Font Sizes (Responsive) -->
-								<div class="pt-4">
-									<h4 class="mb-3 text-gray-700 text-sm border-b border-gray-300 pb-2"><?php esc_html_e( 'Font Sizes (Responsive)', 'hotel-chain' ); ?></h4>
-									<div class="space-y-6">
+								<div class="pt-4 border-t border-solid border-gray-400">
+									<h4 class="mb-3 text-gray-700 text-sm pb-2 border-b border-gray-300"><?php esc_html_e( 'Font Sizes (Responsive)', 'hotel-chain' ); ?></h4>
+									<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
 										<?php
 										$typography_elements = array(
 											'h1' => array( 'label' => __( 'H1', 'hotel-chain' ), 'mobile' => array( 'min' => 20, 'max' => 36, 'default' => 28 ), 'tablet' => array( 'min' => 24, 'max' => 40, 'default' => 32 ), 'desktop' => array( 'min' => 28, 'max' => 48, 'default' => 36 ) ),
@@ -848,35 +865,51 @@ class SystemSettingsPage implements ServiceProviderInterface {
 											'h4' => array( 'label' => __( 'H4', 'hotel-chain' ), 'mobile' => array( 'min' => 14, 'max' => 24, 'default' => 18 ), 'tablet' => array( 'min' => 16, 'max' => 28, 'default' => 20 ), 'desktop' => array( 'min' => 18, 'max' => 32, 'default' => 24 ) ),
 											'h5' => array( 'label' => __( 'H5', 'hotel-chain' ), 'mobile' => array( 'min' => 12, 'max' => 20, 'default' => 16 ), 'tablet' => array( 'min' => 14, 'max' => 24, 'default' => 18 ), 'desktop' => array( 'min' => 16, 'max' => 28, 'default' => 20 ) ),
 											'h6' => array( 'label' => __( 'H6', 'hotel-chain' ), 'mobile' => array( 'min' => 10, 'max' => 18, 'default' => 14 ), 'tablet' => array( 'min' => 12, 'max' => 20, 'default' => 16 ), 'desktop' => array( 'min' => 14, 'max' => 24, 'default' => 18 ) ),
-											'p'  => array( 'label' => __( 'Paragraph (P)', 'hotel-chain' ), 'mobile' => array( 'min' => 10, 'max' => 18, 'default' => 14 ), 'tablet' => array( 'min' => 12, 'max' => 20, 'default' => 16 ), 'desktop' => array( 'min' => 14, 'max' => 24, 'default' => 18 ) ),
+											'p'  => array( 'label' => __( 'P', 'hotel-chain' ), 'mobile' => array( 'min' => 10, 'max' => 18, 'default' => 14 ), 'tablet' => array( 'min' => 12, 'max' => 20, 'default' => 16 ), 'desktop' => array( 'min' => 14, 'max' => 24, 'default' => 18 ) ),
 										);
 										foreach ( $typography_elements as $element => $config ) :
 											$mobile_key  = 'font_size_' . $element . '_mobile';
 											$tablet_key  = 'font_size_' . $element . '_tablet';
 											$desktop_key = 'font_size_' . $element . '_desktop';
 											?>
-											<div class="border border-solid border-gray-400 rounded p-4">
-												<div class="mb-3 text-gray-700 text-sm"><?php echo esc_html( $config['label'] ); ?></div>
-												<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+											<div class="border border-solid border-gray-300 rounded p-3 bg-white">
+												<div class="mb-2 text-gray-700 text-xs font-semibold"><?php echo esc_html( $config['label'] ); ?></div>
+												<div class="grid grid-cols-3 gap-2">
 													<div>
-														<div class="mb-2 text-gray-600 text-xs"><?php esc_html_e( 'Mobile', 'hotel-chain' ); ?> (&lt;768px)</div>
-														<div class="flex items-center gap-2">
-															<input type="number" name="<?php echo esc_attr( $mobile_key ); ?>" value="<?php echo esc_attr( (string) ( $s[ $mobile_key ] ?? $config['mobile']['default'] ) ); ?>" min="<?php echo esc_attr( (string) $config['mobile']['min'] ); ?>" max="<?php echo esc_attr( (string) $config['mobile']['max'] ); ?>" class="flex-1 border border-solid border-gray-400 rounded p-2 bg-white" />
-															<span class="text-gray-600 text-sm">px</span>
+														<div class="mb-1 flex items-center justify-center">
+															<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-smartphone text-gray-500" aria-hidden="true" title="<?php esc_attr_e( 'Mobile', 'hotel-chain' ); ?>">
+																<rect width="14" height="20" x="5" y="2" rx="2" ry="2"></rect>
+																<path d="M12 18h.01"></path>
+															</svg>
+														</div>
+														<div class="flex items-center gap-1">
+															<input type="number" name="<?php echo esc_attr( $mobile_key ); ?>" value="<?php echo esc_attr( (string) ( $s[ $mobile_key ] ?? $config['mobile']['default'] ) ); ?>" min="<?php echo esc_attr( (string) $config['mobile']['min'] ); ?>" max="<?php echo esc_attr( (string) $config['mobile']['max'] ); ?>" class="w-full border border-solid border-gray-300 rounded p-1.5 bg-white text-sm" />
+															<span class="text-gray-500 text-xs">px</span>
 														</div>
 													</div>
 													<div>
-														<div class="mb-2 text-gray-600 text-xs"><?php esc_html_e( 'Tablet', 'hotel-chain' ); ?> (768px-1024px)</div>
-														<div class="flex items-center gap-2">
-															<input type="number" name="<?php echo esc_attr( $tablet_key ); ?>" value="<?php echo esc_attr( (string) ( $s[ $tablet_key ] ?? $config['tablet']['default'] ) ); ?>" min="<?php echo esc_attr( (string) $config['tablet']['min'] ); ?>" max="<?php echo esc_attr( (string) $config['tablet']['max'] ); ?>" class="flex-1 border-2 border-gray-300 rounded p-2 bg-white" />
-															<span class="text-gray-600 text-sm">px</span>
+														<div class="mb-1 flex items-center justify-center">
+															<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tablet text-gray-500" aria-hidden="true" title="<?php esc_attr_e( 'Tablet', 'hotel-chain' ); ?>">
+																<rect width="18" height="20" x="3" y="4" rx="2" ry="2"></rect>
+																<line x1="7" y1="20" x2="17" y2="20"></line>
+															</svg>
+														</div>
+														<div class="flex items-center gap-1">
+															<input type="number" name="<?php echo esc_attr( $tablet_key ); ?>" value="<?php echo esc_attr( (string) ( $s[ $tablet_key ] ?? $config['tablet']['default'] ) ); ?>" min="<?php echo esc_attr( (string) $config['tablet']['min'] ); ?>" max="<?php echo esc_attr( (string) $config['tablet']['max'] ); ?>" class="w-full border border-solid border-gray-300 rounded p-1.5 bg-white text-sm" />
+															<span class="text-gray-500 text-xs">px</span>
 														</div>
 													</div>
 													<div>
-														<div class="mb-2 text-gray-600 text-xs"><?php esc_html_e( 'Desktop', 'hotel-chain' ); ?> (&gt;1024px)</div>
-														<div class="flex items-center gap-2">
-															<input type="number" name="<?php echo esc_attr( $desktop_key ); ?>" value="<?php echo esc_attr( (string) ( $s[ $desktop_key ] ?? $config['desktop']['default'] ) ); ?>" min="<?php echo esc_attr( (string) $config['desktop']['min'] ); ?>" max="<?php echo esc_attr( (string) $config['desktop']['max'] ); ?>" class="flex-1 border-2 border-gray-300 rounded p-2 bg-white" />
-															<span class="text-gray-600 text-sm">px</span>
+														<div class="mb-1 flex items-center justify-center">
+															<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-monitor text-gray-500" aria-hidden="true" title="<?php esc_attr_e( 'Desktop', 'hotel-chain' ); ?>">
+																<rect width="20" height="14" x="2" y="3" rx="2"></rect>
+																<line x1="8" y1="21" x2="16" y2="21"></line>
+																<line x1="12" y1="17" x2="12" y2="21"></line>
+															</svg>
+														</div>
+														<div class="flex items-center gap-1">
+															<input type="number" name="<?php echo esc_attr( $desktop_key ); ?>" value="<?php echo esc_attr( (string) ( $s[ $desktop_key ] ?? $config['desktop']['default'] ) ); ?>" min="<?php echo esc_attr( (string) $config['desktop']['min'] ); ?>" max="<?php echo esc_attr( (string) $config['desktop']['max'] ); ?>" class="w-full border border-solid border-gray-300 rounded p-1.5 bg-white text-sm" />
+															<span class="text-gray-500 text-xs">px</span>
 														</div>
 													</div>
 												</div>
@@ -886,7 +919,7 @@ class SystemSettingsPage implements ServiceProviderInterface {
 								</div>
 
 								<!-- Button Colors -->
-								<div class="border-t-2 border-gray-300 pt-4">
+								<div class="border-t-2 border-gray-300 pt-4 hidden">
 									<h4 class="mb-3 text-gray-700 text-sm border-b border-gray-300 pb-2"><?php esc_html_e( 'Button Colors', 'hotel-chain' ); ?></h4>
 									<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
 										<div>
@@ -1017,175 +1050,311 @@ class SystemSettingsPage implements ServiceProviderInterface {
 					}
 				}
 
-				// Logo uploader (matching thumbnail uploader pattern)
-				const uploadLogoBtn = document.getElementById('upload_logo_btn');
-				const removeLogoBtn = document.getElementById('remove_logo_btn');
+				// Logo uploader with drag & drop and progress bar
+				const logoDropZone = document.getElementById('logo-drop-zone');
+				const logoFileInput = document.getElementById('logo-file');
 				const logoId = document.getElementById('logo_id');
 				const logoUrl = document.getElementById('logo_url');
-				const logoPreviewWrapper = document.getElementById('logo-preview-wrapper');
 				const logoPreview = document.getElementById('logo-preview');
 				const logoPlaceholder = document.getElementById('logo-placeholder');
-				const logoDropZone = document.getElementById('logo-drop-zone');
+				const logoUploading = document.getElementById('logo-uploading');
+				const logoImg = document.getElementById('logo-img');
+				const logoProgressBar = document.getElementById('logo-progress-bar');
+				const logoProgressText = document.getElementById('logo-progress-text');
+				const removeLogoBtn = document.getElementById('remove-logo-btn');
+				const uploadNonce = '<?php echo esc_js( wp_create_nonce( 'system_settings_upload' ) ); ?>';
+				const ajaxUrl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
 
-				// Clean up logo preview and show placeholder
-				function resetLogoPreview() {
-					if (logoPreview) {
-						logoPreview.removeAttribute('src');
+				// Upload file via AJAX
+				function uploadLogoFile(file) {
+					if (!file || !file.type.startsWith('image/')) {
+						alert('<?php echo esc_js( __( 'Please select a valid image file', 'hotel-chain' ) ); ?>');
+						return;
 					}
-					if (logoPreviewWrapper) {
-						logoPreviewWrapper.classList.add('hidden');
+					if (file.size > 5 * 1024 * 1024) {
+						alert('<?php echo esc_js( __( 'Logo file must be less than 5MB', 'hotel-chain' ) ); ?>');
+						return;
 					}
-					if (logoPlaceholder) {
+
+					logoPlaceholder.classList.add('hidden');
+					logoPreview.classList.add('hidden');
+					logoUploading.classList.remove('hidden');
+					logoProgressBar.style.width = '0%';
+					logoProgressText.textContent = '0%';
+
+					const formData = new FormData();
+					formData.append('action', 'system_settings_upload_media');
+					formData.append('nonce', uploadNonce);
+					formData.append('file', file);
+					formData.append('type', 'image');
+
+					const xhr = new XMLHttpRequest();
+					xhr.open('POST', ajaxUrl, true);
+
+					xhr.upload.onprogress = function(e) {
+						if (e.lengthComputable) {
+							const percent = Math.round((e.loaded / e.total) * 100);
+							logoProgressBar.style.width = percent + '%';
+							logoProgressText.textContent = percent + '%';
+						}
+					};
+
+					xhr.onload = function() {
+						if (xhr.status === 200) {
+							try {
+								const response = JSON.parse(xhr.responseText);
+								if (response.success) {
+									if (logoId) logoId.value = response.data.attachment_id;
+									if (logoUrl) logoUrl.value = response.data.url;
+									if (logoImg) logoImg.src = response.data.url;
+									logoUploading.classList.add('hidden');
+									logoPreview.classList.remove('hidden');
+								} else {
+									alert(response.data || '<?php echo esc_js( __( 'Upload failed', 'hotel-chain' ) ); ?>');
+									logoUploading.classList.add('hidden');
+									logoPlaceholder.classList.remove('hidden');
+								}
+							} catch (e) {
+								alert('<?php echo esc_js( __( 'Invalid response', 'hotel-chain' ) ); ?>');
+								logoUploading.classList.add('hidden');
+								logoPlaceholder.classList.remove('hidden');
+							}
+						} else {
+							alert('<?php echo esc_js( __( 'Upload failed', 'hotel-chain' ) ); ?>');
+							logoUploading.classList.add('hidden');
+							logoPlaceholder.classList.remove('hidden');
+						}
+					};
+
+					xhr.onerror = function() {
+						alert('<?php echo esc_js( __( 'Network error', 'hotel-chain' ) ); ?>');
+						logoUploading.classList.add('hidden');
 						logoPlaceholder.classList.remove('hidden');
-					}
-					if (logoId) {
-						logoId.value = '';
-					}
-					if (logoUrl) {
-						logoUrl.value = '';
-					}
-					if (uploadLogoBtn) {
-						uploadLogoBtn.textContent = '<?php echo esc_js( __( 'Select Logo', 'hotel-chain' ) ); ?>';
-					}
+					};
+
+					xhr.send(formData);
 				}
 
-				if (uploadLogoBtn) {
-					uploadLogoBtn.addEventListener('click', function(e) {
-						e.preventDefault();
-						e.stopPropagation();
-						const mediaUploader = wp.media({
-							title: '<?php echo esc_js( __( 'Choose Logo', 'hotel-chain' ) ); ?>',
-							button: {
-								text: '<?php echo esc_js( __( 'Use this logo', 'hotel-chain' ) ); ?>'
-							},
-							multiple: false,
-							library: {
-								type: 'image'
-							}
-						});
-
-						mediaUploader.on('select', function() {
-							const attachment = mediaUploader.state().get('selection').first().toJSON();
-							if (logoId) logoId.value = attachment.id;
-							if (logoUrl) logoUrl.value = attachment.url;
-							
-							// Update preview
-							if (logoPreview) {
-								logoPreview.src = attachment.url;
-							}
-							if (logoPreviewWrapper) {
-								logoPreviewWrapper.classList.remove('hidden');
-							}
-							if (logoPlaceholder) {
-								logoPlaceholder.classList.add('hidden');
-							}
-							if (uploadLogoBtn) {
-								uploadLogoBtn.textContent = '<?php echo esc_js( __( 'Change Logo', 'hotel-chain' ) ); ?>';
-							}
-						});
-
-						mediaUploader.open();
+				// Click to browse
+				if (logoDropZone) {
+					logoDropZone.addEventListener('click', function() {
+						logoFileInput.click();
 					});
 				}
 
+				// File input change
+				if (logoFileInput) {
+					logoFileInput.addEventListener('change', function(e) {
+						if (e.target.files && e.target.files[0]) {
+							uploadLogoFile(e.target.files[0]);
+						}
+					});
+				}
+
+				// Drag and drop
+				if (logoDropZone) {
+					logoDropZone.addEventListener('dragover', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+						logoDropZone.style.borderColor = 'rgb(59, 130, 246)';
+						logoDropZone.style.backgroundColor = 'rgb(239, 246, 255)';
+					});
+
+					logoDropZone.addEventListener('dragleave', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+						logoDropZone.style.borderColor = 'rgb(196, 196, 196)';
+						logoDropZone.style.backgroundColor = 'rgb(249, 250, 251)';
+					});
+
+					logoDropZone.addEventListener('drop', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+						logoDropZone.style.borderColor = 'rgb(196, 196, 196)';
+						logoDropZone.style.backgroundColor = 'rgb(249, 250, 251)';
+						if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+							uploadLogoFile(e.dataTransfer.files[0]);
+						}
+					});
+				}
+
+				// Remove logo
 				if (removeLogoBtn) {
 					removeLogoBtn.addEventListener('click', function(e) {
 						e.preventDefault();
 						e.stopPropagation();
-						resetLogoPreview();
+						if (logoId && logoId.value) {
+							const formData = new FormData();
+							formData.append('action', 'system_settings_delete_media');
+							formData.append('nonce', uploadNonce);
+							formData.append('attachment_id', logoId.value);
+							fetch(ajaxUrl, { method: 'POST', body: formData })
+								.then(response => response.json())
+								.then(data => {
+									if (!data.success) {
+										console.error('Delete failed:', data.data);
+									}
+								})
+								.catch(error => console.error('Error:', error));
+						}
+						if (logoId) logoId.value = '';
+						if (logoUrl) logoUrl.value = '';
+						if (logoImg) logoImg.removeAttribute('src');
+						logoPreview.classList.add('hidden');
+						logoPlaceholder.classList.remove('hidden');
 					});
 				}
 
-				// Prevent label from triggering when clicking on preview
-				if (logoPreview) {
-					logoPreview.addEventListener('click', function(e) {
-						e.stopPropagation();
-					});
-				}
-
-				// Favicon uploader (matching thumbnail uploader pattern)
-				const uploadFaviconBtn = document.getElementById('upload_favicon_btn');
-				const removeFaviconBtn = document.getElementById('remove_favicon_btn');
+				// Favicon uploader with drag & drop and progress bar
+				const faviconDropZone = document.getElementById('favicon-drop-zone');
+				const faviconFileInput = document.getElementById('favicon-file');
 				const faviconId = document.getElementById('favicon_id');
 				const faviconUrl = document.getElementById('favicon_url');
-				const faviconPreviewWrapper = document.getElementById('favicon-preview-wrapper');
 				const faviconPreview = document.getElementById('favicon-preview');
 				const faviconPlaceholder = document.getElementById('favicon-placeholder');
-				const faviconDropZone = document.getElementById('favicon-drop-zone');
+				const faviconUploading = document.getElementById('favicon-uploading');
+				const faviconImg = document.getElementById('favicon-img');
+				const faviconProgressBar = document.getElementById('favicon-progress-bar');
+				const faviconProgressText = document.getElementById('favicon-progress-text');
+				const removeFaviconBtn = document.getElementById('remove-favicon-btn');
 
-				// Clean up favicon preview and show placeholder
-				function resetFaviconPreview() {
-					if (faviconPreview) {
-						faviconPreview.removeAttribute('src');
+				// Upload file via AJAX
+				function uploadFaviconFile(file) {
+					if (!file || !file.type.startsWith('image/')) {
+						alert('<?php echo esc_js( __( 'Please select a valid image file', 'hotel-chain' ) ); ?>');
+						return;
 					}
-					if (faviconPreviewWrapper) {
-						faviconPreviewWrapper.classList.add('hidden');
+					if (file.size > 2 * 1024 * 1024) {
+						alert('<?php echo esc_js( __( 'Favicon file must be less than 2MB', 'hotel-chain' ) ); ?>');
+						return;
 					}
-					if (faviconPlaceholder) {
+
+					faviconPlaceholder.classList.add('hidden');
+					faviconPreview.classList.add('hidden');
+					faviconUploading.classList.remove('hidden');
+					faviconProgressBar.style.width = '0%';
+					faviconProgressText.textContent = '0%';
+
+					const formData = new FormData();
+					formData.append('action', 'system_settings_upload_media');
+					formData.append('nonce', uploadNonce);
+					formData.append('file', file);
+					formData.append('type', 'image');
+
+					const xhr = new XMLHttpRequest();
+					xhr.open('POST', ajaxUrl, true);
+
+					xhr.upload.onprogress = function(e) {
+						if (e.lengthComputable) {
+							const percent = Math.round((e.loaded / e.total) * 100);
+							faviconProgressBar.style.width = percent + '%';
+							faviconProgressText.textContent = percent + '%';
+						}
+					};
+
+					xhr.onload = function() {
+						if (xhr.status === 200) {
+							try {
+								const response = JSON.parse(xhr.responseText);
+								if (response.success) {
+									if (faviconId) faviconId.value = response.data.attachment_id;
+									if (faviconUrl) faviconUrl.value = response.data.url;
+									if (faviconImg) faviconImg.src = response.data.url;
+									faviconUploading.classList.add('hidden');
+									faviconPreview.classList.remove('hidden');
+								} else {
+									alert(response.data || '<?php echo esc_js( __( 'Upload failed', 'hotel-chain' ) ); ?>');
+									faviconUploading.classList.add('hidden');
+									faviconPlaceholder.classList.remove('hidden');
+								}
+							} catch (e) {
+								alert('<?php echo esc_js( __( 'Invalid response', 'hotel-chain' ) ); ?>');
+								faviconUploading.classList.add('hidden');
+								faviconPlaceholder.classList.remove('hidden');
+							}
+						} else {
+							alert('<?php echo esc_js( __( 'Upload failed', 'hotel-chain' ) ); ?>');
+							faviconUploading.classList.add('hidden');
+							faviconPlaceholder.classList.remove('hidden');
+						}
+					};
+
+					xhr.onerror = function() {
+						alert('<?php echo esc_js( __( 'Network error', 'hotel-chain' ) ); ?>');
+						faviconUploading.classList.add('hidden');
 						faviconPlaceholder.classList.remove('hidden');
-					}
-					if (faviconId) {
-						faviconId.value = '';
-					}
-					if (faviconUrl) {
-						faviconUrl.value = '';
-					}
-					if (uploadFaviconBtn) {
-						uploadFaviconBtn.textContent = '<?php echo esc_js( __( 'Select Favicon', 'hotel-chain' ) ); ?>';
-					}
+					};
+
+					xhr.send(formData);
 				}
 
-				if (uploadFaviconBtn) {
-					uploadFaviconBtn.addEventListener('click', function(e) {
-						e.preventDefault();
-						e.stopPropagation();
-						const mediaUploader = wp.media({
-							title: '<?php echo esc_js( __( 'Choose Favicon', 'hotel-chain' ) ); ?>',
-							button: {
-								text: '<?php echo esc_js( __( 'Use this favicon', 'hotel-chain' ) ); ?>'
-							},
-							multiple: false,
-							library: {
-								type: 'image'
-							}
-						});
-
-						mediaUploader.on('select', function() {
-							const attachment = mediaUploader.state().get('selection').first().toJSON();
-							if (faviconId) faviconId.value = attachment.id;
-							if (faviconUrl) faviconUrl.value = attachment.url;
-							
-							// Update preview
-							if (faviconPreview) {
-								faviconPreview.src = attachment.url;
-							}
-							if (faviconPreviewWrapper) {
-								faviconPreviewWrapper.classList.remove('hidden');
-							}
-							if (faviconPlaceholder) {
-								faviconPlaceholder.classList.add('hidden');
-							}
-							if (uploadFaviconBtn) {
-								uploadFaviconBtn.textContent = '<?php echo esc_js( __( 'Change Favicon', 'hotel-chain' ) ); ?>';
-							}
-						});
-
-						mediaUploader.open();
+				// Click to browse
+				if (faviconDropZone) {
+					faviconDropZone.addEventListener('click', function() {
+						faviconFileInput.click();
 					});
 				}
 
+				// File input change
+				if (faviconFileInput) {
+					faviconFileInput.addEventListener('change', function(e) {
+						if (e.target.files && e.target.files[0]) {
+							uploadFaviconFile(e.target.files[0]);
+						}
+					});
+				}
+
+				// Drag and drop
+				if (faviconDropZone) {
+					faviconDropZone.addEventListener('dragover', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+						faviconDropZone.style.borderColor = 'rgb(59, 130, 246)';
+						faviconDropZone.style.backgroundColor = 'rgb(239, 246, 255)';
+					});
+
+					faviconDropZone.addEventListener('dragleave', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+						faviconDropZone.style.borderColor = 'rgb(196, 196, 196)';
+						faviconDropZone.style.backgroundColor = 'rgb(249, 250, 251)';
+					});
+
+					faviconDropZone.addEventListener('drop', function(e) {
+						e.preventDefault();
+						e.stopPropagation();
+						faviconDropZone.style.borderColor = 'rgb(196, 196, 196)';
+						faviconDropZone.style.backgroundColor = 'rgb(249, 250, 251)';
+						if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+							uploadFaviconFile(e.dataTransfer.files[0]);
+						}
+					});
+				}
+
+				// Remove favicon
 				if (removeFaviconBtn) {
 					removeFaviconBtn.addEventListener('click', function(e) {
 						e.preventDefault();
 						e.stopPropagation();
-						resetFaviconPreview();
-					});
-				}
-
-				// Prevent label from triggering when clicking on preview
-				if (faviconPreview) {
-					faviconPreview.addEventListener('click', function(e) {
-						e.stopPropagation();
+						if (faviconId && faviconId.value) {
+							const formData = new FormData();
+							formData.append('action', 'system_settings_delete_media');
+							formData.append('nonce', uploadNonce);
+							formData.append('attachment_id', faviconId.value);
+							fetch(ajaxUrl, { method: 'POST', body: formData })
+								.then(response => response.json())
+								.then(data => {
+									if (!data.success) {
+										console.error('Delete failed:', data.data);
+									}
+								})
+								.catch(error => console.error('Error:', error));
+						}
+						if (faviconId) faviconId.value = '';
+						if (faviconUrl) faviconUrl.value = '';
+						if (faviconImg) faviconImg.removeAttribute('src');
+						faviconPreview.classList.add('hidden');
+						faviconPlaceholder.classList.remove('hidden');
 					});
 				}
 
@@ -1245,5 +1414,98 @@ class SystemSettingsPage implements ServiceProviderInterface {
 		</script>
 		<?php
 	}
+
+	/**
+	 * Handle media upload via AJAX.
+	 *
+	 * @return void
+	 */
+	public function handle_media_upload(): void {
+		check_ajax_referer( 'system_settings_upload', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Unauthorized', 'hotel-chain' ) );
+		}
+
+		if ( empty( $_FILES['file'] ) ) {
+			wp_send_json_error( __( 'No file uploaded', 'hotel-chain' ) );
+		}
+
+		$file = $_FILES['file'];
+		$type = isset( $_POST['type'] ) ? sanitize_text_field( wp_unslash( $_POST['type'] ) ) : '';
+
+		// Validate file type - only images for logo and favicon.
+		$allowed_image = array( 'image/jpeg', 'image/png', 'image/jpg', 'image/svg+xml', 'image/x-icon' );
+
+		if ( 'image' !== $type || ! in_array( $file['type'], $allowed_image, true ) ) {
+			wp_send_json_error( __( 'Invalid image format. Please upload PNG, JPG, SVG or ICO.', 'hotel-chain' ) );
+		}
+
+		// Use WordPress media handling.
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+
+		$upload = wp_handle_upload( $file, array( 'test_form' => false ) );
+
+		if ( isset( $upload['error'] ) ) {
+			wp_send_json_error( $upload['error'] );
+		}
+
+		// Create attachment.
+		$attachment = array(
+			'post_mime_type' => $upload['type'],
+			'post_title'     => sanitize_file_name( pathinfo( $upload['file'], PATHINFO_FILENAME ) ),
+			'post_content'   => '',
+			'post_status'    => 'inherit',
+		);
+
+		$attachment_id = wp_insert_attachment( $attachment, $upload['file'] );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_send_json_error( $attachment_id->get_error_message() );
+		}
+
+		// Generate metadata.
+		$metadata = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
+		wp_update_attachment_metadata( $attachment_id, $metadata );
+
+		wp_send_json_success(
+			array(
+				'attachment_id' => $attachment_id,
+				'url'           => $upload['url'],
+			)
+		);
+	}
+
+	/**
+	 * Handle media delete via AJAX.
+	 *
+	 * @return void
+	 */
+	public function handle_media_delete(): void {
+		check_ajax_referer( 'system_settings_upload', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Unauthorized', 'hotel-chain' ) );
+		}
+
+		$attachment_id = isset( $_POST['attachment_id'] ) ? absint( $_POST['attachment_id'] ) : 0;
+
+		if ( ! $attachment_id ) {
+			wp_send_json_error( __( 'Invalid attachment ID', 'hotel-chain' ) );
+		}
+
+		// Delete from WordPress (and AWS if using offload plugin).
+		$deleted = wp_delete_attachment( $attachment_id, true );
+
+		if ( $deleted ) {
+			wp_send_json_success( array( 'message' => __( 'File deleted', 'hotel-chain' ) ) );
+		} else {
+			wp_send_json_error( __( 'Failed to delete file', 'hotel-chain' ) );
+		}
+	}
 }
+
+
 

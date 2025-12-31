@@ -217,6 +217,8 @@ class HotelProfilePage {
 			'country'         => isset( $_POST['country'] ) ? sanitize_text_field( wp_unslash( $_POST['country'] ) ) : '',
 			'website'         => isset( $_POST['website'] ) ? esc_url_raw( wp_unslash( $_POST['website'] ) ) : '',
 			'welcome_section' => wp_json_encode( $welcome_section ),
+			'logo_id'         => isset( $_POST['logo_id'] ) ? absint( $_POST['logo_id'] ) : 0,
+			'favicon_id'      => isset( $_POST['favicon_id'] ) ? absint( $_POST['favicon_id'] ) : 0,
 		);
 
 		$result = $hotel_repository->update( $hotel->id, $update_data );
@@ -286,18 +288,37 @@ class HotelProfilePage {
 		$registration_url = $hotel->registration_url ?? '';
 		$landing_url      = $hotel->landing_url ?? '';
 
+		// Get logo and favicon IDs and URLs.
+		$logo_id    = isset( $hotel->logo_id ) ? absint( $hotel->logo_id ) : 0;
+		$favicon_id = isset( $hotel->favicon_id ) ? absint( $hotel->favicon_id ) : 0;
+		$logo_url   = $logo_id ? wp_get_attachment_url( $logo_id ) : '';
+		$favicon_url = $favicon_id ? wp_get_attachment_url( $favicon_id ) : '';
+
 		// Enqueue media uploader.
 		wp_enqueue_media();
-		?>
-		<div class="wrap max-w-full">
-			<div class="flex-1 overflow-auto p-4 lg:p-8 border border-solid border-gray-400">
-				<div class="max-w-7xl mx-auto">
-					<div class="space-y-6">
-					<div class="mb-6 pb-4 border-b border-solid border-gray-400">
-						<h1 class="mb-1"><?php esc_html_e( 'HOTEL – Hotel Profile', 'hotel-chain' ); ?></h1>
-						<p><?php esc_html_e( "Customize your hotel's branding and settings", 'hotel-chain' ); ?></p>
-					</div>
 
+		// Get logo URL from hotel.
+		$logo_id  = isset( $hotel->logo_id ) ? absint( $hotel->logo_id ) : 0;
+		$logo_url = $logo_id ? wp_get_attachment_url( $logo_id ) : '';	
+		?>
+		<div class="flex-1 overflow-auto p-4 lg:p-8 lg:px-0 hotel-profile-page">
+			<div class="w-12/12 md:w-10/12 mx-auto p-0">
+				<div class="flex items-center gap-4 mb-6 pb-3 border-b border-solid border-gray-400">
+					<?php if ( ! empty( $logo_url ) ) : ?>
+						<div class="flex-shrink-0">
+							<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php esc_attr_e( 'Logo', 'hotel-chain' ); ?>" class="h-12 md:h-16 w-auto object-contain" />
+						</div>
+					<?php endif; ?>
+					<div class="flex-1">
+						<h1><?php esc_html_e( 'HOTEL – Hotel Profile', 'hotel-chain' ); ?></h1>
+						<p class="text-slate-600"><?php esc_html_e( "Customize your hotel's branding and settings", 'hotel-chain' ); ?></p>
+					</div>
+				</div>
+
+
+
+
+				<div class="space-y-6">
 					<!-- Hotel Information -->
 					<div class="bg-white rounded p-4 border border-solid border-gray-400">
 						<h3 class="mb-4 pb-3 border-b-2 border-gray-300"><?php esc_html_e( 'Hotel Information', 'hotel-chain' ); ?></h3>
@@ -336,6 +357,89 @@ class HotelProfilePage {
 								<div class="mb-4">
 									<label class="block mb-1"><?php esc_html_e( 'Website', 'hotel-chain' ); ?></label>
 									<input type="url" name="website" value="<?php echo esc_attr( $hotel->website ? $hotel->website : '' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="https://example.com" />
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Hotel Logo & Favicon -->
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
+						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400"><?php esc_html_e( 'Hotel Logo & Favicon', 'hotel-chain' ); ?></h3>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+							<!-- Logo Upload -->
+							<div>
+								<label class="block mb-2 text-gray-700"><?php esc_html_e( 'Hotel Logo', 'hotel-chain' ); ?></label>
+								<div id="logo-drop-zone" class="border border-solid border-gray-400 border-dashed rounded p-6 text-center bg-gray-50 transition-colors cursor-pointer hover:border-blue-400 hover:bg-blue-50">
+									<input type="hidden" name="logo_id" id="logo_id" value="<?php echo esc_attr( $logo_id ); ?>" />
+									<input type="file" id="logo-file" accept="image/png,image/jpeg,image/jpg,image/svg+xml" class="hidden" />
+									<div id="logo-preview" class="<?php echo $logo_id ? '' : 'hidden '; ?>mb-4">
+										<img id="logo-img" src="<?php echo esc_url( $logo_url ); ?>" alt="Logo" class="w-full rounded object-contain mx-auto" style="max-height: 200px;" />
+										<button type="button" id="remove-logo-btn" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
+											<?php esc_html_e( 'Remove Logo', 'hotel-chain' ); ?>
+										</button>
+									</div>
+									<div id="logo-uploading" class="hidden mb-4">
+										<div class="w-16 h-16 mx-auto mb-3">
+											<svg class="animate-spin w-full h-full text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+												<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+												<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+											</svg>
+										</div>
+										<p class="text-blue-600 text-sm font-medium"><?php esc_html_e( 'Uploading logo...', 'hotel-chain' ); ?></p>
+										<div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+											<div id="logo-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+										</div>
+										<p id="logo-progress-text" class="text-gray-500 text-xs mt-1">0%</p>
+									</div>
+									<div id="logo-placeholder" class="<?php echo $logo_id ? 'hidden ' : ''; ?>mb-4">
+										<div class="w-16 h-16 mx-auto bg-gray-200 border border-solid border-gray-400 rounded flex items-center justify-center mb-3">
+											<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+												<rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+												<circle cx="9" cy="9" r="2"></circle>
+												<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+											</svg>
+										</div>
+										<p class="text-gray-700 text-sm font-medium"><?php esc_html_e( 'Drop logo here or click to browse', 'hotel-chain' ); ?></p>
+										<p class="text-gray-500 text-xs mt-1"><?php esc_html_e( 'PNG, JPG or SVG. Recommended 300x100px', 'hotel-chain' ); ?></p>
+									</div>
+								</div>
+							</div>
+							<!-- Favicon Upload -->
+							<div>
+								<label class="block mb-2 text-gray-700"><?php esc_html_e( 'Favicon', 'hotel-chain' ); ?></label>
+								<div id="favicon-drop-zone" class="border border-solid border-gray-400 border-dashed rounded p-6 text-center bg-gray-50 transition-colors cursor-pointer hover:border-blue-400 hover:bg-blue-50">
+									<input type="hidden" name="favicon_id" id="favicon_id" value="<?php echo esc_attr( $favicon_id ); ?>" />
+									<input type="file" id="favicon-file" accept="image/png,image/jpeg,image/jpg,image/x-icon,image/svg+xml" class="hidden" />
+									<div id="favicon-preview" class="<?php echo $favicon_id ? '' : 'hidden '; ?>mb-4">
+										<img id="favicon-img" src="<?php echo esc_url( $favicon_url ); ?>" alt="Favicon" class="w-32 h-32 rounded object-contain mx-auto" />
+										<button type="button" id="remove-favicon-btn" class="mt-2 px-3 py-1 bg-red-200 border-2 border-red-400 rounded text-red-900 text-sm">
+											<?php esc_html_e( 'Remove Favicon', 'hotel-chain' ); ?>
+										</button>
+									</div>
+									<div id="favicon-uploading" class="hidden mb-4">
+										<div class="w-16 h-16 mx-auto mb-3">
+											<svg class="animate-spin w-full h-full text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+												<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+												<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+											</svg>
+										</div>
+										<p class="text-blue-600 text-sm font-medium"><?php esc_html_e( 'Uploading favicon...', 'hotel-chain' ); ?></p>
+										<div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+											<div id="favicon-progress-bar" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+										</div>
+										<p id="favicon-progress-text" class="text-gray-500 text-xs mt-1">0%</p>
+									</div>
+									<div id="favicon-placeholder" class="<?php echo $favicon_id ? 'hidden ' : ''; ?>mb-4">
+										<div class="w-16 h-16 mx-auto bg-gray-200 border border-solid border-gray-400 rounded flex items-center justify-center mb-3">
+											<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+												<rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+												<circle cx="9" cy="9" r="2"></circle>
+												<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+											</svg>
+										</div>
+										<p class="text-gray-700 text-sm font-medium"><?php esc_html_e( 'Drop favicon here or click to browse', 'hotel-chain' ); ?></p>
+										<p class="text-gray-500 text-xs mt-1"><?php esc_html_e( 'PNG, JPG, ICO or SVG. Recommended 32x32px or 64x64px', 'hotel-chain' ); ?></p>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -585,374 +689,6 @@ class HotelProfilePage {
 						</div>
 					</div>
 
-					<script>
-					document.addEventListener('DOMContentLoaded', function() {
-						// Use relative URL to avoid CORS issues with different ports
-						const ajaxUrl = '/wp-admin/admin-ajax.php';
-						const uploadNonce = '<?php echo esc_js( wp_create_nonce( 'hotel_profile_upload' ) ); ?>';
-
-						// Video upload elements
-						const videoDropZone = document.getElementById('video-drop-zone');
-						const videoFileInput = document.getElementById('welcome-video-file');
-						const videoInput = document.getElementById('welcome_video_id');
-						const videoPreview = document.getElementById('welcome-video-preview');
-						const videoPlaceholder = document.getElementById('welcome-video-placeholder');
-						const videoUploading = document.getElementById('welcome-video-uploading');
-						const videoPlayer = document.getElementById('welcome-video-player');
-						const videoProgressBar = document.getElementById('video-progress-bar');
-						const videoProgressText = document.getElementById('video-progress-text');
-						const removeVideoBtn = document.getElementById('remove-video-btn');
-
-						// Thumbnail upload elements
-						const thumbDropZone = document.getElementById('thumbnail-drop-zone');
-						const thumbFileInput = document.getElementById('welcome-thumbnail-file');
-						const thumbInput = document.getElementById('welcome_thumbnail_id');
-						const thumbPreview = document.getElementById('welcome-thumbnail-preview');
-						const thumbPlaceholder = document.getElementById('welcome-thumbnail-placeholder');
-						const thumbUploading = document.getElementById('welcome-thumbnail-uploading');
-						const thumbImg = document.getElementById('welcome-thumbnail-img');
-						const thumbProgressBar = document.getElementById('thumbnail-progress-bar');
-						const thumbProgressText = document.getElementById('thumbnail-progress-text');
-						const removeThumbBtn = document.getElementById('remove-thumbnail-btn');
-
-						// Upload file via AJAX to WordPress media library
-						function uploadFile(file, type, progressBar, progressText, onSuccess, onError) {
-							const formData = new FormData();
-							formData.append('action', 'hotel_profile_upload_media');
-							formData.append('nonce', uploadNonce);
-							formData.append('file', file);
-							formData.append('type', type);
-
-							const xhr = new XMLHttpRequest();
-							xhr.open('POST', ajaxUrl, true);
-
-							xhr.upload.onprogress = function(e) {
-								if (e.lengthComputable) {
-									const percent = Math.round((e.loaded / e.total) * 100);
-									progressBar.style.width = percent + '%';
-									progressText.textContent = percent + '%';
-								}
-							};
-
-							xhr.onload = function() {
-								if (xhr.status === 200) {
-									try {
-										const response = JSON.parse(xhr.responseText);
-										if (response.success) {
-											onSuccess(response.data);
-										} else {
-											onError(response.data || '<?php esc_html_e( 'Upload failed', 'hotel-chain' ); ?>');
-										}
-									} catch (e) {
-										onError('<?php esc_html_e( 'Invalid response', 'hotel-chain' ); ?>');
-									}
-								} else {
-									onError('<?php esc_html_e( 'Upload failed', 'hotel-chain' ); ?>');
-								}
-							};
-
-							xhr.onerror = function() {
-								onError('<?php esc_html_e( 'Network error', 'hotel-chain' ); ?>');
-							};
-
-							xhr.send(formData);
-						}
-
-						// Handle video upload
-						function handleVideoUpload(file) {
-							if (!file || !file.type.startsWith('video/')) {
-								alert('<?php esc_html_e( 'Please select a valid video file', 'hotel-chain' ); ?>');
-								return;
-							}
-							if (file.size > 100 * 1024 * 1024) {
-								alert('<?php esc_html_e( 'Video file must be less than 100MB', 'hotel-chain' ); ?>');
-								return;
-							}
-
-							videoPlaceholder.classList.add('hidden');
-							videoPreview.classList.add('hidden');
-							videoUploading.classList.remove('hidden');
-							videoProgressBar.style.width = '0%';
-
-							uploadFile(file, 'video', videoProgressBar, videoProgressText, 
-								function(data) {
-									videoInput.value = data.attachment_id;
-									videoPlayer.src = data.url;
-									videoUploading.classList.add('hidden');
-									videoPreview.classList.remove('hidden');
-								},
-								function(error) {
-									alert(error);
-									videoUploading.classList.add('hidden');
-									videoPlaceholder.classList.remove('hidden');
-								}
-							);
-						}
-
-						// Handle thumbnail upload
-						function handleThumbnailUpload(file) {
-							if (!file || !file.type.startsWith('image/')) {
-								alert('<?php esc_html_e( 'Please select a valid image file', 'hotel-chain' ); ?>');
-								return;
-							}
-							if (file.size > 5 * 1024 * 1024) {
-								alert('<?php esc_html_e( 'Image file must be less than 5MB', 'hotel-chain' ); ?>');
-								return;
-							}
-
-							thumbPlaceholder.classList.add('hidden');
-							thumbPreview.classList.add('hidden');
-							thumbUploading.classList.remove('hidden');
-							thumbProgressBar.style.width = '0%';
-
-							uploadFile(file, 'image', thumbProgressBar, thumbProgressText,
-								function(data) {
-									thumbInput.value = data.attachment_id;
-									thumbImg.src = data.url;
-									thumbUploading.classList.add('hidden');
-									thumbPreview.classList.remove('hidden');
-								},
-								function(error) {
-									alert(error);
-									thumbUploading.classList.add('hidden');
-									thumbPlaceholder.classList.remove('hidden');
-								}
-							);
-						}
-
-						// Video drop zone events
-						videoDropZone.addEventListener('click', function(e) {
-							if (!e.target.closest('button')) {
-								videoFileInput.click();
-							}
-						});
-						videoFileInput.addEventListener('change', function() {
-							if (this.files[0]) handleVideoUpload(this.files[0]);
-						});
-						videoDropZone.addEventListener('dragover', function(e) {
-							e.preventDefault();
-							this.classList.add('border-blue-500', 'bg-blue-50');
-						});
-						videoDropZone.addEventListener('dragleave', function(e) {
-							e.preventDefault();
-							this.classList.remove('border-blue-500', 'bg-blue-50');
-						});
-						videoDropZone.addEventListener('drop', function(e) {
-							e.preventDefault();
-							this.classList.remove('border-blue-500', 'bg-blue-50');
-							if (e.dataTransfer.files[0]) handleVideoUpload(e.dataTransfer.files[0]);
-						});
-
-						// Thumbnail drop zone events
-						thumbDropZone.addEventListener('click', function(e) {
-							if (!e.target.closest('button')) {
-								thumbFileInput.click();
-							}
-						});
-						thumbFileInput.addEventListener('change', function() {
-							if (this.files[0]) handleThumbnailUpload(this.files[0]);
-						});
-						thumbDropZone.addEventListener('dragover', function(e) {
-							e.preventDefault();
-							this.classList.add('border-blue-500', 'bg-blue-50');
-						});
-						thumbDropZone.addEventListener('dragleave', function(e) {
-							e.preventDefault();
-							this.classList.remove('border-blue-500', 'bg-blue-50');
-						});
-						thumbDropZone.addEventListener('drop', function(e) {
-							e.preventDefault();
-							this.classList.remove('border-blue-500', 'bg-blue-50');
-							if (e.dataTransfer.files[0]) handleThumbnailUpload(e.dataTransfer.files[0]);
-						});
-
-						// Delete attachment from server
-						function deleteAttachment(attachmentId, onSuccess) {
-							if (!attachmentId) {
-								onSuccess();
-								return;
-							}
-							const formData = new FormData();
-							formData.append('action', 'hotel_profile_delete_media');
-							formData.append('nonce', uploadNonce);
-							formData.append('attachment_id', attachmentId);
-
-							fetch(ajaxUrl, { method: 'POST', body: formData })
-								.then(response => response.json())
-								.then(data => { onSuccess(); })
-								.catch(err => { onSuccess(); }); // Still clear UI even if delete fails
-						}
-
-						// Remove buttons
-						removeVideoBtn.addEventListener('click', function(e) {
-							e.stopPropagation();
-							const attachmentId = videoInput.value;
-							deleteAttachment(attachmentId, function() {
-								videoInput.value = '';
-								videoPlayer.src = '';
-								videoPreview.classList.add('hidden');
-								videoPlaceholder.classList.remove('hidden');
-							});
-						});
-						removeThumbBtn.addEventListener('click', function(e) {
-							e.stopPropagation();
-							const attachmentId = thumbInput.value;
-							deleteAttachment(attachmentId, function() {
-								thumbInput.value = '';
-								thumbImg.src = '';
-								thumbPreview.classList.add('hidden');
-								thumbPlaceholder.classList.remove('hidden');
-							});
-						});
-
-						// Steps repeater
-						const container = document.getElementById('steps-container');
-						const addBtn = document.getElementById('add-step-btn');
-						
-						function updateStepNumbers() {
-							const steps = container.querySelectorAll('.step-item');
-							steps.forEach((step, index) => {
-								step.dataset.step = index + 1;
-								step.querySelector('.w-8').textContent = index + 1;
-								step.querySelector('.font-medium').textContent = '<?php esc_html_e( 'Step', 'hotel-chain' ); ?> ' + (index + 1);
-								step.querySelectorAll('input, textarea').forEach(input => {
-									input.name = input.name.replace(/\[\d+\]/, '[' + index + ']');
-								});
-							});
-						}
-						
-						addBtn.addEventListener('click', function() {
-							const stepCount = container.querySelectorAll('.step-item').length;
-							const newStep = document.createElement('div');
-							newStep.className = 'step-item p-4 border border-solid border-gray-400 rounded bg-gray-50';
-							newStep.dataset.step = stepCount + 1;
-							newStep.innerHTML = `
-								<div class="flex items-center justify-between mb-3">
-									<div class="flex items-center gap-2">
-										<span class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold" style="background-color: rgb(61, 61, 68);">${stepCount + 1}</span>
-										<span class="font-medium text-gray-700"><?php esc_html_e( 'Step', 'hotel-chain' ); ?> ${stepCount + 1}</span>
-									</div>
-									<button type="button" class="remove-step-btn text-red-600 hover:text-red-800">
-										<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-											<path d="M3 6h18"></path>
-											<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-											<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-										</svg>
-									</button>
-								</div>
-								<div class="space-y-3">
-									<div>
-										<label class="block mb-1 text-gray-600 text-sm"><?php esc_html_e( 'Heading', 'hotel-chain' ); ?></label>
-										<input type="text" name="steps[${stepCount}][heading]" value="" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" />
-									</div>
-									<div>
-										<label class="block mb-1 text-gray-600 text-sm"><?php esc_html_e( 'Description', 'hotel-chain' ); ?></label>
-										<textarea name="steps[${stepCount}][description]" rows="2" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);"></textarea>
-									</div>
-								</div>
-							`;
-							container.appendChild(newStep);
-						});
-						
-						container.addEventListener('click', function(e) {
-							if (e.target.closest('.remove-step-btn')) {
-								const stepItem = e.target.closest('.step-item');
-								if (container.querySelectorAll('.step-item').length > 1) {
-									stepItem.remove();
-									updateStepNumbers();
-								}
-							}
-						});
-
-						// Save Changes button
-						const saveBtn = document.getElementById('save-profile-btn');
-						const cancelBtn = document.getElementById('cancel-profile-btn');
-						
-						if (saveBtn) {
-							saveBtn.addEventListener('click', function(e) {
-								e.preventDefault();
-								saveBtn.disabled = true;
-								saveBtn.innerHTML = '<svg class="animate-spin w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><?php esc_html_e( 'Saving...', 'hotel-chain' ); ?>';
-
-								const formData = new FormData();
-								formData.append('action', 'hotel_profile_save');
-								formData.append('nonce', uploadNonce);
-								
-								// Hotel info
-								formData.append('hotel_name', document.querySelector('input[name="hotel_name"]')?.value || '');
-								formData.append('contact_phone', document.querySelector('input[name="contact_phone"]')?.value || '');
-								formData.append('address', document.querySelector('input[name="address"]')?.value || '');
-								formData.append('city', document.querySelector('input[name="city"]')?.value || '');
-								formData.append('country', document.querySelector('input[name="country"]')?.value || '');
-								formData.append('website', document.querySelector('input[name="website"]')?.value || '');
-								
-								// Welcome section
-								formData.append('welcome_video_id', videoInput.value || '');
-								formData.append('welcome_thumbnail_id', thumbInput.value || '');
-								formData.append('welcome_heading', document.querySelector('input[name="welcome_heading"]')?.value || '');
-								formData.append('welcome_subheading', document.querySelector('input[name="welcome_subheading"]')?.value || '');
-								formData.append('welcome_description', document.querySelector('textarea[name="welcome_description"]')?.value || '');
-								
-								// Steps
-								const stepItems = document.querySelectorAll('.step-item');
-								stepItems.forEach((step, index) => {
-									const heading = step.querySelector('input[name^="steps"]')?.value || '';
-									const description = step.querySelector('textarea[name^="steps"]')?.value || '';
-									formData.append('steps[' + index + '][heading]', heading);
-									formData.append('steps[' + index + '][description]', description);
-								});
-
-								fetch(ajaxUrl, { method: 'POST', body: formData })
-									.then(response => response.json())
-									.then(data => {
-										saveBtn.disabled = false;
-										saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"></path><path d="M7 3v4a1 1 0 0 0 1 1h7"></path></svg><?php esc_html_e( 'Save Changes', 'hotel-chain' ); ?>';
-										if (data.success) {
-											alert('<?php esc_html_e( 'Profile saved successfully!', 'hotel-chain' ); ?>');
-										} else {
-											alert(data.data || '<?php esc_html_e( 'Failed to save profile', 'hotel-chain' ); ?>');
-										}
-									})
-									.catch(err => {
-										saveBtn.disabled = false;
-										saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"></path><path d="M7 3v4a1 1 0 0 0 1 1h7"></path></svg><?php esc_html_e( 'Save Changes', 'hotel-chain' ); ?>';
-										alert('<?php esc_html_e( 'Network error. Please try again.', 'hotel-chain' ); ?>');
-									});
-							});
-						}
-
-						if (cancelBtn) {
-							cancelBtn.addEventListener('click', function(e) {
-								e.preventDefault();
-								window.location.reload();
-							});
-						}
-
-						// Copy URL functionality
-						const copyUrlButtons = document.querySelectorAll('.copy-url-btn');
-						copyUrlButtons.forEach(button => {
-							button.addEventListener('click', function() {
-								const url = this.getAttribute('data-url');
-								if (url) {
-									navigator.clipboard.writeText(url).then(function() {
-										const originalText = button.textContent;
-										button.textContent = '<?php esc_html_e( 'Copied!', 'hotel-chain' ); ?>';
-										button.classList.remove('bg-blue-200', 'border-blue-400', 'text-blue-900');
-										button.classList.add('bg-green-200', 'border-green-400', 'text-green-900');
-										setTimeout(function() {
-											button.textContent = originalText;
-											button.classList.remove('bg-green-200', 'border-green-400', 'text-green-900');
-											button.classList.add('bg-blue-200', 'border-blue-400', 'text-blue-900');
-										}, 2000);
-									}).catch(function(err) {
-										alert('<?php esc_html_e( 'Failed to copy URL. Please try again.', 'hotel-chain' ); ?>');
-									});
-								}
-							});
-						});
-					});
-					</script>
-
 					<!-- Guest Portal Settings -->
 					<div class="bg-white rounded p-4 border border-solid border-gray-400">
 						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400"><?php esc_html_e( 'Guest Portal Settings', 'hotel-chain' ); ?></h3>
@@ -1027,6 +763,536 @@ class HotelProfilePage {
 				</div>
 			</div>
 		</div>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				// Use relative URL to avoid CORS issues with different ports
+				const ajaxUrl = '/wp-admin/admin-ajax.php';
+				const uploadNonce = '<?php echo esc_js( wp_create_nonce( 'hotel_profile_upload' ) ); ?>';
+
+				// Video upload elements
+				const videoDropZone = document.getElementById('video-drop-zone');
+				const videoFileInput = document.getElementById('welcome-video-file');
+				const videoInput = document.getElementById('welcome_video_id');
+				const videoPreview = document.getElementById('welcome-video-preview');
+				const videoPlaceholder = document.getElementById('welcome-video-placeholder');
+				const videoUploading = document.getElementById('welcome-video-uploading');
+				const videoPlayer = document.getElementById('welcome-video-player');
+				const videoProgressBar = document.getElementById('video-progress-bar');
+				const videoProgressText = document.getElementById('video-progress-text');
+				const removeVideoBtn = document.getElementById('remove-video-btn');
+
+				// Thumbnail upload elements
+				const thumbDropZone = document.getElementById('thumbnail-drop-zone');
+				const thumbFileInput = document.getElementById('welcome-thumbnail-file');
+				const thumbInput = document.getElementById('welcome_thumbnail_id');
+				const thumbPreview = document.getElementById('welcome-thumbnail-preview');
+				const thumbPlaceholder = document.getElementById('welcome-thumbnail-placeholder');
+				const thumbUploading = document.getElementById('welcome-thumbnail-uploading');
+				const thumbImg = document.getElementById('welcome-thumbnail-img');
+				const thumbProgressBar = document.getElementById('thumbnail-progress-bar');
+				const thumbProgressText = document.getElementById('thumbnail-progress-text');
+				const removeThumbBtn = document.getElementById('remove-thumbnail-btn');
+
+				// Upload file via AJAX to WordPress media library
+				function uploadFile(file, type, progressBar, progressText, onSuccess, onError) {
+					const formData = new FormData();
+					formData.append('action', 'hotel_profile_upload_media');
+					formData.append('nonce', uploadNonce);
+					formData.append('file', file);
+					formData.append('type', type);
+
+					const xhr = new XMLHttpRequest();
+					xhr.open('POST', ajaxUrl, true);
+
+					xhr.upload.onprogress = function(e) {
+						if (e.lengthComputable) {
+							const percent = Math.round((e.loaded / e.total) * 100);
+							progressBar.style.width = percent + '%';
+							progressText.textContent = percent + '%';
+						}
+					};
+
+					xhr.onload = function() {
+						if (xhr.status === 200) {
+							try {
+								const response = JSON.parse(xhr.responseText);
+								if (response.success) {
+									onSuccess(response.data);
+								} else {
+									onError(response.data || '<?php esc_html_e( 'Upload failed', 'hotel-chain' ); ?>');
+								}
+							} catch (e) {
+								onError('<?php esc_html_e( 'Invalid response', 'hotel-chain' ); ?>');
+							}
+						} else {
+							onError('<?php esc_html_e( 'Upload failed', 'hotel-chain' ); ?>');
+						}
+					};
+
+					xhr.onerror = function() {
+						onError('<?php esc_html_e( 'Network error', 'hotel-chain' ); ?>');
+					};
+
+					xhr.send(formData);
+				}
+
+				// Handle video upload
+				function handleVideoUpload(file) {
+					if (!file || !file.type.startsWith('video/')) {
+						alert('<?php esc_html_e( 'Please select a valid video file', 'hotel-chain' ); ?>');
+						return;
+					}
+					if (file.size > 100 * 1024 * 1024) {
+						alert('<?php esc_html_e( 'Video file must be less than 100MB', 'hotel-chain' ); ?>');
+						return;
+					}
+
+					videoPlaceholder.classList.add('hidden');
+					videoPreview.classList.add('hidden');
+					videoUploading.classList.remove('hidden');
+					videoProgressBar.style.width = '0%';
+
+					uploadFile(file, 'video', videoProgressBar, videoProgressText, 
+						function(data) {
+							videoInput.value = data.attachment_id;
+							videoPlayer.src = data.url;
+							videoUploading.classList.add('hidden');
+							videoPreview.classList.remove('hidden');
+						},
+						function(error) {
+							alert(error);
+							videoUploading.classList.add('hidden');
+							videoPlaceholder.classList.remove('hidden');
+						}
+					);
+				}
+
+				// Handle thumbnail upload
+				function handleThumbnailUpload(file) {
+					if (!file || !file.type.startsWith('image/')) {
+						alert('<?php esc_html_e( 'Please select a valid image file', 'hotel-chain' ); ?>');
+						return;
+					}
+					if (file.size > 5 * 1024 * 1024) {
+						alert('<?php esc_html_e( 'Image file must be less than 5MB', 'hotel-chain' ); ?>');
+						return;
+					}
+
+					thumbPlaceholder.classList.add('hidden');
+					thumbPreview.classList.add('hidden');
+					thumbUploading.classList.remove('hidden');
+					thumbProgressBar.style.width = '0%';
+
+					uploadFile(file, 'image', thumbProgressBar, thumbProgressText,
+						function(data) {
+							thumbInput.value = data.attachment_id;
+							thumbImg.src = data.url;
+							thumbUploading.classList.add('hidden');
+							thumbPreview.classList.remove('hidden');
+						},
+						function(error) {
+							alert(error);
+							thumbUploading.classList.add('hidden');
+							thumbPlaceholder.classList.remove('hidden');
+						}
+					);
+				}
+
+				// Video drop zone events
+				videoDropZone.addEventListener('click', function(e) {
+					if (!e.target.closest('button')) {
+						videoFileInput.click();
+					}
+				});
+				videoFileInput.addEventListener('change', function() {
+					if (this.files[0]) handleVideoUpload(this.files[0]);
+				});
+				videoDropZone.addEventListener('dragover', function(e) {
+					e.preventDefault();
+					this.classList.add('border-blue-500', 'bg-blue-50');
+				});
+				videoDropZone.addEventListener('dragleave', function(e) {
+					e.preventDefault();
+					this.classList.remove('border-blue-500', 'bg-blue-50');
+				});
+				videoDropZone.addEventListener('drop', function(e) {
+					e.preventDefault();
+					this.classList.remove('border-blue-500', 'bg-blue-50');
+					if (e.dataTransfer.files[0]) handleVideoUpload(e.dataTransfer.files[0]);
+				});
+
+				// Thumbnail drop zone events
+				thumbDropZone.addEventListener('click', function(e) {
+					if (!e.target.closest('button')) {
+						thumbFileInput.click();
+					}
+				});
+				thumbFileInput.addEventListener('change', function() {
+					if (this.files[0]) handleThumbnailUpload(this.files[0]);
+				});
+				thumbDropZone.addEventListener('dragover', function(e) {
+					e.preventDefault();
+					this.classList.add('border-blue-500', 'bg-blue-50');
+				});
+				thumbDropZone.addEventListener('dragleave', function(e) {
+					e.preventDefault();
+					this.classList.remove('border-blue-500', 'bg-blue-50');
+				});
+				thumbDropZone.addEventListener('drop', function(e) {
+					e.preventDefault();
+					this.classList.remove('border-blue-500', 'bg-blue-50');
+					if (e.dataTransfer.files[0]) handleThumbnailUpload(e.dataTransfer.files[0]);
+				});
+
+				// Delete attachment from server
+				function deleteAttachment(attachmentId, onSuccess) {
+					if (!attachmentId) {
+						onSuccess();
+						return;
+					}
+					const formData = new FormData();
+					formData.append('action', 'hotel_profile_delete_media');
+					formData.append('nonce', uploadNonce);
+					formData.append('attachment_id', attachmentId);
+
+					fetch(ajaxUrl, { method: 'POST', body: formData })
+						.then(response => response.json())
+						.then(data => { onSuccess(); })
+						.catch(err => { onSuccess(); }); // Still clear UI even if delete fails
+				}
+
+				// Remove buttons
+				removeVideoBtn.addEventListener('click', function(e) {
+					e.stopPropagation();
+					const attachmentId = videoInput.value;
+					deleteAttachment(attachmentId, function() {
+						videoInput.value = '';
+						videoPlayer.src = '';
+						videoPreview.classList.add('hidden');
+						videoPlaceholder.classList.remove('hidden');
+					});
+				});
+				removeThumbBtn.addEventListener('click', function(e) {
+					e.stopPropagation();
+					const attachmentId = thumbInput.value;
+					deleteAttachment(attachmentId, function() {
+						thumbInput.value = '';
+						thumbImg.src = '';
+						thumbPreview.classList.add('hidden');
+						thumbPlaceholder.classList.remove('hidden');
+					});
+				});
+
+				// Logo upload elements
+				const logoDropZone = document.getElementById('logo-drop-zone');
+				const logoFileInput = document.getElementById('logo-file');
+				const logoInput = document.getElementById('logo_id');
+				const logoPreview = document.getElementById('logo-preview');
+				const logoPlaceholder = document.getElementById('logo-placeholder');
+				const logoUploading = document.getElementById('logo-uploading');
+				const logoImg = document.getElementById('logo-img');
+				const logoProgressBar = document.getElementById('logo-progress-bar');
+				const logoProgressText = document.getElementById('logo-progress-text');
+				const removeLogoBtn = document.getElementById('remove-logo-btn');
+
+				// Favicon upload elements
+				const faviconDropZone = document.getElementById('favicon-drop-zone');
+				const faviconFileInput = document.getElementById('favicon-file');
+				const faviconInput = document.getElementById('favicon_id');
+				const faviconPreview = document.getElementById('favicon-preview');
+				const faviconPlaceholder = document.getElementById('favicon-placeholder');
+				const faviconUploading = document.getElementById('favicon-uploading');
+				const faviconImg = document.getElementById('favicon-img');
+				const faviconProgressBar = document.getElementById('favicon-progress-bar');
+				const faviconProgressText = document.getElementById('favicon-progress-text');
+				const removeFaviconBtn = document.getElementById('remove-favicon-btn');
+
+				// Handle logo upload
+				function handleLogoUpload(file) {
+					if (!file || !file.type.startsWith('image/')) {
+						alert('<?php esc_html_e( 'Please select a valid image file', 'hotel-chain' ); ?>');
+						return;
+					}
+					if (file.size > 5 * 1024 * 1024) {
+						alert('<?php esc_html_e( 'Logo file must be less than 5MB', 'hotel-chain' ); ?>');
+						return;
+					}
+
+					logoPlaceholder.classList.add('hidden');
+					logoPreview.classList.add('hidden');
+					logoUploading.classList.remove('hidden');
+					logoProgressBar.style.width = '0%';
+
+					uploadFile(file, 'image', logoProgressBar, logoProgressText,
+						function(data) {
+							logoInput.value = data.attachment_id;
+							logoImg.src = data.url;
+							logoUploading.classList.add('hidden');
+							logoPreview.classList.remove('hidden');
+						},
+						function(error) {
+							alert(error);
+							logoUploading.classList.add('hidden');
+							logoPlaceholder.classList.remove('hidden');
+						}
+					);
+				}
+
+				// Handle favicon upload
+				function handleFaviconUpload(file) {
+					if (!file || !file.type.startsWith('image/')) {
+						alert('<?php esc_html_e( 'Please select a valid image file', 'hotel-chain' ); ?>');
+						return;
+					}
+					if (file.size > 2 * 1024 * 1024) {
+						alert('<?php esc_html_e( 'Favicon file must be less than 2MB', 'hotel-chain' ); ?>');
+						return;
+					}
+
+					faviconPlaceholder.classList.add('hidden');
+					faviconPreview.classList.add('hidden');
+					faviconUploading.classList.remove('hidden');
+					faviconProgressBar.style.width = '0%';
+
+					uploadFile(file, 'image', faviconProgressBar, faviconProgressText,
+						function(data) {
+							faviconInput.value = data.attachment_id;
+							faviconImg.src = data.url;
+							faviconUploading.classList.add('hidden');
+							faviconPreview.classList.remove('hidden');
+						},
+						function(error) {
+							alert(error);
+							faviconUploading.classList.add('hidden');
+							faviconPlaceholder.classList.remove('hidden');
+						}
+					);
+				}
+
+				// Logo drop zone events
+				logoDropZone.addEventListener('click', function(e) {
+					if (!e.target.closest('button')) {
+						logoFileInput.click();
+					}
+				});
+				logoFileInput.addEventListener('change', function() {
+					if (this.files[0]) handleLogoUpload(this.files[0]);
+				});
+				logoDropZone.addEventListener('dragover', function(e) {
+					e.preventDefault();
+					this.classList.add('border-blue-500', 'bg-blue-50');
+				});
+				logoDropZone.addEventListener('dragleave', function(e) {
+					e.preventDefault();
+					this.classList.remove('border-blue-500', 'bg-blue-50');
+				});
+				logoDropZone.addEventListener('drop', function(e) {
+					e.preventDefault();
+					this.classList.remove('border-blue-500', 'bg-blue-50');
+					if (e.dataTransfer.files[0]) handleLogoUpload(e.dataTransfer.files[0]);
+				});
+
+				// Favicon drop zone events
+				faviconDropZone.addEventListener('click', function(e) {
+					if (!e.target.closest('button')) {
+						faviconFileInput.click();
+					}
+				});
+				faviconFileInput.addEventListener('change', function() {
+					if (this.files[0]) handleFaviconUpload(this.files[0]);
+				});
+				faviconDropZone.addEventListener('dragover', function(e) {
+					e.preventDefault();
+					this.classList.add('border-blue-500', 'bg-blue-50');
+				});
+				faviconDropZone.addEventListener('dragleave', function(e) {
+					e.preventDefault();
+					this.classList.remove('border-blue-500', 'bg-blue-50');
+				});
+				faviconDropZone.addEventListener('drop', function(e) {
+					e.preventDefault();
+					this.classList.remove('border-blue-500', 'bg-blue-50');
+					if (e.dataTransfer.files[0]) handleFaviconUpload(e.dataTransfer.files[0]);
+				});
+
+				// Remove logo button
+				removeLogoBtn.addEventListener('click', function(e) {
+					e.stopPropagation();
+					const attachmentId = logoInput.value;
+					deleteAttachment(attachmentId, function() {
+						logoInput.value = '';
+						logoImg.src = '';
+						logoPreview.classList.add('hidden');
+						logoPlaceholder.classList.remove('hidden');
+					});
+				});
+
+				// Remove favicon button
+				removeFaviconBtn.addEventListener('click', function(e) {
+					e.stopPropagation();
+					const attachmentId = faviconInput.value;
+					deleteAttachment(attachmentId, function() {
+						faviconInput.value = '';
+						faviconImg.src = '';
+						faviconPreview.classList.add('hidden');
+						faviconPlaceholder.classList.remove('hidden');
+					});
+				});
+
+				// Steps repeater
+				const container = document.getElementById('steps-container');
+				const addBtn = document.getElementById('add-step-btn');
+				
+				function updateStepNumbers() {
+					const steps = container.querySelectorAll('.step-item');
+					steps.forEach((step, index) => {
+						step.dataset.step = index + 1;
+						step.querySelector('.w-8').textContent = index + 1;
+						step.querySelector('.font-medium').textContent = '<?php esc_html_e( 'Step', 'hotel-chain' ); ?> ' + (index + 1);
+						step.querySelectorAll('input, textarea').forEach(input => {
+							input.name = input.name.replace(/\[\d+\]/, '[' + index + ']');
+						});
+					});
+				}
+				
+				addBtn.addEventListener('click', function() {
+					const stepCount = container.querySelectorAll('.step-item').length;
+					const newStep = document.createElement('div');
+					newStep.className = 'step-item p-4 border border-solid border-gray-400 rounded bg-gray-50';
+					newStep.dataset.step = stepCount + 1;
+					newStep.innerHTML = `
+						<div class="flex items-center justify-between mb-3">
+							<div class="flex items-center gap-2">
+								<span class="w-8 h-8 rounded-full flex items-center justify-center text-white font-semibold" style="background-color: rgb(61, 61, 68);">${stepCount + 1}</span>
+								<span class="font-medium text-gray-700"><?php esc_html_e( 'Step', 'hotel-chain' ); ?> ${stepCount + 1}</span>
+							</div>
+							<button type="button" class="remove-step-btn text-red-600 hover:text-red-800">
+								<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<path d="M3 6h18"></path>
+									<path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+									<path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+								</svg>
+							</button>
+						</div>
+						<div class="space-y-3">
+							<div>
+								<label class="block mb-1 text-gray-600 text-sm"><?php esc_html_e( 'Heading', 'hotel-chain' ); ?></label>
+								<input type="text" name="steps[${stepCount}][heading]" value="" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);" />
+							</div>
+							<div>
+								<label class="block mb-1 text-gray-600 text-sm"><?php esc_html_e( 'Description', 'hotel-chain' ); ?></label>
+								<textarea name="steps[${stepCount}][description]" rows="2" class="w-full rounded p-2 bg-white" style="border: 2px solid rgb(196, 196, 196);"></textarea>
+							</div>
+						</div>
+					`;
+					container.appendChild(newStep);
+				});
+				
+				container.addEventListener('click', function(e) {
+					if (e.target.closest('.remove-step-btn')) {
+						const stepItem = e.target.closest('.step-item');
+						if (container.querySelectorAll('.step-item').length > 1) {
+							stepItem.remove();
+							updateStepNumbers();
+						}
+					}
+				});
+
+				// Save Changes button
+				const saveBtn = document.getElementById('save-profile-btn');
+				const cancelBtn = document.getElementById('cancel-profile-btn');
+				
+				if (saveBtn) {
+					saveBtn.addEventListener('click', function(e) {
+						e.preventDefault();
+						saveBtn.disabled = true;
+						saveBtn.innerHTML = '<svg class="animate-spin w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><?php esc_html_e( 'Saving...', 'hotel-chain' ); ?>';
+
+						const formData = new FormData();
+						formData.append('action', 'hotel_profile_save');
+						formData.append('nonce', uploadNonce);
+						
+						// Hotel info
+						formData.append('hotel_name', document.querySelector('input[name="hotel_name"]')?.value || '');
+						formData.append('contact_phone', document.querySelector('input[name="contact_phone"]')?.value || '');
+						formData.append('address', document.querySelector('input[name="address"]')?.value || '');
+						formData.append('city', document.querySelector('input[name="city"]')?.value || '');
+						formData.append('country', document.querySelector('input[name="country"]')?.value || '');
+						formData.append('website', document.querySelector('input[name="website"]')?.value || '');
+						
+						// Welcome section
+						formData.append('welcome_video_id', videoInput.value || '');
+						formData.append('welcome_thumbnail_id', thumbInput.value || '');
+						formData.append('welcome_heading', document.querySelector('input[name="welcome_heading"]')?.value || '');
+						formData.append('welcome_subheading', document.querySelector('input[name="welcome_subheading"]')?.value || '');
+						formData.append('welcome_description', document.querySelector('textarea[name="welcome_description"]')?.value || '');
+						
+						// Logo and favicon
+						formData.append('logo_id', logoInput.value || '');
+						formData.append('favicon_id', faviconInput.value || '');
+						
+						// Steps
+						const stepItems = document.querySelectorAll('.step-item');
+						stepItems.forEach((step, index) => {
+							const heading = step.querySelector('input[name^="steps"]')?.value || '';
+							const description = step.querySelector('textarea[name^="steps"]')?.value || '';
+							formData.append('steps[' + index + '][heading]', heading);
+							formData.append('steps[' + index + '][description]', description);
+						});
+
+						fetch(ajaxUrl, { method: 'POST', body: formData })
+							.then(response => response.json())
+							.then(data => {
+								saveBtn.disabled = false;
+								saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"></path><path d="M7 3v4a1 1 0 0 0 1 1h7"></path></svg><?php esc_html_e( 'Save Changes', 'hotel-chain' ); ?>';
+								if (data.success) {
+									alert('<?php esc_html_e( 'Profile saved successfully!', 'hotel-chain' ); ?>');
+									// Reload page to show updated logo and favicon
+									window.location.reload();
+								} else {
+									alert(data.data || '<?php esc_html_e( 'Failed to save profile', 'hotel-chain' ); ?>');
+								}
+							})
+							.catch(err => {
+								saveBtn.disabled = false;
+								saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"></path><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"></path><path d="M7 3v4a1 1 0 0 0 1 1h7"></path></svg><?php esc_html_e( 'Save Changes', 'hotel-chain' ); ?>';
+								alert('<?php esc_html_e( 'Network error. Please try again.', 'hotel-chain' ); ?>');
+							});
+					});
+				}
+
+				if (cancelBtn) {
+					cancelBtn.addEventListener('click', function(e) {
+						e.preventDefault();
+						window.location.reload();
+					});
+				}
+
+				// Copy URL functionality
+				const copyUrlButtons = document.querySelectorAll('.copy-url-btn');
+				copyUrlButtons.forEach(button => {
+					button.addEventListener('click', function() {
+						const url = this.getAttribute('data-url');
+						if (url) {
+							navigator.clipboard.writeText(url).then(function() {
+								const originalText = button.textContent;
+								button.textContent = '<?php esc_html_e( 'Copied!', 'hotel-chain' ); ?>';
+								button.classList.remove('bg-blue-200', 'border-blue-400', 'text-blue-900');
+								button.classList.add('bg-green-200', 'border-green-400', 'text-green-900');
+								setTimeout(function() {
+									button.textContent = originalText;
+									button.classList.remove('bg-green-200', 'border-green-400', 'text-green-900');
+									button.classList.add('bg-blue-200', 'border-blue-400', 'text-blue-900');
+								}, 2000);
+							}).catch(function(err) {
+								alert('<?php esc_html_e( 'Failed to copy URL. Please try again.', 'hotel-chain' ); ?>');
+							});
+						}
+					});
+				});
+			});
+		</script>
 		<?php
 	}
 

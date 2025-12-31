@@ -10,6 +10,7 @@ namespace HotelChain\Frontend;
 use HotelChain\Contracts\ServiceProviderInterface;
 use HotelChain\Repositories\HotelRepository;
 use HotelChain\Repositories\GuestRepository;
+use HotelChain\Support\AccountSettings;
 
 /**
  * Handle guest registration via hotel registration URL.
@@ -88,12 +89,19 @@ class GuestRegistration implements ServiceProviderInterface {
 	 * @return void
 	 */
 	public function render_page(): void {
-		$hotel_code = isset( $_GET['hotel'] ) ? sanitize_text_field( wp_unslash( $_GET['hotel'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// Use get_query_var to properly handle URL-encoded hotel codes (e.g., codes with & character).
+		$hotel_code = get_query_var( 'hotel' );
+		if ( $hotel_code ) {
+			$hotel_code = sanitize_text_field( $hotel_code );
+		}
 
 		$hotel = null;
 		$error = '';
 
-		if ( $hotel_code ) {
+		// Check if guest registration is allowed globally.
+		if ( ! AccountSettings::is_guest_registration_allowed() ) {
+			$error = __( 'Guest registration is currently disabled.', 'hotel-chain' );
+		} elseif ( $hotel_code ) {
 			$repository = new HotelRepository();
 			$hotel      = $repository->get_by_code( $hotel_code );
 
@@ -513,47 +521,90 @@ class GuestRegistration implements ServiceProviderInterface {
 		$first_name = $name_parts[0];
 		$last_name  = isset( $name_parts[1] ) ? $name_parts[1] : '';
 
+		// Check if guest registration is allowed globally.
+		if ( ! AccountSettings::is_guest_registration_allowed() ) {
+			wp_send_json_error( array( 'message' => __( 'Guest registration is currently disabled.', 'hotel-chain' ) ) );
+		}
+
 		// Calculate access dates.
-		$access_duration = $hotel->access_duration ? (int) $hotel->access_duration : 30;
+		// Always use system default from database settings.
+		AccountSettings::clear_cache();
+		$access_duration = AccountSettings::get_default_guest_duration();
 		$access_start    = current_time( 'mysql' );
 		$access_end      = gmdate( 'Y-m-d H:i:s', strtotime( "+{$access_duration} days" ) );
 
 		// Generate guest code and verification token.
 		$guest_code         = 'G-' . strtoupper( wp_generate_password( 8, false ) );
-		$verification_token = wp_generate_password( 32, false );
+		$verification_token = null;
+		$initial_status     = 'pending';
+
+		// Check if email verification is required.
+		if ( ! AccountSettings::is_email_verification_required() ) {
+			// Skip verification - activate immediately and mark email as verified.
+			$initial_status     = 'active';
+			$verification_token = null;
+		} else {
+			$verification_token = wp_generate_password( 32, false );
+		}
 
 		// Create guest record.
-		$guest_id = $guest_repo->create(
-			array(
-				'hotel_id'           => $hotel->id,
-				'user_id'            => $user_id,
-				'guest_code'         => $guest_code,
-				'first_name'         => $first_name,
-				'last_name'          => $last_name,
-				'email'              => $email,
-				'registration_code'  => $hotel->hotel_code,
-				'verification_token' => $verification_token,
-				'access_start'       => $access_start,
-				'access_end'         => $access_end,
-				'status'             => 'pending',
-			)
+		$guest_data = array(
+			'hotel_id'           => $hotel->id,
+			'user_id'            => $user_id,
+			'guest_code'         => $guest_code,
+			'first_name'         => $first_name,
+			'last_name'          => $last_name,
+			'email'              => $email,
+			'registration_code'  => $hotel->hotel_code,
+			'verification_token' => $verification_token,
+			'access_start'       => $access_start,
+			'access_end'         => $access_end,
+			'status'             => $initial_status,
 		);
+
+		// If email verification not required, mark email as verified.
+		if ( ! AccountSettings::is_email_verification_required() ) {
+			$guest_data['email_verified_at'] = current_time( 'mysql' );
+		}
+
+		$guest_id = $guest_repo->create( $guest_data );
 
 		if ( ! $guest_id ) {
 			wp_send_json_error( array( 'message' => __( 'Failed to create guest record.', 'hotel-chain' ) ) );
 		}
 
-		// Send verification email.
-		$this->send_verification_email( $guest_id, $email, $verification_token, $hotel );
+		// Send verification email only if required.
+		if ( AccountSettings::is_email_verification_required() && $verification_token ) {
+			$this->send_verification_email( $guest_id, $email, $verification_token, $hotel );
+		} else {
+			// Auto-login if verification not required.
+			if ( $user_id && ! is_user_logged_in() ) {
+				wp_set_current_user( $user_id );
+				wp_set_auth_cookie( $user_id );
+			}
+		}
 
-		wp_send_json_success(
-			array(
-				'show_confirmation' => true,
-				'email'             => $email,
-				'guest_id'          => $guest_id,
-				'message'           => __( 'Registration successful! Please check your email to verify your account.', 'hotel-chain' ),
-			)
-		);
+		// Return appropriate response based on verification requirement.
+		if ( AccountSettings::is_email_verification_required() ) {
+			wp_send_json_success(
+				array(
+					'show_confirmation' => true,
+					'email'             => $email,
+					'guest_id'          => $guest_id,
+					'message'           => __( 'Registration successful! Please check your email to verify your account.', 'hotel-chain' ),
+				)
+			);
+		} else {
+			// Redirect to hotel page if verification not required.
+			$hotel_repo = new HotelRepository();
+			$hotel      = $hotel_repo->get_by_id( $hotel->id );
+			wp_send_json_success(
+				array(
+					'redirect' => home_url( '/hotel/' . $hotel->hotel_slug . '/' ),
+					'message'  => __( 'Registration successful! Redirecting...', 'hotel-chain' ),
+				)
+			);
+		}
 	}
 
 	/**

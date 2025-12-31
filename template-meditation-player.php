@@ -8,6 +8,9 @@
 use HotelChain\Repositories\HotelRepository;
 use HotelChain\Repositories\VideoRepository;
 use HotelChain\Repositories\HotelVideoAssignmentRepository;
+use HotelChain\Repositories\GuestRepository;
+use HotelChain\Setup\GuestExpiration;
+use HotelChain\Database\Schema;
 
 $hotel_user = get_query_var( 'hotel_user' );
 $video_id   = get_query_var( 'meditation_video_id' );
@@ -26,6 +29,41 @@ if ( ! $hotel ) {
 	return;
 }
 
+// Check if user is logged in and is a guest for this hotel with valid access.
+$is_guest        = false;
+$guest           = null;
+$current_user_id = get_current_user_id();
+$guest_status_message = '';
+
+if ( $current_user_id ) {
+	$guest_repo = new GuestRepository();
+	$guest      = $guest_repo->get_by_hotel_and_user( $hotel->id, $current_user_id );
+	// Check if guest has valid access (status is active AND access_end hasn't passed).
+	$is_guest = GuestExpiration::is_guest_access_valid( $guest );
+	
+	// Set status message for locked/expired guests.
+	if ( $guest && ! $is_guest ) {
+		if ( 'revoked' === $guest->status || 'locked' === $guest->status ) {
+			$guest_status_message = __( 'Your account has been deactivated. Please contact the hotel for assistance.', 'hotel-chain' );
+		} elseif ( 'expired' === $guest->status ) {
+			$guest_status_message = __( 'Your access has expired. Please contact the hotel to extend your access.', 'hotel-chain' );
+		} elseif ( 'pending' === $guest->status ) {
+			$guest_status_message = __( 'Your account is pending email verification. Please check your email.', 'hotel-chain' );
+		}
+	}
+}
+
+// Block access if guest is not valid.
+if ( ! $is_guest ) {
+	// Redirect to hotel page with access denied message.
+	$redirect_url = home_url( '/hotel/' . $hotel->hotel_slug . '/' );
+	if ( ! empty( $guest_status_message ) ) {
+		$redirect_url = add_query_arg( 'access_denied', '1', $redirect_url );
+	}
+	wp_safe_redirect( $redirect_url );
+	exit;
+}
+
 // Get video data.
 $video_repo = new VideoRepository();
 $video      = $video_repo->get_by_video_id( $video_id );
@@ -37,6 +75,18 @@ if ( ! $video ) {
 
 // Get video file URL.
 $video_url = $video->video_file_id ? wp_get_attachment_url( $video->video_file_id ) : '';
+
+// Check if download is enabled in system settings.
+$enable_download = false;
+global $wpdb;
+$system_settings_table = Schema::get_table_name( 'system_settings' );
+$content_settings_row = $wpdb->get_row( "SELECT content_settings FROM {$system_settings_table} LIMIT 1", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+if ( $content_settings_row && ! empty( $content_settings_row['content_settings'] ) ) {
+	$content_settings = json_decode( $content_settings_row['content_settings'], true );
+	if ( is_array( $content_settings ) && isset( $content_settings['enable_download'] ) ) {
+		$enable_download = (bool) $content_settings['enable_download'];
+	}
+}
 
 // Get all fully active videos for "Continue Your Journey" section
 // (admin approved AND hotel has this video set to active).
@@ -208,6 +258,19 @@ wp_enqueue_style(
 						</div>
 					<?php endif; ?>
 				</div>
+				<?php if ( $enable_download && $video_url ) : ?>
+					<!-- Download Button -->
+					<div class="mt-4 flex justify-center">
+						<a href="<?php echo esc_url( $video_url ); ?>" download class="inline-flex items-center gap-2 px-6 py-3 rounded transition-all hover:opacity-90 no-underline" style="background-color: rgb(61, 61, 68); color: rgb(240, 231, 215); font-family: var(--font-sans); border: none;">
+							<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5" aria-hidden="true">
+								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+								<polyline points="7 10 12 15 17 10"></polyline>
+								<line x1="12" y1="15" x2="12" y2="3"></line>
+							</svg>
+							<?php esc_html_e( 'Download Video', 'hotel-chain' ); ?>
+						</a>
+					</div>
+				<?php endif; ?>
 			</div>
 			<script>
 			function playMeditationVideo() {
