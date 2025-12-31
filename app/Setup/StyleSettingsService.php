@@ -47,12 +47,12 @@ class StyleSettingsService implements ServiceProviderInterface {
 	 * @return void
 	 */
 	public function enqueue_fonts(): void {
-		$elements = array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p' );
+		$elements       = array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p' );
 		$enqueued_fonts = array();
 
 		foreach ( $elements as $element ) {
 			$font_url = StyleSettings::get_typography_font_url( $element );
-			
+
 			// If URL is empty, try to generate it from font name.
 			if ( empty( $font_url ) ) {
 				$font_name = StyleSettings::get_typography_font( $element );
@@ -64,7 +64,7 @@ class StyleSettingsService implements ServiceProviderInterface {
 					'hotel-chain-typography-' . $element,
 					$font_url,
 					array(),
-					null
+					filemtime( get_template_directory() . '/assets/css/main.css' ) // Use theme version for cache busting.
 				);
 				$enqueued_fonts[] = $font_url;
 			}
@@ -77,12 +77,12 @@ class StyleSettingsService implements ServiceProviderInterface {
 	 * @return void
 	 */
 	public function add_font_links(): void {
-		$elements = array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p' );
+		$elements       = array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p' );
 		$enqueued_fonts = array();
 
 		foreach ( $elements as $element ) {
 			$font_url = StyleSettings::get_typography_font_url( $element );
-			
+
 			// If URL is empty, try to generate it from font name.
 			if ( empty( $font_url ) ) {
 				$font_name = StyleSettings::get_typography_font( $element );
@@ -90,7 +90,13 @@ class StyleSettingsService implements ServiceProviderInterface {
 			}
 
 			if ( ! empty( $font_url ) && ! in_array( $font_url, $enqueued_fonts, true ) ) {
-				echo '<link rel="stylesheet" href="' . esc_url( $font_url ) . '" />' . "\n";
+				// Enqueue Google Fonts via wp_enqueue_style instead of direct link tag.
+				wp_enqueue_style(
+					'hotel-chain-google-font-' . md5( $font_url ),
+					$font_url,
+					array(),
+					'1.0.0'
+				);
 				$enqueued_fonts[] = $font_url;
 			}
 		}
@@ -105,31 +111,31 @@ class StyleSettingsService implements ServiceProviderInterface {
 	private function generate_google_font_url( string $font_name ): string {
 		// Map of font names to their Google Fonts URLs.
 		$font_map = array(
-			'Inter'              => 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
-			'Playfair Display'  => 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap',
-			'Roboto'            => 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap',
-			'Open Sans'         => 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap',
-			'Lato'              => 'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap',
-			'Montserrat'        => 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap',
-			'Poppins'           => 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
-			'Raleway'           => 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap',
-			'Oswald'            => 'https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap',
-			'Roboto Condensed'  => 'https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500;600;700&display=swap',
-			'Ubuntu'            => 'https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600;700&display=swap',
-			'Lobster'           => 'https://fonts.googleapis.com/css2?family=Lobster&display=swap',
-			'Pacifico'          => 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap',
-			'Anton'             => 'https://fonts.googleapis.com/css2?family=Anton&display=swap',
-			'Exo 2'             => 'https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap',
-			'Bebas Neue'        => 'https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap',
-			'Bitter'            => 'https://fonts.googleapis.com/css2?family=Bitter:wght@300;400;500;600;700&display=swap',
-			'Fira Sans'         => 'https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&display=swap',
-			'Jura'              => 'https://fonts.googleapis.com/css2?family=Jura:wght@300;400;500;600;700&display=swap',
-			'Kanit'             => 'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap',
-			'Kaushan Script'    => 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap',
-			'Lobster Two'       => 'https://fonts.googleapis.com/css2?family=Lobster+Two:wght@300;400;700&display=swap',
-			'Noto Serif'        => 'https://fonts.googleapis.com/css2?family=Noto+Serif:wght@300;400;500;600;700&display=swap',
-			'Merriweather'      => 'https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap',
-			'Source Sans Pro'   => 'https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap',
+			'Inter'            => 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+			'Playfair Display' => 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap',
+			'Roboto'           => 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap',
+			'Open Sans'        => 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap',
+			'Lato'             => 'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap',
+			'Montserrat'       => 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap',
+			'Poppins'          => 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
+			'Raleway'          => 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap',
+			'Oswald'           => 'https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap',
+			'Roboto Condensed' => 'https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500;600;700&display=swap',
+			'Ubuntu'           => 'https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600;700&display=swap',
+			'Lobster'          => 'https://fonts.googleapis.com/css2?family=Lobster&display=swap',
+			'Pacifico'         => 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap',
+			'Anton'            => 'https://fonts.googleapis.com/css2?family=Anton&display=swap',
+			'Exo 2'            => 'https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap',
+			'Bebas Neue'       => 'https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap',
+			'Bitter'           => 'https://fonts.googleapis.com/css2?family=Bitter:wght@300;400;500;600;700&display=swap',
+			'Fira Sans'        => 'https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&display=swap',
+			'Jura'             => 'https://fonts.googleapis.com/css2?family=Jura:wght@300;400;500;600;700&display=swap',
+			'Kanit'            => 'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap',
+			'Kaushan Script'   => 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap',
+			'Lobster Two'      => 'https://fonts.googleapis.com/css2?family=Lobster+Two:wght@300;400;700&display=swap',
+			'Noto Serif'       => 'https://fonts.googleapis.com/css2?family=Noto+Serif:wght@300;400;500;600;700&display=swap',
+			'Merriweather'     => 'https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap',
+			'Source Sans Pro'  => 'https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap',
 		);
 
 		return $font_map[ $font_name ] ?? '';
@@ -141,7 +147,7 @@ class StyleSettingsService implements ServiceProviderInterface {
 	 * @return void
 	 */
 	public function inject_css_variables(): void {
-		$elements = array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p' );
+		$elements         = array( 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p' );
 		$typography_fonts = array();
 		foreach ( $elements as $element ) {
 			$typography_fonts[ $element ] = StyleSettings::get_typography_font( $element );

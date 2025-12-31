@@ -51,13 +51,13 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 
 		$guest_repository = new GuestRepository();
 		$video_repository = new VideoRepository();
-		$assignment_repo = new HotelVideoAssignmentRepository();
+		$assignment_repo  = new HotelVideoAssignmentRepository();
 
 		// Get filter/search parameters.
-		$search_query = isset( $_GET['search'] ) ? sanitize_text_field( wp_unslash( $_GET['search'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$status_filter = isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$search_query      = isset( $_GET['search'] ) ? sanitize_text_field( wp_unslash( $_GET['search'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$status_filter     = isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$selected_guest_id = isset( $_GET['guest_id'] ) ? absint( $_GET['guest_id'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		
+
 		// Debug: Log guest_id if present.
 		if ( $selected_guest_id && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			error_log( 'Hotel Guest Management: Selected guest_id = ' . $selected_guest_id ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -67,15 +67,15 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		$all_guests = $guest_repository->get_hotel_guests( $hotel->id, array( 'limit' => -1 ) );
 
 		// Calculate statistics.
-		$total_guests = count( $all_guests );
-		$active_guests = 0;
-		$expiring_soon = 0;
+		$total_guests   = count( $all_guests );
+		$active_guests  = 0;
+		$expiring_soon  = 0;
 		$expired_guests = 0;
-		$locked_guests = 0;
+		$locked_guests  = 0;
 
 		$expiry_warning_days = AccountSettings::get_expiry_warning_period();
-		$now = current_time( 'mysql' );
-		$warning_date = gmdate( 'Y-m-d H:i:s', strtotime( "+{$expiry_warning_days} days" ) );
+		$now                 = current_time( 'mysql' );
+		$warning_date        = gmdate( 'Y-m-d H:i:s', strtotime( "+{$expiry_warning_days} days" ) );
 
 		foreach ( $all_guests as $guest ) {
 			if ( 'active' === $guest->status ) {
@@ -118,7 +118,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 
 		// Get video views data for guests.
 		global $wpdb;
-		$video_views_table = Schema::get_table_name( 'video_views' );
+		$video_views_table    = Schema::get_table_name( 'video_views' );
 		$video_metadata_table = Schema::get_table_name( 'video_metadata' );
 
 		// Get last active times and video counts for each guest.
@@ -126,8 +126,8 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		foreach ( $filtered_guests as $guest ) {
 			if ( ! $guest->user_id ) {
 				$guest_stats[ $guest->id ] = array(
-					'last_active' => null,
-					'video_count' => 0,
+					'last_active'   => null,
+					'video_count'   => 0,
 					'practice_time' => 0,
 				);
 				continue;
@@ -161,14 +161,14 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 			);
 
 			$guest_stats[ $guest->id ] = array(
-				'last_active' => $last_active,
-				'video_count' => $video_count,
+				'last_active'   => $last_active,
+				'video_count'   => $video_count,
 				'practice_time' => $practice_time,
 			);
 		}
 
 		// Get selected guest details if provided.
-		$selected_guest = null;
+		$selected_guest        = null;
 		$selected_guest_videos = array();
 		if ( $selected_guest_id ) {
 			// Search in all_guests, not filtered_guests, to ensure we find the guest even if filters are applied.
@@ -178,7 +178,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 					break;
 				}
 			}
-			
+
 			// If not found in all_guests, try to get directly from repository.
 			if ( ! $selected_guest ) {
 				$selected_guest = $guest_repository->get_by_id( $selected_guest_id );
@@ -190,14 +190,15 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 
 			if ( $selected_guest && $selected_guest->user_id ) {
 				// Get assigned videos for this hotel.
-				$assigned_videos = $assignment_repo->get_hotel_videos( $hotel->id, array( 'status' => 'active' ) );
+				$assigned_videos    = $assignment_repo->get_hotel_videos( $hotel->id, array( 'status' => 'active' ) );
 				$assigned_video_ids = array();
 				foreach ( $assigned_videos as $assignment ) {
 					$assigned_video_ids[] = (int) $assignment->video_id;
 				}
 
 				// Get video progress for this guest.
-				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// Video IDs are sanitized with intval, so safe to use in IN clause.
+				// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 				$selected_guest_videos = $wpdb->get_results(
 					$wpdb->prepare(
 						"SELECT 
@@ -209,44 +210,44 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 							SUM(vv.view_duration) as total_duration
 						FROM {$video_metadata_table} vm
 						INNER JOIN {$video_views_table} vv ON vm.video_id = vv.video_id
-						WHERE vv.hotel_id = %d AND vv.user_id = %d AND vm.video_id IN (" . implode( ',', array_map( 'intval', $assigned_video_ids ) ) . ")
+						WHERE vv.hotel_id = %d AND vv.user_id = %d AND vm.video_id IN (" . implode( ',', array_map( 'intval', $assigned_video_ids ) ) . ')
 						GROUP BY vm.video_id
-						ORDER BY last_viewed DESC",
+						ORDER BY last_viewed DESC',
 						$hotel->id,
 						$selected_guest->user_id
 					)
 				);
-				// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared
 			}
 		}
 
 		$this->render_html( $hotel, $filtered_guests, $guest_stats, $total_guests, $active_guests, $expiring_soon, $expired_guests, $locked_guests, $search_query, $status_filter, $selected_guest, $selected_guest_videos );
 	}
 
-	
+
 
 	/**
 	 * Render the HTML for the guest management page.
 	 *
-	 * @param object $hotel Hotel object.
-	 * @param array  $guests Filtered guests array.
-	 * @param array  $guest_stats Guest statistics array.
-	 * @param int    $total_guests Total guests count.
-	 * @param int    $active_guests Active guests count.
-	 * @param int    $expiring_soon Expiring soon count.
-	 * @param int    $expired_guests Expired guests count.
-	 * @param int    $locked_guests Locked guests count.
-	 * @param string $search_query Search query.
-	 * @param string $status_filter Status filter.
+	 * @param object      $hotel Hotel object.
+	 * @param array       $guests Filtered guests array.
+	 * @param array       $guest_stats Guest statistics array.
+	 * @param int         $total_guests Total guests count.
+	 * @param int         $active_guests Active guests count.
+	 * @param int         $expiring_soon Expiring soon count.
+	 * @param int         $expired_guests Expired guests count.
+	 * @param int         $locked_guests Locked guests count.
+	 * @param string      $search_query Search query.
+	 * @param string      $status_filter Status filter.
 	 * @param object|null $selected_guest Selected guest object.
-	 * @param array  $selected_guest_videos Selected guest video progress.
+	 * @param array       $selected_guest_videos Selected guest video progress.
 	 * @return void
 	 */
 	private function render_html( $hotel, $guests, $guest_stats, $total_guests, $active_guests, $expiring_soon, $expired_guests, $locked_guests, $search_query, $status_filter, $selected_guest, $selected_guest_videos ): void {
-		$ajax_url = admin_url( 'admin-ajax.php' );
-		$nonce = wp_create_nonce( 'hotel_guest_management' );
+		$ajax_url   = admin_url( 'admin-ajax.php' );
+		$nonce      = wp_create_nonce( 'hotel_guest_management' );
 		$export_url = admin_url( 'admin-post.php?action=hotel_export_guests&hotel_id=' . $hotel->id . '&_wpnonce=' . wp_create_nonce( 'hotel_export_guests_' . $hotel->id ) );
-		
+
 		// Get logo URL from hotel.
 		$logo_id  = isset( $hotel->logo_id ) ? absint( $hotel->logo_id ) : 0;
 		$logo_url = $logo_id ? wp_get_attachment_url( $logo_id ) : '';
@@ -280,7 +281,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 								</svg>
 								<input type="text" name="search" value="<?php echo esc_attr( $search_query ); ?>" placeholder="<?php esc_attr_e( 'Search guests by name or email...', 'hotel-chain' ); ?>" class="flex-1 border-none outline-none bg-transparent text-gray-600">
 								<?php if ( ! empty( $search_query ) ) : ?>
-									<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-guest-management' . ( $selected_guest_id ? '&guest_id=' . $selected_guest_id : '' ) . ( ! empty( $status_filter ) ? '&status=' . urlencode( $status_filter ) : '' ) ) ); ?>" class="text-gray-400 hover:text-gray-600" title="<?php esc_attr_e( 'Clear search', 'hotel-chain' ); ?>">
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-guest-management' . ( $selected_guest_id ? '&guest_id=' . $selected_guest_id : '' ) . ( ! empty( $status_filter ) ? '&status=' . rawurlencode( $status_filter ) : '' ) ) ); ?>" class="text-gray-400 hover:text-gray-600" title="<?php esc_attr_e( 'Clear search', 'hotel-chain' ); ?>">
 										<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x">
 											<path d="M18 6L6 18"></path>
 											<path d="M6 6l12 12"></path>
@@ -307,7 +308,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 							<?php
 							// Build export URL with current filters.
 							$export_params = array(
-								'action' => 'hotel_export_guests',
+								'action'   => 'hotel_export_guests',
 								'hotel_id' => $hotel->id,
 								'_wpnonce' => wp_create_nonce( 'hotel_export_guests_' . $hotel->id ),
 							);
@@ -318,7 +319,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 								$export_params['status'] = $status_filter;
 							}
 							$export_url = admin_url( 'admin-post.php?' . http_build_query( $export_params ) );
-							
+
 							// Build clear filters URL.
 							$clear_url = admin_url( 'admin.php?page=hotel-guest-management' );
 							if ( $selected_guest_id ) {
@@ -431,16 +432,16 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 											$initials = strtoupper( substr( $guest->email ?? 'G', 0, 1 ) );
 										}
 
-										$stats = $guest_stats[ $guest->id ] ?? array();
-										$last_active = $stats['last_active'] ?? null;
-										$video_count = $stats['video_count'] ?? 0;
+										$stats         = $guest_stats[ $guest->id ] ?? array();
+										$last_active   = $stats['last_active'] ?? null;
+										$video_count   = $stats['video_count'] ?? 0;
 										$practice_time = $stats['practice_time'] ?? 0;
 
 										// Determine status display.
-										$status = $guest->status;
+										$status              = $guest->status;
 										$expiry_warning_days = AccountSettings::get_expiry_warning_period();
-										$now = current_time( 'mysql' );
-										$warning_date = gmdate( 'Y-m-d H:i:s', strtotime( "+{$expiry_warning_days} days" ) );
+										$now                 = current_time( 'mysql' );
+										$warning_date        = gmdate( 'Y-m-d H:i:s', strtotime( "+{$expiry_warning_days} days" ) );
 
 										if ( 'active' === $status && $guest->access_end && $guest->access_end > $now && $guest->access_end <= $warning_date ) {
 											$status_display = 'expiring_soon';
@@ -449,19 +450,19 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 										}
 
 										$status_classes = array(
-											'active' => 'bg-green-200 border border-green-600 text-green-900',
+											'active'  => 'bg-green-200 border border-green-600 text-green-900',
 											'expiring_soon' => 'bg-orange-200 border border-orange-600 text-orange-900',
 											'expired' => 'bg-red-200 border border-red-600 text-red-900',
 											'revoked' => 'bg-yellow-200 border border-yellow-600 text-yellow-900',
-											'locked' => 'bg-purple-200 border border-purple-600 text-purple-900',
+											'locked'  => 'bg-purple-200 border border-purple-600 text-purple-900',
 										);
 
 										$status_labels = array(
-											'active' => __( 'Active', 'hotel-chain' ),
+											'active'  => __( 'Active', 'hotel-chain' ),
 											'expiring_soon' => __( 'Expiring Soon', 'hotel-chain' ),
 											'expired' => __( 'Expired', 'hotel-chain' ),
 											'revoked' => __( 'Locked', 'hotel-chain' ),
-											'locked' => __( 'Locked', 'hotel-chain' ),
+											'locked'  => __( 'Locked', 'hotel-chain' ),
 										);
 
 										$status_style = $status_classes[ $status_display ] ?? $status_classes['active'];
@@ -470,7 +471,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 										// Format last active.
 										$last_active_display = __( 'Never', 'hotel-chain' );
 										if ( $last_active ) {
-											$last_active_ts = strtotime( $last_active );
+											$last_active_ts      = strtotime( $last_active );
 											$last_active_display = human_time_diff( $last_active_ts, time() ) . ' ' . __( 'ago', 'hotel-chain' );
 										}
 
@@ -613,7 +614,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 			});
 			<?php else : ?>
 			// Debug: Check if guest_id is in URL but guest not found.
-			<?php if ( $selected_guest_id ) : ?>
+				<?php if ( $selected_guest_id ) : ?>
 			console.warn('Guest ID <?php echo esc_js( (string) $selected_guest_id ); ?> was requested but guest not found');
 			<?php endif; ?>
 			<?php endif; ?>
@@ -1104,13 +1105,13 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 			$initials = strtoupper( substr( $guest->email ?? 'G', 0, 1 ) );
 		}
 
-		$last_active = $stats['last_active'] ?? null;
-		$practice_time = $stats['practice_time'] ?? 0;
+		$last_active    = $stats['last_active'] ?? null;
+		$practice_time  = $stats['practice_time'] ?? 0;
 		$practice_hours = round( $practice_time / 3600, 1 );
 
 		$last_active_display = __( 'Never', 'hotel-chain' );
 		if ( $last_active ) {
-			$last_active_ts = strtotime( $last_active );
+			$last_active_ts      = strtotime( $last_active );
 			$last_active_display = human_time_diff( $last_active_ts, time() ) . ' ' . __( 'ago', 'hotel-chain' );
 		}
 
@@ -1120,9 +1121,9 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		}
 
 		// Calculate completion stats.
-		$completed_count = 0;
+		$completed_count  = 0;
 		$total_completion = 0;
-		$total_sessions = 0;
+		$total_sessions   = 0;
 		foreach ( $videos as $video ) {
 			if ( $video->completed ) {
 				++$completed_count;
@@ -1133,7 +1134,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		$avg_completion = $total_sessions > 0 ? round( $total_completion / $total_sessions ) : 0;
 
 		// Format duration helper.
-		$format_duration = function( $seconds ) {
+		$format_duration = function ( $seconds ) {
 			if ( ! $seconds ) {
 				return '0:00';
 			}
@@ -1241,9 +1242,9 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 								<?php else : ?>
 									<?php foreach ( $videos as $video ) : ?>
 										<?php
-										$completion = (int) $video->completion_percentage;
-										$is_completed = (bool) $video->completed;
-										$status_text = $is_completed ? __( 'Completed', 'hotel-chain' ) : ( $completion > 0 ? __( 'In Progress', 'hotel-chain' ) : __( 'Not Started', 'hotel-chain' ) );
+										$completion       = (int) $video->completion_percentage;
+										$is_completed     = (bool) $video->completed;
+										$status_text      = $is_completed ? __( 'Completed', 'hotel-chain' ) : ( $completion > 0 ? __( 'In Progress', 'hotel-chain' ) : __( 'Not Started', 'hotel-chain' ) );
 										$duration_display = $format_duration( (int) $video->total_duration );
 										?>
 										<div class="flex items-center justify-between p-3 border border-solid border-gray-400 rounded">
@@ -1321,6 +1322,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		}
 
 		if ( ! in_array( 'hotel', $current_user->roles, true ) ) {
+			// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText -- Debug message with user roles
 			wp_die( esc_html__( 'Unauthorized access. Hotel role required. User roles: ' . implode( ', ', $current_user->roles ), 'hotel-chain' ) );
 		}
 
@@ -1332,16 +1334,19 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		$hotel_repo = new HotelRepository();
 		$hotel      = $hotel_repo->get_by_user_id( $current_user_id );
 		if ( ! $hotel ) {
+			// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText -- Debug message with user ID
 			wp_die( esc_html__( 'Hotel account not found for this user. User ID: ' . $current_user_id, 'hotel-chain' ) );
 		}
 		$logo_id  = isset( $hotel->logo_id ) ? absint( $hotel->logo_id ) : 0;
 		$logo_url = $logo_id ? wp_get_attachment_url( $logo_id ) : '';
 
 		if ( ! $hotel ) {
+			// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText -- Debug message with user ID
 			wp_die( esc_html__( 'Hotel account not found for this user. User ID: ' . $current_user_id, 'hotel-chain' ) );
 		}
 
 		if ( (int) $hotel->id !== (int) $hotel_id ) {
+			// phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText -- Debug message with hotel IDs
 			wp_die( esc_html__( 'Unauthorized access. Hotel ID mismatch. Expected: ' . $hotel->id . ', Got: ' . $hotel_id, 'hotel-chain' ) );
 		}
 
@@ -1356,7 +1361,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		}
 
 		// Get filter parameters.
-		$search_query = isset( $_GET['search'] ) ? sanitize_text_field( wp_unslash( $_GET['search'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$search_query  = isset( $_GET['search'] ) ? sanitize_text_field( wp_unslash( $_GET['search'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$status_filter = isset( $_GET['status'] ) ? sanitize_text_field( wp_unslash( $_GET['status'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		$guest_repo = new GuestRepository();
@@ -1364,8 +1369,8 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 
 		// Apply the same filters as the page.
 		$expiry_warning_days = AccountSettings::get_expiry_warning_period();
-		$now = current_time( 'mysql' );
-		$warning_date = gmdate( 'Y-m-d H:i:s', strtotime( "+{$expiry_warning_days} days" ) );
+		$now                 = current_time( 'mysql' );
+		$warning_date        = gmdate( 'Y-m-d H:i:s', strtotime( "+{$expiry_warning_days} days" ) );
 
 		// Get video views data for statistics.
 		global $wpdb;
@@ -1399,7 +1404,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		// Set headers for CSV download.
 		nocache_headers();
 		header( 'Content-Type: text/csv; charset=utf-8' );
-		$filename = 'guests-' . sanitize_file_name( $hotel->hotel_name ) . '-' . date( 'Y-m-d' );
+		$filename = 'guests-' . sanitize_file_name( $hotel->hotel_name ) . '-' . gmdate( 'Y-m-d' );
 		if ( ! empty( $search_query ) || ! empty( $status_filter ) ) {
 			$filename .= '-filtered';
 		}
@@ -1434,8 +1439,8 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		// CSV rows.
 		foreach ( $filtered_guests as $guest ) {
 			// Get last active time.
-			$last_active = null;
-			$video_count = 0;
+			$last_active   = null;
+			$video_count   = 0;
 			$practice_time = 0;
 
 			if ( $guest->user_id ) {
@@ -1462,14 +1467,14 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 						$guest->user_id
 					)
 				);
-				$practice_time = round( $practice_time_seconds / 3600, 2 );
+				$practice_time         = round( $practice_time_seconds / 3600, 2 );
 			}
 
 			// Format dates.
 			$access_start_formatted = $guest->access_start ? date_i18n( 'Y-m-d H:i:s', strtotime( $guest->access_start ) ) : '';
-			$access_end_formatted = $guest->access_end ? date_i18n( 'Y-m-d H:i:s', strtotime( $guest->access_end ) ) : '';
-			$last_active_formatted = $last_active ? date_i18n( 'Y-m-d H:i:s', strtotime( $last_active ) ) : '';
-			$created_at_formatted = $guest->created_at ? date_i18n( 'Y-m-d H:i:s', strtotime( $guest->created_at ) ) : '';
+			$access_end_formatted   = $guest->access_end ? date_i18n( 'Y-m-d H:i:s', strtotime( $guest->access_end ) ) : '';
+			$last_active_formatted  = $last_active ? date_i18n( 'Y-m-d H:i:s', strtotime( $last_active ) ) : '';
+			$created_at_formatted   = $guest->created_at ? date_i18n( 'Y-m-d H:i:s', strtotime( $guest->created_at ) ) : '';
 
 			fputcsv(
 				$output,
@@ -1490,6 +1495,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 			);
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- CSV export requires direct file operations
 		fclose( $output );
 		exit;
 	}
@@ -1592,7 +1598,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 			wp_send_json_success(
 				array(
 					'message'     => __( 'Access extended successfully!', 'hotel-chain' ),
-					'new_end'    => date_i18n( 'M j, Y', strtotime( $new_end ) ),
+					'new_end'     => date_i18n( 'M j, Y', strtotime( $new_end ) ),
 					'new_end_raw' => $new_end,
 				)
 			);
@@ -1679,9 +1685,9 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		}
 
 		// Check if access_end is still valid, otherwise set status based on that.
-		$now = current_time( 'mysql' );
+		$now        = current_time( 'mysql' );
 		$new_status = 'active';
-		
+
 		// If access_end has passed, set to expired instead of active.
 		if ( $guest->access_end && $guest->access_end <= $now ) {
 			$new_status = 'expired';
@@ -1690,7 +1696,7 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		$updated = $guest_repo->update( $guest_id, array( 'status' => $new_status ) );
 
 		if ( $updated ) {
-			$message = 'expired' === $new_status 
+			$message = 'expired' === $new_status
 				? __( 'Guest account reactivated, but access has expired. Please extend access.', 'hotel-chain' )
 				: __( 'Guest account reactivated successfully.', 'hotel-chain' );
 			wp_send_json_success( array( 'message' => $message ) );
@@ -1713,9 +1719,11 @@ class HotelGuestManagementPage implements ServiceProviderInterface {
 		/* translators: %s: Hotel name */
 		$subject = sprintf( __( 'Your meditation access - %s', 'hotel-chain' ), $hotel->hotel_name );
 
-		$message = sprintf(
+		$guest_name = trim( ( $guest->first_name ?? '' ) . ' ' . ( $guest->last_name ?? '' ) );
+		$guest_name = ! empty( $guest_name ) ? $guest_name : __( 'Guest', 'hotel-chain' );
+		$message    = sprintf(
 			__( "Hello %1\$s,\n\nWelcome to %2\$s!\n\nPlease click the link below to verify your email address and activate your meditation access:\n\n%3\$s\n\nThis link will expire in 24 hours.\n\nIf you didn't request this access, you can safely ignore this email.\n\nThank you!", 'hotel-chain' ),
-			trim( ( $guest->first_name ?? '' ) . ' ' . ( $guest->last_name ?? '' ) ) ?: __( 'Guest', 'hotel-chain' ),
+			$guest_name,
 			$hotel->hotel_name,
 			$verify_url
 		);

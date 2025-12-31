@@ -56,82 +56,82 @@ class SystemSettingsPage implements ServiceProviderInterface {
 	private function get_default_settings(): array {
 		return array(
 			'account' => array(
-				'default_guest_duration'    => 30,
+				'default_guest_duration'     => 30,
 				'expiry_warning_period'      => 3,
 				'allow_guest_registration'   => true,
 				'require_email_verification' => true,
-				'auto_approve_requests'       => false,
+				'auto_approve_requests'      => false,
 				'allow_reactivation'         => true,
 			),
 			'content' => array(
 				'max_video_size'        => 2,
 				'signed_url_expiration' => 1,
-				'supported_formats'      => array( 'MP4', 'MOV', 'AVI', 'WebM' ),
-				'enable_download'        => false,
-				'auto_play_next'         => true,
-				'track_analytics'        => true,
+				'supported_formats'     => array( 'MP4', 'MOV', 'AVI', 'WebM' ),
+				'enable_download'       => false,
+				'auto_play_next'        => true,
+				'track_analytics'       => true,
 			),
-			'email' => array(
+			'email'   => array(
 				'from_email'                      => 'noreply@videoplatform.com',
 				'from_name'                       => 'Video Platform',
 				'email_registration_confirmation' => true,
-				'email_access_approved'            => true,
-				'email_expiry_warning'             => true,
-				'email_admin_alerts'               => true,
+				'email_access_approved'           => true,
+				'email_expiry_warning'            => true,
+				'email_admin_alerts'              => true,
 			),
-			'style' => array(
+			'style'   => array(
 				'typography_h1_font'        => 'Playfair Display',
-				'typography_h1_font_url'     => '',
-				'typography_h1_font_weight'  => '600',
+				'typography_h1_font_url'    => '',
+				'typography_h1_font_weight' => '600',
 				'typography_h2_font'        => 'Playfair Display',
-				'typography_h2_font_url'     => '',
-				'typography_h2_font_weight'  => '600',
+				'typography_h2_font_url'    => '',
+				'typography_h2_font_weight' => '600',
 				'typography_h3_font'        => 'Playfair Display',
-				'typography_h3_font_url'     => '',
-				'typography_h3_font_weight'  => '600',
+				'typography_h3_font_url'    => '',
+				'typography_h3_font_weight' => '600',
 				'typography_h4_font'        => 'Playfair Display',
-				'typography_h4_font_url'     => '',
-				'typography_h4_font_weight'  => '600',
+				'typography_h4_font_url'    => '',
+				'typography_h4_font_weight' => '600',
 				'typography_h5_font'        => 'Playfair Display',
-				'typography_h5_font_url'     => '',
-				'typography_h5_font_weight'  => '600',
+				'typography_h5_font_url'    => '',
+				'typography_h5_font_weight' => '600',
 				'typography_h6_font'        => 'Playfair Display',
-				'typography_h6_font_url'     => '',
-				'typography_h6_font_weight'  => '600',
-				'typography_p_font'          => 'Inter',
-				'typography_p_font_url'      => '',
-				'typography_p_font_weight'   => '400',
-				'logo_id'               => 0,
-				'logo_url'              => '',
-				'favicon_id'            => 0,
-				'favicon_url'           => '',
-				'font_size_h1_mobile'   => 28,
-				'font_size_h1_tablet'   => 32,
-				'font_size_h1_desktop'  => 36,
-				'font_size_h2_mobile'   => 24,
-				'font_size_h2_tablet'   => 28,
-				'font_size_h2_desktop'  => 32,
-				'font_size_h3_mobile'   => 20,
-				'font_size_h3_tablet'   => 24,
-				'font_size_h3_desktop'  => 28,
-				'font_size_h4_mobile'   => 18,
-				'font_size_h4_tablet'   => 20,
-				'font_size_h4_desktop'  => 24,
-				'font_size_h5_mobile'   => 16,
-				'font_size_h5_tablet'   => 18,
-				'font_size_h5_desktop'  => 20,
-				'font_size_h6_mobile'   => 14,
-				'font_size_h6_tablet'   => 16,
-				'font_size_h6_desktop'  => 18,
-				'font_size_p_mobile'    => 14,
-				'font_size_p_tablet'    => 16,
-				'font_size_p_desktop'   => 18,
-				'button_primary_color'  => '#1f88ff',
-				'button_secondary_color' => '#6b7280',
-				'button_success_color'  => '#10b981',
-				'button_info_color'     => '#3b82f6',
-				'button_warning_color'  => '#f59e0b',
-				'button_danger_color'   => '#ef4444',
+				'typography_h6_font_url'    => '',
+				'typography_h6_font_weight' => '600',
+				'typography_p_font'         => 'Inter',
+				'typography_p_font_url'     => '',
+				'typography_p_font_weight'  => '400',
+				'logo_id'                   => 0,
+				'logo_url'                  => '',
+				'favicon_id'                => 0,
+				'favicon_url'               => '',
+				'font_size_h1_mobile'       => 28,
+				'font_size_h1_tablet'       => 32,
+				'font_size_h1_desktop'      => 36,
+				'font_size_h2_mobile'       => 24,
+				'font_size_h2_tablet'       => 28,
+				'font_size_h2_desktop'      => 32,
+				'font_size_h3_mobile'       => 20,
+				'font_size_h3_tablet'       => 24,
+				'font_size_h3_desktop'      => 28,
+				'font_size_h4_mobile'       => 18,
+				'font_size_h4_tablet'       => 20,
+				'font_size_h4_desktop'      => 24,
+				'font_size_h5_mobile'       => 16,
+				'font_size_h5_tablet'       => 18,
+				'font_size_h5_desktop'      => 20,
+				'font_size_h6_mobile'       => 14,
+				'font_size_h6_tablet'       => 16,
+				'font_size_h6_desktop'      => 18,
+				'font_size_p_mobile'        => 14,
+				'font_size_p_tablet'        => 16,
+				'font_size_p_desktop'       => 18,
+				'button_primary_color'      => '#1f88ff',
+				'button_secondary_color'    => '#6b7280',
+				'button_success_color'      => '#10b981',
+				'button_info_color'         => '#3b82f6',
+				'button_warning_color'      => '#f59e0b',
+				'button_danger_color'       => '#ef4444',
 			),
 		);
 	}
@@ -186,85 +186,85 @@ class SystemSettingsPage implements ServiceProviderInterface {
 
 		// Organize settings into categories.
 		$account_settings = array(
-			'default_guest_duration'    => isset( $_POST['default_guest_duration'] ) ? absint( $_POST['default_guest_duration'] ) : 30, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'default_guest_duration'     => isset( $_POST['default_guest_duration'] ) ? absint( $_POST['default_guest_duration'] ) : 30, // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'expiry_warning_period'      => isset( $_POST['expiry_warning_period'] ) ? absint( $_POST['expiry_warning_period'] ) : 3, // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'allow_guest_registration'   => isset( $_POST['allow_guest_registration'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'require_email_verification' => isset( $_POST['require_email_verification'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'auto_approve_requests'       => isset( $_POST['auto_approve_requests'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'auto_approve_requests'      => isset( $_POST['auto_approve_requests'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'allow_reactivation'         => isset( $_POST['allow_reactivation'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		);
 
 		$content_settings = array(
 			'max_video_size'        => isset( $_POST['max_video_size'] ) ? absint( $_POST['max_video_size'] ) : 2, // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'signed_url_expiration' => isset( $_POST['signed_url_expiration'] ) ? absint( $_POST['signed_url_expiration'] ) : 1, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'supported_formats'      => isset( $_POST['supported_formats'] ) ? array_map( 'sanitize_text_field', (array) $_POST['supported_formats'] ) : array(), // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'enable_download'        => isset( $_POST['enable_download'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'auto_play_next'         => isset( $_POST['auto_play_next'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'track_analytics'        => isset( $_POST['track_analytics'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'supported_formats'     => isset( $_POST['supported_formats'] ) ? array_map( 'sanitize_text_field', (array) $_POST['supported_formats'] ) : array(), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'enable_download'       => isset( $_POST['enable_download'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'auto_play_next'        => isset( $_POST['auto_play_next'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'track_analytics'       => isset( $_POST['track_analytics'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		);
 
 		$email_settings = array(
 			'from_email'                      => isset( $_POST['from_email'] ) ? sanitize_email( wp_unslash( $_POST['from_email'] ) ) : 'noreply@videoplatform.com', // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'from_name'                       => isset( $_POST['from_name'] ) ? sanitize_text_field( wp_unslash( $_POST['from_name'] ) ) : 'Video Platform', // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'email_registration_confirmation' => isset( $_POST['email_registration_confirmation'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'email_access_approved'            => isset( $_POST['email_access_approved'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'email_expiry_warning'             => isset( $_POST['email_expiry_warning'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'email_admin_alerts'               => isset( $_POST['email_admin_alerts'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'email_access_approved'           => isset( $_POST['email_access_approved'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'email_expiry_warning'            => isset( $_POST['email_expiry_warning'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'email_admin_alerts'              => isset( $_POST['email_admin_alerts'] ), // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		);
 
 		$style_settings = array(
 			'typography_h1_font'        => isset( $_POST['typography_h1_font'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h1_font'] ) ) : 'Playfair Display', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h1_font_url'     => isset( $_POST['typography_h1_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h1_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h1_font_weight'  => isset( $_POST['typography_h1_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h1_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h1_font_url'    => isset( $_POST['typography_h1_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h1_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h1_font_weight' => isset( $_POST['typography_h1_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h1_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'typography_h2_font'        => isset( $_POST['typography_h2_font'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h2_font'] ) ) : 'Playfair Display', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h2_font_url'     => isset( $_POST['typography_h2_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h2_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h2_font_weight'  => isset( $_POST['typography_h2_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h2_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h2_font_url'    => isset( $_POST['typography_h2_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h2_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h2_font_weight' => isset( $_POST['typography_h2_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h2_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'typography_h3_font'        => isset( $_POST['typography_h3_font'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h3_font'] ) ) : 'Playfair Display', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h3_font_url'     => isset( $_POST['typography_h3_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h3_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h3_font_weight'  => isset( $_POST['typography_h3_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h3_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h3_font_url'    => isset( $_POST['typography_h3_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h3_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h3_font_weight' => isset( $_POST['typography_h3_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h3_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'typography_h4_font'        => isset( $_POST['typography_h4_font'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h4_font'] ) ) : 'Playfair Display', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h4_font_url'     => isset( $_POST['typography_h4_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h4_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h4_font_weight'  => isset( $_POST['typography_h4_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h4_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h4_font_url'    => isset( $_POST['typography_h4_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h4_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h4_font_weight' => isset( $_POST['typography_h4_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h4_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'typography_h5_font'        => isset( $_POST['typography_h5_font'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h5_font'] ) ) : 'Playfair Display', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h5_font_url'     => isset( $_POST['typography_h5_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h5_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h5_font_weight'  => isset( $_POST['typography_h5_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h5_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h5_font_url'    => isset( $_POST['typography_h5_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h5_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h5_font_weight' => isset( $_POST['typography_h5_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h5_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			'typography_h6_font'        => isset( $_POST['typography_h6_font'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h6_font'] ) ) : 'Playfair Display', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h6_font_url'     => isset( $_POST['typography_h6_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h6_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_h6_font_weight'  => isset( $_POST['typography_h6_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h6_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_p_font'          => isset( $_POST['typography_p_font'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_p_font'] ) ) : 'Inter', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_p_font_url'      => isset( $_POST['typography_p_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_p_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'typography_p_font_weight'   => isset( $_POST['typography_p_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_p_font_weight'] ) ) : '400', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'logo_id'               => isset( $_POST['logo_id'] ) ? absint( $_POST['logo_id'] ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'logo_url'              => isset( $_POST['logo_url'] ) ? esc_url_raw( wp_unslash( $_POST['logo_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'favicon_id'            => isset( $_POST['favicon_id'] ) ? absint( $_POST['favicon_id'] ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'favicon_url'           => isset( $_POST['favicon_url'] ) ? esc_url_raw( wp_unslash( $_POST['favicon_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h1_mobile'   => isset( $_POST['font_size_h1_mobile'] ) ? absint( $_POST['font_size_h1_mobile'] ) : 28, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h1_tablet'   => isset( $_POST['font_size_h1_tablet'] ) ? absint( $_POST['font_size_h1_tablet'] ) : 32, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h1_desktop'  => isset( $_POST['font_size_h1_desktop'] ) ? absint( $_POST['font_size_h1_desktop'] ) : 36, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h2_mobile'   => isset( $_POST['font_size_h2_mobile'] ) ? absint( $_POST['font_size_h2_mobile'] ) : 24, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h2_tablet'   => isset( $_POST['font_size_h2_tablet'] ) ? absint( $_POST['font_size_h2_tablet'] ) : 28, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h2_desktop'  => isset( $_POST['font_size_h2_desktop'] ) ? absint( $_POST['font_size_h2_desktop'] ) : 32, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h3_mobile'   => isset( $_POST['font_size_h3_mobile'] ) ? absint( $_POST['font_size_h3_mobile'] ) : 20, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h3_tablet'   => isset( $_POST['font_size_h3_tablet'] ) ? absint( $_POST['font_size_h3_tablet'] ) : 24, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h3_desktop'  => isset( $_POST['font_size_h3_desktop'] ) ? absint( $_POST['font_size_h3_desktop'] ) : 28, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h4_mobile'   => isset( $_POST['font_size_h4_mobile'] ) ? absint( $_POST['font_size_h4_mobile'] ) : 18, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h4_tablet'   => isset( $_POST['font_size_h4_tablet'] ) ? absint( $_POST['font_size_h4_tablet'] ) : 20, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h4_desktop'  => isset( $_POST['font_size_h4_desktop'] ) ? absint( $_POST['font_size_h4_desktop'] ) : 24, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h5_mobile'   => isset( $_POST['font_size_h5_mobile'] ) ? absint( $_POST['font_size_h5_mobile'] ) : 16, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h5_tablet'   => isset( $_POST['font_size_h5_tablet'] ) ? absint( $_POST['font_size_h5_tablet'] ) : 18, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h5_desktop'  => isset( $_POST['font_size_h5_desktop'] ) ? absint( $_POST['font_size_h5_desktop'] ) : 20, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h6_mobile'   => isset( $_POST['font_size_h6_mobile'] ) ? absint( $_POST['font_size_h6_mobile'] ) : 14, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h6_tablet'   => isset( $_POST['font_size_h6_tablet'] ) ? absint( $_POST['font_size_h6_tablet'] ) : 16, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_h6_desktop'  => isset( $_POST['font_size_h6_desktop'] ) ? absint( $_POST['font_size_h6_desktop'] ) : 18, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_p_mobile'    => isset( $_POST['font_size_p_mobile'] ) ? absint( $_POST['font_size_p_mobile'] ) : 14, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_p_tablet'    => isset( $_POST['font_size_p_tablet'] ) ? absint( $_POST['font_size_p_tablet'] ) : 16, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'font_size_p_desktop'   => isset( $_POST['font_size_p_desktop'] ) ? absint( $_POST['font_size_p_desktop'] ) : 18, // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'button_primary_color'  => isset( $_POST['button_primary_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_primary_color'] ) ) : '#1f88ff', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'button_secondary_color' => isset( $_POST['button_secondary_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_secondary_color'] ) ) : '#6b7280', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'button_success_color'  => isset( $_POST['button_success_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_success_color'] ) ) : '#10b981', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'button_info_color'     => isset( $_POST['button_info_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_info_color'] ) ) : '#3b82f6', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'button_warning_color'  => isset( $_POST['button_warning_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_warning_color'] ) ) : '#f59e0b', // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			'button_danger_color'   => isset( $_POST['button_danger_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_danger_color'] ) ) : '#ef4444', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h6_font_url'    => isset( $_POST['typography_h6_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_h6_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_h6_font_weight' => isset( $_POST['typography_h6_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_h6_font_weight'] ) ) : '600', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_p_font'         => isset( $_POST['typography_p_font'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_p_font'] ) ) : 'Inter', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_p_font_url'     => isset( $_POST['typography_p_font_url'] ) ? esc_url_raw( wp_unslash( $_POST['typography_p_font_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'typography_p_font_weight'  => isset( $_POST['typography_p_font_weight'] ) ? sanitize_text_field( wp_unslash( $_POST['typography_p_font_weight'] ) ) : '400', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'logo_id'                   => isset( $_POST['logo_id'] ) ? absint( $_POST['logo_id'] ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'logo_url'                  => isset( $_POST['logo_url'] ) ? esc_url_raw( wp_unslash( $_POST['logo_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'favicon_id'                => isset( $_POST['favicon_id'] ) ? absint( $_POST['favicon_id'] ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'favicon_url'               => isset( $_POST['favicon_url'] ) ? esc_url_raw( wp_unslash( $_POST['favicon_url'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h1_mobile'       => isset( $_POST['font_size_h1_mobile'] ) ? absint( $_POST['font_size_h1_mobile'] ) : 28, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h1_tablet'       => isset( $_POST['font_size_h1_tablet'] ) ? absint( $_POST['font_size_h1_tablet'] ) : 32, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h1_desktop'      => isset( $_POST['font_size_h1_desktop'] ) ? absint( $_POST['font_size_h1_desktop'] ) : 36, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h2_mobile'       => isset( $_POST['font_size_h2_mobile'] ) ? absint( $_POST['font_size_h2_mobile'] ) : 24, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h2_tablet'       => isset( $_POST['font_size_h2_tablet'] ) ? absint( $_POST['font_size_h2_tablet'] ) : 28, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h2_desktop'      => isset( $_POST['font_size_h2_desktop'] ) ? absint( $_POST['font_size_h2_desktop'] ) : 32, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h3_mobile'       => isset( $_POST['font_size_h3_mobile'] ) ? absint( $_POST['font_size_h3_mobile'] ) : 20, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h3_tablet'       => isset( $_POST['font_size_h3_tablet'] ) ? absint( $_POST['font_size_h3_tablet'] ) : 24, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h3_desktop'      => isset( $_POST['font_size_h3_desktop'] ) ? absint( $_POST['font_size_h3_desktop'] ) : 28, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h4_mobile'       => isset( $_POST['font_size_h4_mobile'] ) ? absint( $_POST['font_size_h4_mobile'] ) : 18, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h4_tablet'       => isset( $_POST['font_size_h4_tablet'] ) ? absint( $_POST['font_size_h4_tablet'] ) : 20, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h4_desktop'      => isset( $_POST['font_size_h4_desktop'] ) ? absint( $_POST['font_size_h4_desktop'] ) : 24, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h5_mobile'       => isset( $_POST['font_size_h5_mobile'] ) ? absint( $_POST['font_size_h5_mobile'] ) : 16, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h5_tablet'       => isset( $_POST['font_size_h5_tablet'] ) ? absint( $_POST['font_size_h5_tablet'] ) : 18, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h5_desktop'      => isset( $_POST['font_size_h5_desktop'] ) ? absint( $_POST['font_size_h5_desktop'] ) : 20, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h6_mobile'       => isset( $_POST['font_size_h6_mobile'] ) ? absint( $_POST['font_size_h6_mobile'] ) : 14, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h6_tablet'       => isset( $_POST['font_size_h6_tablet'] ) ? absint( $_POST['font_size_h6_tablet'] ) : 16, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_h6_desktop'      => isset( $_POST['font_size_h6_desktop'] ) ? absint( $_POST['font_size_h6_desktop'] ) : 18, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_p_mobile'        => isset( $_POST['font_size_p_mobile'] ) ? absint( $_POST['font_size_p_mobile'] ) : 14, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_p_tablet'        => isset( $_POST['font_size_p_tablet'] ) ? absint( $_POST['font_size_p_tablet'] ) : 16, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'font_size_p_desktop'       => isset( $_POST['font_size_p_desktop'] ) ? absint( $_POST['font_size_p_desktop'] ) : 18, // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'button_primary_color'      => isset( $_POST['button_primary_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_primary_color'] ) ) : '#1f88ff', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'button_secondary_color'    => isset( $_POST['button_secondary_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_secondary_color'] ) ) : '#6b7280', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'button_success_color'      => isset( $_POST['button_success_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_success_color'] ) ) : '#10b981', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'button_info_color'         => isset( $_POST['button_info_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_info_color'] ) ) : '#3b82f6', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'button_warning_color'      => isset( $_POST['button_warning_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_warning_color'] ) ) : '#f59e0b', // phpcs:ignore WordPress.Security.NonceVerification.Missing
+			'button_danger_color'       => isset( $_POST['button_danger_color'] ) ? sanitize_hex_color( wp_unslash( $_POST['button_danger_color'] ) ) : '#ef4444', // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		);
 
 		// Check if row exists.
@@ -305,7 +305,7 @@ class SystemSettingsPage implements ServiceProviderInterface {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'         => 'system-settings',
+					'page'           => 'system-settings',
 					'settings_saved' => 1,
 				),
 				admin_url( 'admin.php' )
@@ -368,7 +368,7 @@ class SystemSettingsPage implements ServiceProviderInterface {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'         => 'system-settings',
+					'page'           => 'system-settings',
 					'settings_reset' => 1,
 				),
 				admin_url( 'admin.php' )
@@ -397,31 +397,31 @@ class SystemSettingsPage implements ServiceProviderInterface {
 	 */
 	private function get_google_fonts(): array {
 		return array(
-			'Inter'              => 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
-			'Playfair Display'  => 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap',
-			'Roboto'            => 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap',
-			'Open Sans'         => 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap',
-			'Lato'              => 'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap',
-			'Montserrat'        => 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap',
-			'Poppins'           => 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
-			'Raleway'           => 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap',
-			'Oswald'            => 'https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap',
-			'Roboto Condensed'  => 'https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500;600;700&display=swap',
-			'Ubuntu'            => 'https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600;700&display=swap',
-			'Lobster'           => 'https://fonts.googleapis.com/css2?family=Lobster&display=swap',
-			'Pacifico'          => 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap',
-			'Anton'             => 'https://fonts.googleapis.com/css2?family=Anton&display=swap',
-			'Exo 2'             => 'https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap',
-			'Bebas Neue'        => 'https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap',
-			'Bitter'            => 'https://fonts.googleapis.com/css2?family=Bitter:wght@300;400;500;600;700&display=swap',
-			'Fira Sans'         => 'https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&display=swap',
-			'Jura'              => 'https://fonts.googleapis.com/css2?family=Jura:wght@300;400;500;600;700&display=swap',
-			'Kanit'             => 'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap',
-			'Kaushan Script'    => 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap',
-			'Lobster Two'       => 'https://fonts.googleapis.com/css2?family=Lobster+Two:wght@300;400;700&display=swap',
-			'Noto Serif'        => 'https://fonts.googleapis.com/css2?family=Noto+Serif:wght@300;400;500;600;700&display=swap',
-			'Merriweather'      => 'https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap',
-			'Source Sans Pro'   => 'https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap',
+			'Inter'            => 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+			'Playfair Display' => 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap',
+			'Roboto'           => 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap',
+			'Open Sans'        => 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap',
+			'Lato'             => 'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap',
+			'Montserrat'       => 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap',
+			'Poppins'          => 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
+			'Raleway'          => 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700&display=swap',
+			'Oswald'           => 'https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap',
+			'Roboto Condensed' => 'https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500;600;700&display=swap',
+			'Ubuntu'           => 'https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600;700&display=swap',
+			'Lobster'          => 'https://fonts.googleapis.com/css2?family=Lobster&display=swap',
+			'Pacifico'         => 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap',
+			'Anton'            => 'https://fonts.googleapis.com/css2?family=Anton&display=swap',
+			'Exo 2'            => 'https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap',
+			'Bebas Neue'       => 'https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap',
+			'Bitter'           => 'https://fonts.googleapis.com/css2?family=Bitter:wght@300;400;500;600;700&display=swap',
+			'Fira Sans'        => 'https://fonts.googleapis.com/css2?family=Fira+Sans:wght@300;400;500;600;700&display=swap',
+			'Jura'             => 'https://fonts.googleapis.com/css2?family=Jura:wght@300;400;500;600;700&display=swap',
+			'Kanit'            => 'https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap',
+			'Kaushan Script'   => 'https://fonts.googleapis.com/css2?family=Kaushan+Script&display=swap',
+			'Lobster Two'      => 'https://fonts.googleapis.com/css2?family=Lobster+Two:wght@300;400;700&display=swap',
+			'Noto Serif'       => 'https://fonts.googleapis.com/css2?family=Noto+Serif:wght@300;400;500;600;700&display=swap',
+			'Merriweather'     => 'https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap',
+			'Source Sans Pro'  => 'https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap',
 		);
 	}
 
@@ -435,7 +435,7 @@ class SystemSettingsPage implements ServiceProviderInterface {
 	 * @return void
 	 */
 	private function render_toggle( string $name, bool $checked, string $label, string $description ): void {
-		$toggle_id = 'toggle_' . $name;
+		$toggle_id    = 'toggle_' . $name;
 		$toggle_class = $checked ? 'toggle-switch-on' : 'toggle-switch-off';
 		?>
 		<div class="flex items-center justify-between p-3 border border-solid border-gray-400 rounded">
@@ -463,7 +463,7 @@ class SystemSettingsPage implements ServiceProviderInterface {
 			return;
 		}
 
-		$settings = $this->get_settings();
+		$settings       = $this->get_settings();
 		$settings_saved = isset( $_GET['settings_saved'] ) ? absint( $_GET['settings_saved'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$settings_reset = isset( $_GET['settings_reset'] ) ? absint( $_GET['settings_reset'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
@@ -557,12 +557,15 @@ class SystemSettingsPage implements ServiceProviderInterface {
 											__( 'Auto-Approve Video Requests', 'hotel-chain' ),
 											__( 'Automatically approve all guest video requests', 'hotel-chain' )
 										);
-										/* $this->render_toggle(
-											'allow_reactivation',
-											$s['allow_reactivation'],
-											__( 'Allow Reactivation Requests', 'hotel-chain' ),
-											__( 'Guests can request account reactivation after expiry', 'hotel-chain' )
-										); */
+
+										// Allow Reactivation Requests toggle is currently disabled.
+										// Uncomment below to enable:
+										// $this->render_toggle(
+										// 'allow_reactivation',
+										// $s['allow_reactivation'],
+										// __( 'Allow Reactivation Requests', 'hotel-chain' ),
+										// __( 'Guests can request account reactivation after expiry', 'hotel-chain' ),
+										// );?
 										?>
 									</div>
 								</div>
@@ -599,7 +602,7 @@ class SystemSettingsPage implements ServiceProviderInterface {
 									<div class="mb-2 text-gray-700 text-sm"><?php esc_html_e( 'Supported Video Formats', 'hotel-chain' ); ?></div>
 									<div class="flex flex-wrap gap-2">
 										<?php
-										$all_formats = array( 'MP4', 'MOV', 'AVI', 'WebM', 'MKV', 'FLV' );
+										$all_formats      = array( 'MP4', 'MOV', 'AVI', 'WebM', 'MKV', 'FLV' );
 										$selected_formats = $s['supported_formats'];
 										foreach ( $all_formats as $format ) :
 											$is_selected = in_array( $format, $selected_formats, true );
@@ -798,7 +801,7 @@ class SystemSettingsPage implements ServiceProviderInterface {
 									<h4 class="mb-3 text-gray-700 text-sm pb-2 border-b border-gray-300"><?php esc_html_e( 'Typography', 'hotel-chain' ); ?></h4>
 									<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
 										<?php
-										$google_fonts = $this->get_google_fonts();
+										$google_fonts        = $this->get_google_fonts();
 										$typography_elements = array(
 											'h1' => __( 'H1', 'hotel-chain' ),
 											'h2' => __( 'H2', 'hotel-chain' ),
@@ -809,13 +812,13 @@ class SystemSettingsPage implements ServiceProviderInterface {
 											'p'  => __( 'P', 'hotel-chain' ),
 										);
 										foreach ( $typography_elements as $element => $label ) :
-											$font_key = 'typography_' . $element . '_font';
-											$font_url_key = 'typography_' . $element . '_font_url';
-											$font_weight_key = 'typography_' . $element . '_font_weight';
-											$current_font = $s[ $font_key ] ?? 'Inter';
-											$current_font_url = $s[ $font_url_key ] ?? '';
+											$font_key            = 'typography_' . $element . '_font';
+											$font_url_key        = 'typography_' . $element . '_font_url';
+											$font_weight_key     = 'typography_' . $element . '_font_weight';
+											$current_font        = $s[ $font_key ] ?? 'Inter';
+											$current_font_url    = $s[ $font_url_key ] ?? '';
 											$current_font_weight = $s[ $font_weight_key ] ?? ( 'p' === $element ? '400' : '600' );
-											$font_weights = array(
+											$font_weights        = array(
 												'100' => __( '100', 'hotel-chain' ),
 												'200' => __( '200', 'hotel-chain' ),
 												'300' => __( '300', 'hotel-chain' ),
@@ -859,13 +862,132 @@ class SystemSettingsPage implements ServiceProviderInterface {
 									<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
 										<?php
 										$typography_elements = array(
-											'h1' => array( 'label' => __( 'H1', 'hotel-chain' ), 'mobile' => array( 'min' => 20, 'max' => 36, 'default' => 28 ), 'tablet' => array( 'min' => 24, 'max' => 40, 'default' => 32 ), 'desktop' => array( 'min' => 28, 'max' => 48, 'default' => 36 ) ),
-											'h2' => array( 'label' => __( 'H2', 'hotel-chain' ), 'mobile' => array( 'min' => 18, 'max' => 32, 'default' => 24 ), 'tablet' => array( 'min' => 20, 'max' => 36, 'default' => 28 ), 'desktop' => array( 'min' => 24, 'max' => 40, 'default' => 32 ) ),
-											'h3' => array( 'label' => __( 'H3', 'hotel-chain' ), 'mobile' => array( 'min' => 16, 'max' => 28, 'default' => 20 ), 'tablet' => array( 'min' => 18, 'max' => 32, 'default' => 24 ), 'desktop' => array( 'min' => 20, 'max' => 36, 'default' => 28 ) ),
-											'h4' => array( 'label' => __( 'H4', 'hotel-chain' ), 'mobile' => array( 'min' => 14, 'max' => 24, 'default' => 18 ), 'tablet' => array( 'min' => 16, 'max' => 28, 'default' => 20 ), 'desktop' => array( 'min' => 18, 'max' => 32, 'default' => 24 ) ),
-											'h5' => array( 'label' => __( 'H5', 'hotel-chain' ), 'mobile' => array( 'min' => 12, 'max' => 20, 'default' => 16 ), 'tablet' => array( 'min' => 14, 'max' => 24, 'default' => 18 ), 'desktop' => array( 'min' => 16, 'max' => 28, 'default' => 20 ) ),
-											'h6' => array( 'label' => __( 'H6', 'hotel-chain' ), 'mobile' => array( 'min' => 10, 'max' => 18, 'default' => 14 ), 'tablet' => array( 'min' => 12, 'max' => 20, 'default' => 16 ), 'desktop' => array( 'min' => 14, 'max' => 24, 'default' => 18 ) ),
-											'p'  => array( 'label' => __( 'P', 'hotel-chain' ), 'mobile' => array( 'min' => 10, 'max' => 18, 'default' => 14 ), 'tablet' => array( 'min' => 12, 'max' => 20, 'default' => 16 ), 'desktop' => array( 'min' => 14, 'max' => 24, 'default' => 18 ) ),
+											'h1' => array(
+												'label'   => __( 'H1', 'hotel-chain' ),
+												'mobile'  => array(
+													'min' => 20,
+													'max' => 36,
+													'default' => 28,
+												),
+												'tablet'  => array(
+													'min' => 24,
+													'max' => 40,
+													'default' => 32,
+												),
+												'desktop' => array(
+													'min' => 28,
+													'max' => 48,
+													'default' => 36,
+												),
+											),
+											'h2' => array(
+												'label'   => __( 'H2', 'hotel-chain' ),
+												'mobile'  => array(
+													'min' => 18,
+													'max' => 32,
+													'default' => 24,
+												),
+												'tablet'  => array(
+													'min' => 20,
+													'max' => 36,
+													'default' => 28,
+												),
+												'desktop' => array(
+													'min' => 24,
+													'max' => 40,
+													'default' => 32,
+												),
+											),
+											'h3' => array(
+												'label'   => __( 'H3', 'hotel-chain' ),
+												'mobile'  => array(
+													'min' => 16,
+													'max' => 28,
+													'default' => 20,
+												),
+												'tablet'  => array(
+													'min' => 18,
+													'max' => 32,
+													'default' => 24,
+												),
+												'desktop' => array(
+													'min' => 20,
+													'max' => 36,
+													'default' => 28,
+												),
+											),
+											'h4' => array(
+												'label'   => __( 'H4', 'hotel-chain' ),
+												'mobile'  => array(
+													'min' => 14,
+													'max' => 24,
+													'default' => 18,
+												),
+												'tablet'  => array(
+													'min' => 16,
+													'max' => 28,
+													'default' => 20,
+												),
+												'desktop' => array(
+													'min' => 18,
+													'max' => 32,
+													'default' => 24,
+												),
+											),
+											'h5' => array(
+												'label'   => __( 'H5', 'hotel-chain' ),
+												'mobile'  => array(
+													'min' => 12,
+													'max' => 20,
+													'default' => 16,
+												),
+												'tablet'  => array(
+													'min' => 14,
+													'max' => 24,
+													'default' => 18,
+												),
+												'desktop' => array(
+													'min' => 16,
+													'max' => 28,
+													'default' => 20,
+												),
+											),
+											'h6' => array(
+												'label'   => __( 'H6', 'hotel-chain' ),
+												'mobile'  => array(
+													'min' => 10,
+													'max' => 18,
+													'default' => 14,
+												),
+												'tablet'  => array(
+													'min' => 12,
+													'max' => 20,
+													'default' => 16,
+												),
+												'desktop' => array(
+													'min' => 14,
+													'max' => 24,
+													'default' => 18,
+												),
+											),
+											'p'  => array(
+												'label'   => __( 'P', 'hotel-chain' ),
+												'mobile'  => array(
+													'min' => 10,
+													'max' => 18,
+													'default' => 14,
+												),
+												'tablet'  => array(
+													'min' => 12,
+													'max' => 20,
+													'default' => 16,
+												),
+												'desktop' => array(
+													'min' => 14,
+													'max' => 24,
+													'default' => 18,
+												),
+											),
 										);
 										foreach ( $typography_elements as $element => $config ) :
 											$mobile_key  = 'font_size_' . $element . '_mobile';

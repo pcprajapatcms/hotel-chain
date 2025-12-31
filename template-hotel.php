@@ -27,9 +27,9 @@ if ( ! $hotel ) {
 }
 
 // Check if user is logged in and is a guest for this hotel.
-$is_guest        = false;
-$guest           = null;
-$current_user_id = get_current_user_id();
+$is_guest             = false;
+$guest                = null;
+$current_user_id      = get_current_user_id();
 $guest_status_message = '';
 
 if ( $current_user_id ) {
@@ -37,7 +37,7 @@ if ( $current_user_id ) {
 	$guest      = $guest_repo->get_by_hotel_and_user( $hotel->id, $current_user_id );
 	// Check if guest has valid access (status is active AND access_end hasn't passed).
 	$is_guest = GuestExpiration::is_guest_access_valid( $guest );
-	
+
 	// Set status message for locked/expired guests.
 	if ( $guest && ! $is_guest ) {
 		if ( 'revoked' === $guest->status || 'locked' === $guest->status ) {

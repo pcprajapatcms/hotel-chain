@@ -64,12 +64,12 @@ class AccountSettings {
 	 * Get a specific account setting.
 	 *
 	 * @param string $key Setting key.
-	 * @param mixed  $default Default value if not found.
+	 * @param mixed  $default_value Default value if not found.
 	 * @return mixed Setting value.
 	 */
-	public static function get( string $key, $default = null ) {
+	public static function get( string $key, $default_value = null ) {
 		$settings = self::get_all();
-		return $settings[ $key ] ?? $default;
+		return $settings[ $key ] ?? $default_value;
 	}
 
 	/**
@@ -133,11 +133,11 @@ class AccountSettings {
 	 */
 	private static function get_defaults(): array {
 		return array(
-			'default_guest_duration'    => 30,
+			'default_guest_duration'     => 30,
 			'expiry_warning_period'      => 3,
 			'allow_guest_registration'   => true,
 			'require_email_verification' => true,
-			'auto_approve_requests'       => false,
+			'auto_approve_requests'      => false,
 			'allow_reactivation'         => true,
 		);
 	}
@@ -151,4 +151,3 @@ class AccountSettings {
 		self::$settings = null;
 	}
 }
-

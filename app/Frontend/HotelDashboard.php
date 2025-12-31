@@ -264,7 +264,7 @@ class HotelDashboard implements ServiceProviderInterface {
 					$hotel->id
 				)
 			);
-			$completion_rate = round( $avg_completion_pct, 0 );
+			$completion_rate    = round( $avg_completion_pct, 0 );
 
 			$top_meditations_data[] = array(
 				'video_id'   => $video->video_id,

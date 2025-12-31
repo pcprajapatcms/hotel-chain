@@ -59,9 +59,12 @@ class VideoTaxonomyRepository {
 	 */
 	public function get_category_names(): array {
 		$categories = $this->get_categories();
-		return array_map( function( $cat ) {
-			return $cat->name;
-		}, $categories );
+		return array_map(
+			function ( $cat ) {
+				return $cat->name;
+			},
+			$categories
+		);
 	}
 
 	/**
@@ -71,9 +74,12 @@ class VideoTaxonomyRepository {
 	 */
 	public function get_tag_names(): array {
 		$tags = $this->get_tags();
-		return array_map( function( $tag ) {
-			return $tag->name;
-		}, $tags );
+		return array_map(
+			function ( $tag ) {
+				return $tag->name;
+			},
+			$tags
+		);
 	}
 
 	/**
@@ -233,4 +239,3 @@ class VideoTaxonomyRepository {
 		return $item ? $item : null;
 	}
 }
-

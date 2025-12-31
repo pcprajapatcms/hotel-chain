@@ -576,12 +576,10 @@ class GuestRegistration implements ServiceProviderInterface {
 		// Send verification email only if required.
 		if ( AccountSettings::is_email_verification_required() && $verification_token ) {
 			$this->send_verification_email( $guest_id, $email, $verification_token, $hotel );
-		} else {
+		} elseif ( $user_id && ! is_user_logged_in() ) {
 			// Auto-login if verification not required.
-			if ( $user_id && ! is_user_logged_in() ) {
-				wp_set_current_user( $user_id );
-				wp_set_auth_cookie( $user_id );
-			}
+			wp_set_current_user( $user_id );
+			wp_set_auth_cookie( $user_id );
 		}
 
 		// Return appropriate response based on verification requirement.

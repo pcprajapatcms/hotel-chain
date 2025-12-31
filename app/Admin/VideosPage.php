@@ -387,8 +387,8 @@ class VideosPage implements ServiceProviderInterface {
 											'textarea_name' => 'video_description',
 											'textarea_rows' => 10,
 											'media_buttons' => false,
-											'teeny'         => false,
-											'quicktags'     => true,
+											'teeny'     => false,
+											'quicktags' => true,
 										)
 									);
 									?>

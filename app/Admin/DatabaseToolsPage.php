@@ -59,22 +59,23 @@ class DatabaseToolsPage implements ServiceProviderInterface {
 		$tables_info = array();
 
 		foreach ( $table_names as $key => $table_name ) {
-			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$row_count = 0;
+			$exists     = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$row_count  = 0;
 			$table_size = '0 KB';
 
 			if ( $exists ) {
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$row_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_name}" );
-				
-				// Get table size
+
+				// Get table size.
 				$size_query = $wpdb->prepare(
-					"SELECT ROUND(((data_length + index_length) / 1024), 2) AS size_kb 
+					'SELECT ROUND(((data_length + index_length) / 1024), 2) AS size_kb 
 					FROM information_schema.TABLES 
-					WHERE table_schema = %s AND table_name = %s",
+					WHERE table_schema = %s AND table_name = %s',
 					DB_NAME,
 					$table_name
 				);
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is already prepared
 				$size_result = $wpdb->get_var( $size_query );
 				if ( $size_result ) {
 					$table_size = number_format( (float) $size_result, 2 ) . ' KB';
@@ -92,7 +93,7 @@ class DatabaseToolsPage implements ServiceProviderInterface {
 			);
 		}
 
-		$db_version = get_option( Migration::DB_VERSION_OPTION, '0.0.0' );
+		$db_version      = get_option( Migration::DB_VERSION_OPTION, '0.0.0' );
 		$current_version = Migration::DB_VERSION;
 
 		$recreated = isset( $_GET['recreated'] ) ? absint( $_GET['recreated'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended

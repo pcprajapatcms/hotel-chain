@@ -289,9 +289,9 @@ class HotelProfilePage {
 		$landing_url      = $hotel->landing_url ?? '';
 
 		// Get logo and favicon IDs and URLs.
-		$logo_id    = isset( $hotel->logo_id ) ? absint( $hotel->logo_id ) : 0;
-		$favicon_id = isset( $hotel->favicon_id ) ? absint( $hotel->favicon_id ) : 0;
-		$logo_url   = $logo_id ? wp_get_attachment_url( $logo_id ) : '';
+		$logo_id     = isset( $hotel->logo_id ) ? absint( $hotel->logo_id ) : 0;
+		$favicon_id  = isset( $hotel->favicon_id ) ? absint( $hotel->favicon_id ) : 0;
+		$logo_url    = $logo_id ? wp_get_attachment_url( $logo_id ) : '';
 		$favicon_url = $favicon_id ? wp_get_attachment_url( $favicon_id ) : '';
 
 		// Enqueue media uploader.
@@ -299,7 +299,7 @@ class HotelProfilePage {
 
 		// Get logo URL from hotel.
 		$logo_id  = isset( $hotel->logo_id ) ? absint( $hotel->logo_id ) : 0;
-		$logo_url = $logo_id ? wp_get_attachment_url( $logo_id ) : '';	
+		$logo_url = $logo_id ? wp_get_attachment_url( $logo_id ) : '';
 		?>
 		<div class="flex-1 overflow-auto p-4 lg:p-8 lg:px-0 hotel-profile-page">
 			<div class="w-12/12 md:w-10/12 mx-auto p-0">
