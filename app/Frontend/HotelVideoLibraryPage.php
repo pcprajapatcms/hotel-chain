@@ -60,12 +60,12 @@ class HotelVideoLibraryPage {
 
 		// Apply filters and calculate statistics.
 		global $wpdb;
-		$video_views_table    = $wpdb->prefix . 'hotel_chain_video_views';
-		$videos                = array();
+		$video_views_table      = $wpdb->prefix . 'hotel_chain_video_views';
+		$videos                 = array();
 		$total_duration_seconds = 0;
-		$total_completions     = 0;
-		$total_views           = 0;
-		$active_videos         = 0;
+		$total_completions      = 0;
+		$total_views            = 0;
+		$active_videos          = 0;
 
 		foreach ( $all_videos as $video_meta ) {
 			$video_id_key = (string) $video_meta->video_id;
@@ -99,7 +99,7 @@ class HotelVideoLibraryPage {
 
 			$videos[]                = $video_meta;
 			$total_duration_seconds += (int) $video_meta->duration_seconds;
-			
+
 			// Get completion stats for this video for this hotel.
 			$video_completions = (int) $wpdb->get_var(
 				$wpdb->prepare(
@@ -108,14 +108,14 @@ class HotelVideoLibraryPage {
 					$hotel->id
 				)
 			);
-			$video_views = (int) $wpdb->get_var(
+			$video_views       = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$video_views_table} WHERE video_id = %d AND hotel_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$video_meta->video_id,
 					$hotel->id
 				)
 			);
-			
+
 			$total_completions += $video_completions;
 			$total_views       += $video_views;
 
@@ -127,7 +127,7 @@ class HotelVideoLibraryPage {
 		// Calculate statistics.
 		$total_videos         = count( $videos );
 		$total_duration_hours = round( $total_duration_seconds / 3600, 1 );
-		
+
 		// Calculate average completion percentage across all videos for this hotel (based on actual progress).
 		$avg_completion = (float) $wpdb->get_var(
 			$wpdb->prepare(
@@ -160,7 +160,7 @@ class HotelVideoLibraryPage {
 		global $wpdb;
 		$video_views_table = $wpdb->prefix . 'hotel_chain_video_views';
 		$videos_data       = array();
-		
+
 		foreach ( $all_videos as $vid ) {
 			$video_id_key = (string) $vid->video_id;
 
@@ -182,7 +182,7 @@ class HotelVideoLibraryPage {
 					$hotel->id
 				)
 			);
-			$completion = round( $avg_completion_pct, 0 );
+			$completion         = round( $avg_completion_pct, 0 );
 
 			// Get total completions (100% complete) for this video for this hotel.
 			$total_completions = (int) $wpdb->get_var(
@@ -245,7 +245,7 @@ class HotelVideoLibraryPage {
 
 		// Get logo URL from hotel.
 		$logo_id  = isset( $hotel->logo_id ) ? absint( $hotel->logo_id ) : 0;
-		$logo_url = $logo_id ? wp_get_attachment_url( $logo_id ) : '';	
+		$logo_url = $logo_id ? wp_get_attachment_url( $logo_id ) : '';
 
 		?>
 		<div class="flex-1 overflow-auto p-4 lg:p-8 lg:px-0 hotel-video-library">

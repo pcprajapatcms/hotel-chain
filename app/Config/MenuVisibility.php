@@ -39,7 +39,7 @@ class MenuVisibility {
 				'hotel-database-tools',
 			),
 			// Hide menus for Hotel role.
-			'hotel' => array(
+			'hotel'         => array(
 				'index.php',
 				'edit.php',
 				'upload.php',

@@ -67,27 +67,27 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 		$days = isset( $_GET['days'] ) ? absint( $_GET['days'] ) : 30; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$days = max( 7, min( 365, $days ) ); // Between 7 and 365 days.
 
-		$period_start = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
-		$previous_period_start = gmdate( 'Y-m-d H:i:s', strtotime( "-" . ( $days * 2 ) . " days" ) );
-		$previous_period_end = $period_start;
+		$period_start          = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+		$previous_period_start = gmdate( 'Y-m-d H:i:s', strtotime( '-' . ( $days * 2 ) . ' days' ) );
+		$previous_period_end   = $period_start;
 
-		$hotels_table     = Schema::get_table_name( 'hotels' );
-		$guests_table     = Schema::get_table_name( 'guests' );
+		$hotels_table      = Schema::get_table_name( 'hotels' );
+		$guests_table      = Schema::get_table_name( 'guests' );
 		$video_views_table = Schema::get_table_name( 'video_views' );
 		$assignments_table = Schema::get_table_name( 'hotel_video_assignments' );
 
 		// Active Hotels.
-		$active_hotels = $hotel_repo->count( array( 'status' => 'active' ) );
+		$active_hotels          = $hotel_repo->count( array( 'status' => 'active' ) );
 		$active_hotels_previous = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$hotels_table} WHERE status = 'active' AND created_at < %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$period_start
 			)
 		);
-		$active_hotels_change = $active_hotels - $active_hotels_previous;
+		$active_hotels_change   = $active_hotels - $active_hotels_previous;
 
 		// Total Guests.
-		$total_guests = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$guests_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$total_guests       = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$guests_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$guests_this_period = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$guests_table} WHERE created_at >= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -99,14 +99,14 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 		$total_videos = $video_repo->get_count();
 
 		// Total Views.
-		$total_views = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$video_views_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$views_this_period = (int) $wpdb->get_var(
+		$total_views             = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$video_views_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$views_this_period       = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$video_views_table} WHERE viewed_at >= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$period_start
 			)
 		);
-		$views_previous_period = (int) $wpdb->get_var(
+		$views_previous_period   = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$video_views_table} WHERE viewed_at >= %s AND viewed_at < %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$previous_period_start,
@@ -116,7 +116,7 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 		$views_percentage_change = $views_previous_period > 0 ? round( ( ( $views_this_period - $views_previous_period ) / $views_previous_period ) * 100 ) : 0;
 
 		// Average Completion Rate.
-		$avg_completion = (float) $wpdb->get_var(
+		$avg_completion          = (float) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COALESCE(AVG(completion_percentage), 0) FROM {$video_views_table} WHERE viewed_at >= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$period_start
@@ -129,14 +129,14 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 				$previous_period_end
 			)
 		);
-		$completion_change = $avg_completion - $avg_completion_previous;
+		$completion_change       = $avg_completion - $avg_completion_previous;
 
 		// Platform Growth (Last 12 Months).
 		$monthly_growth = array();
 		for ( $i = 11; $i >= 0; $i-- ) {
-			$month_start = gmdate( 'Y-m-01 00:00:00', strtotime( "-{$i} months" ) );
-			$month_end = gmdate( 'Y-m-t 23:59:59', strtotime( "-{$i} months" ) );
-			$month_views = (int) $wpdb->get_var(
+			$month_start      = gmdate( 'Y-m-01 00:00:00', strtotime( "-{$i} months" ) );
+			$month_end        = gmdate( 'Y-m-t 23:59:59', strtotime( "-{$i} months" ) );
+			$month_views      = (int) $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$video_views_table} WHERE viewed_at >= %s AND viewed_at <= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$month_start,
@@ -145,10 +145,12 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 			);
 			$monthly_growth[] = $month_views;
 		}
-		$max_monthly_views = max( $monthly_growth ) ?: 1;
+		$max_monthly_views = max( $monthly_growth );
+		$max_monthly_views = $max_monthly_views > 0 ? $max_monthly_views : 1;
 
 		// Video Views by Category.
 		$videos_table = Schema::get_table_name( 'video_metadata' );
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are safe
 		$category_views = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT 
@@ -163,6 +165,7 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 				$period_start
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$total_category_views = array_sum( array_column( $category_views, 'view_count' ) );
 
 		// Cross-Hotel Engagement Comparison.
@@ -191,14 +194,14 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Calculate engagement scores (0-100).
-		$max_views = 0;
+		$max_views      = 0;
 		$max_completion = 0;
 		foreach ( $hotel_engagement as $hotel ) {
-			$max_views = max( $max_views, (int) $hotel->total_views );
+			$max_views      = max( $max_views, (int) $hotel->total_views );
 			$max_completion = max( $max_completion, (float) $hotel->avg_completion );
 		}
-		$max_views = $max_views ?: 1;
-		$max_completion = $max_completion ?: 1;
+		$max_views      = $max_views > 0 ? $max_views : 1;
+		$max_completion = $max_completion > 0 ? $max_completion : 1;
 		foreach ( $hotel_engagement as $hotel ) {
 			$hotel->engagement_score = round(
 				( ( (int) $hotel->total_views / $max_views ) * 50 ) +
@@ -231,13 +234,13 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Guest Activity Status.
-		$active_guests = (int) $wpdb->get_var(
+		$active_guests  = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$guests_table} WHERE status = 'active' AND (access_end IS NULL OR access_end > %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				current_time( 'mysql' )
 			)
 		);
-		$expiring_soon = (int) $wpdb->get_var(
+		$expiring_soon  = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$guests_table} WHERE status = 'active' AND access_end IS NOT NULL AND access_end > %s AND access_end <= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				current_time( 'mysql' ),
@@ -477,14 +480,29 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 								<div class="space-y-2">
 									<?php
 									$color_map = array(
-										array( 'bg' => 'rgb(147, 197, 253)', 'border' => 'rgb(59, 130, 246)' ), // blue
-										array( 'bg' => 'rgb(196, 181, 253)', 'border' => 'rgb(147, 51, 234)' ), // purple
-										array( 'bg' => 'rgb(134, 239, 172)', 'border' => 'rgb(34, 197, 94)' ), // green
-										array( 'bg' => 'rgb(253, 186, 116)', 'border' => 'rgb(249, 115, 22)' ), // orange
-										array( 'bg' => 'rgb(94, 234, 212)', 'border' => 'rgb(20, 184, 166)' ), // teal
+										array(
+											'bg'     => 'rgb(147, 197, 253)',
+											'border' => 'rgb(59, 130, 246)',
+										), // Blue color.
+										array(
+											'bg'     => 'rgb(196, 181, 253)',
+											'border' => 'rgb(147, 51, 234)',
+										), // Purple color.
+										array(
+											'bg'     => 'rgb(134, 239, 172)',
+											'border' => 'rgb(34, 197, 94)',
+										), // Green color.
+										array(
+											'bg'     => 'rgb(253, 186, 116)',
+											'border' => 'rgb(249, 115, 22)',
+										), // Orange color.
+										array(
+											'bg'     => 'rgb(94, 234, 212)',
+											'border' => 'rgb(20, 184, 166)',
+										), // Teal color.
 									);
 									foreach ( $category_views as $index => $category ) :
-										$color = $color_map[ $index % count( $color_map ) ];
+										$color      = $color_map[ $index % count( $color_map ) ];
 										$percentage = $total_category_views > 0 ? round( ( $category->view_count / $total_category_views ) * 100 ) : 0;
 										?>
 										<div class="flex items-center justify-between">
@@ -513,7 +531,7 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 								<?php foreach ( $hotel_engagement as $hotel ) : ?>
 									<?php
 									$watch_hours = round( (int) $hotel->total_watch_seconds / 3600 );
-									$completion = round( (float) $hotel->avg_completion );
+									$completion  = round( (float) $hotel->avg_completion );
 									?>
 									<div class="border border-solid border-gray-400 rounded-lg p-4 bg-white">
 										<div class="mb-3 pb-3 border-b border-solid border-gray-400">
@@ -577,7 +595,7 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 									<?php foreach ( $hotel_engagement as $hotel ) : ?>
 										<?php
 										$watch_hours = round( (int) $hotel->total_watch_seconds / 3600 );
-										$completion = round( (float) $hotel->avg_completion );
+										$completion  = round( (float) $hotel->avg_completion );
 										?>
 										<div class="grid grid-cols-8 gap-4 p-3 border-b border-solid border-gray-400 last:border-b-0">
 											<div class="col-span-2 flex items-center">
@@ -626,17 +644,29 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 									<?php
 									$avg_watch_seconds = (int) $video->avg_watch_seconds;
 									$avg_watch_minutes = floor( $avg_watch_seconds / 60 );
-									$avg_watch_secs = $avg_watch_seconds % 60;
-									$avg_watch_time = sprintf( '%d:%02d', $avg_watch_minutes, $avg_watch_secs );
-									$completion = round( (float) $video->avg_completion );
-									$engagement = $completion >= 80 ? 'High' : ( $completion >= 60 ? 'Medium' : 'Low' );
-									$engagement_color = $completion >= 80 ? 'green' : ( $completion >= 60 ? 'blue' : 'gray' );
+									$avg_watch_secs    = $avg_watch_seconds % 60;
+									$avg_watch_time    = sprintf( '%d:%02d', $avg_watch_minutes, $avg_watch_secs );
+									$completion        = round( (float) $video->avg_completion );
+									$engagement        = $completion >= 80 ? 'High' : ( $completion >= 60 ? 'Medium' : 'Low' );
+									$engagement_color  = $completion >= 80 ? 'green' : ( $completion >= 60 ? 'blue' : 'gray' );
 									$engagement_styles = array(
-										'green' => array( 'bg' => 'rgb(187, 247, 208)', 'border' => 'rgb(74, 222, 128)', 'text' => 'rgb(20, 83, 45)' ),
-										'blue'  => array( 'bg' => 'rgb(191, 219, 254)', 'border' => 'rgb(96, 165, 250)', 'text' => 'rgb(30, 64, 175)' ),
-										'gray'  => array( 'bg' => 'rgb(229, 231, 235)', 'border' => 'rgb(156, 163, 175)', 'text' => 'rgb(55, 65, 81)' ),
+										'green' => array(
+											'bg'     => 'rgb(187, 247, 208)',
+											'border' => 'rgb(74, 222, 128)',
+											'text'   => 'rgb(20, 83, 45)',
+										),
+										'blue'  => array(
+											'bg'     => 'rgb(191, 219, 254)',
+											'border' => 'rgb(96, 165, 250)',
+											'text'   => 'rgb(30, 64, 175)',
+										),
+										'gray'  => array(
+											'bg'     => 'rgb(229, 231, 235)',
+											'border' => 'rgb(156, 163, 175)',
+											'text'   => 'rgb(55, 65, 81)',
+										),
 									);
-									$style = $engagement_styles[ $engagement_color ] ?? $engagement_styles['gray'];
+									$style             = $engagement_styles[ $engagement_color ] ?? $engagement_styles['gray'];
 									?>
 									<div class="border border-solid border-gray-400 rounded-lg p-4 bg-white">
 										<div class="mb-3 pb-3 border-b border-solid border-gray-400">
@@ -659,7 +689,7 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 											</div>
 											<div class="flex justify-between items-center py-2 border-b border-gray-200">
 												<span class="text-sm" style="color: rgb(122, 122, 122);"><?php esc_html_e( 'Avg Watch Time', 'hotel-chain' ); ?></span>
-												<span class="font-semibold text-gray-700"><?php echo esc_html( $avg_watch_time ); ?> / <?php echo esc_html( $video->duration_label ?: 'N/A' ); ?></span>
+												<span class="font-semibold text-gray-700"><?php echo esc_html( $avg_watch_time ); ?> / <?php echo esc_html( ! empty( $video->duration_label ) ? $video->duration_label : 'N/A' ); ?></span>
 											</div>
 											<div class="flex justify-between items-center py-2 border-b border-gray-200">
 												<span class="text-sm" style="color: rgb(122, 122, 122);"><?php esc_html_e( 'Completion Rate', 'hotel-chain' ); ?></span>
@@ -688,11 +718,11 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 										<?php
 										$avg_watch_seconds = (int) $video->avg_watch_seconds;
 										$avg_watch_minutes = floor( $avg_watch_seconds / 60 );
-										$avg_watch_secs = $avg_watch_seconds % 60;
-										$avg_watch_time = sprintf( '%d:%02d', $avg_watch_minutes, $avg_watch_secs );
-										$completion = round( (float) $video->avg_completion );
-										$engagement = $completion >= 80 ? 'High' : ( $completion >= 60 ? 'Medium' : 'Low' );
-										$engagement_color = $completion >= 80 ? 'green' : ( $completion >= 60 ? 'blue' : 'gray' );
+										$avg_watch_secs    = $avg_watch_seconds % 60;
+										$avg_watch_time    = sprintf( '%d:%02d', $avg_watch_minutes, $avg_watch_secs );
+										$completion        = round( (float) $video->avg_completion );
+										$engagement        = $completion >= 80 ? 'High' : ( $completion >= 60 ? 'Medium' : 'Low' );
+										$engagement_color  = $completion >= 80 ? 'green' : ( $completion >= 60 ? 'blue' : 'gray' );
 										?>
 										<div class="grid grid-cols-7 gap-4 p-3 border-b border-solid border-gray-400 last:border-b-0">
 											<div class="col-span-2 flex items-center">
@@ -704,18 +734,30 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 											</div>
 											<div class="flex items-center"><?php echo esc_html( number_format_i18n( (int) $video->hotels_using ) ); ?> <?php esc_html_e( 'hotels', 'hotel-chain' ); ?></div>
 											<div class="flex items-center"><?php echo esc_html( number_format_i18n( (int) $video->total_views ) ); ?></div>
-											<div class="flex items-center text-gray-700"><?php echo esc_html( $avg_watch_time ); ?> / <?php echo esc_html( $video->duration_label ?: 'N/A' ); ?></div>
+											<div class="flex items-center text-gray-700"><?php echo esc_html( $avg_watch_time ); ?> / <?php echo esc_html( ! empty( $video->duration_label ) ? $video->duration_label : 'N/A' ); ?></div>
 											<div class="flex items-center">
 												<span class="px-3 py-1 bg-green-100 border border-green-300 rounded text-green-900"><?php echo esc_html( (string) $completion ); ?>%</span>
 											</div>
 											<div class="flex items-center">
 												<?php
 												$engagement_styles = array(
-													'green' => array( 'bg' => 'rgb(187, 247, 208)', 'border' => 'rgb(74, 222, 128)', 'text' => 'rgb(20, 83, 45)' ),
-													'blue'  => array( 'bg' => 'rgb(191, 219, 254)', 'border' => 'rgb(96, 165, 250)', 'text' => 'rgb(30, 64, 175)' ),
-													'gray'  => array( 'bg' => 'rgb(229, 231, 235)', 'border' => 'rgb(156, 163, 175)', 'text' => 'rgb(55, 65, 81)' ),
+													'green' => array(
+														'bg'   => 'rgb(187, 247, 208)',
+														'border' => 'rgb(74, 222, 128)',
+														'text' => 'rgb(20, 83, 45)',
+													),
+													'blue' => array(
+														'bg'   => 'rgb(191, 219, 254)',
+														'border' => 'rgb(96, 165, 250)',
+														'text' => 'rgb(30, 64, 175)',
+													),
+													'gray' => array(
+														'bg'   => 'rgb(229, 231, 235)',
+														'border' => 'rgb(156, 163, 175)',
+														'text' => 'rgb(55, 65, 81)',
+													),
 												);
-												$style = $engagement_styles[ $engagement_color ] ?? $engagement_styles['gray'];
+												$style             = $engagement_styles[ $engagement_color ] ?? $engagement_styles['gray'];
 												?>
 												<span class="px-3 py-1 rounded" style="background-color: <?php echo esc_attr( $style['bg'] ); ?>; border: 1px solid <?php echo esc_attr( $style['border'] ); ?>; color: <?php echo esc_attr( $style['text'] ); ?>;"><?php echo esc_html( $engagement ); ?></span>
 											</div>
@@ -806,21 +848,21 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 		$days = isset( $_POST['days'] ) ? absint( $_POST['days'] ) : 30; // phpcs:ignore WordPress.Security.NonceVerification.Missing
 		$days = max( 7, min( 365, $days ) ); // Between 7 and 365 days.
 
-		$period_start = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
-		$previous_period_start = gmdate( 'Y-m-d H:i:s', strtotime( "-" . ( $days * 2 ) . " days" ) );
-		$previous_period_end = $period_start;
+		$period_start          = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+		$previous_period_start = gmdate( 'Y-m-d H:i:s', strtotime( '-' . ( $days * 2 ) . ' days' ) );
+		$previous_period_end   = $period_start;
 
-		$hotels_table     = Schema::get_table_name( 'hotels' );
-		$guests_table     = Schema::get_table_name( 'guests' );
+		$hotels_table      = Schema::get_table_name( 'hotels' );
+		$guests_table      = Schema::get_table_name( 'guests' );
 		$video_views_table = Schema::get_table_name( 'video_views' );
 		$assignments_table = Schema::get_table_name( 'hotel_video_assignments' );
-		$videos_table     = Schema::get_table_name( 'video_metadata' );
+		$videos_table      = Schema::get_table_name( 'video_metadata' );
 
 		// Get all data for export.
 		$active_hotels = $hotel_repo->count( array( 'status' => 'active' ) );
-		$total_guests = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$guests_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$total_videos = $video_repo->get_count();
-		$total_views = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$video_views_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$total_guests  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$guests_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$total_videos  = $video_repo->get_count();
+		$total_views   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$video_views_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Average Completion Rate.
 		$avg_completion = (float) $wpdb->get_var(
@@ -879,13 +921,13 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Guest Activity Status.
-		$active_guests = (int) $wpdb->get_var(
+		$active_guests  = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$guests_table} WHERE status = 'active' AND (access_end IS NULL OR access_end > %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				current_time( 'mysql' )
 			)
 		);
-		$expiring_soon = (int) $wpdb->get_var(
+		$expiring_soon  = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$guests_table} WHERE status = 'active' AND access_end IS NOT NULL AND access_end > %s AND access_end <= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				current_time( 'mysql' ),
@@ -900,6 +942,7 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 		);
 
 		// Video Views by Category.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are safe
 		$category_views = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT 
@@ -913,6 +956,7 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 				$period_start
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Generate CSV.
 		$filename = 'system-analytics-report-' . gmdate( 'Y-m-d' ) . '.csv';
@@ -940,6 +984,7 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 			$output,
 			array(
 				__( 'Report Period', 'hotel-chain' ),
+				/* translators: %d: Number of days */
 				sprintf( __( 'Last %d Days', 'hotel-chain' ), $days ),
 			)
 		);
@@ -1079,7 +1124,7 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 			);
 			foreach ( $hotel_engagement as $hotel ) {
 				$watch_hours = round( (int) $hotel->total_watch_seconds / 3600, 2 );
-				$completion = round( (float) $hotel->avg_completion, 2 );
+				$completion  = round( (float) $hotel->avg_completion, 2 );
 				fputcsv(
 					$output,
 					array(
@@ -1119,7 +1164,7 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 			);
 			foreach ( $top_videos as $video ) {
 				$avg_watch_seconds = (int) $video->avg_watch_seconds;
-				$completion = round( (float) $video->avg_completion, 2 );
+				$completion        = round( (float) $video->avg_completion, 2 );
 				fputcsv(
 					$output,
 					array(
@@ -1128,13 +1173,14 @@ class SystemAnalyticsPage implements ServiceProviderInterface {
 						number_format_i18n( (int) $video->hotels_using ),
 						number_format_i18n( (int) $video->total_views ),
 						number_format_i18n( $avg_watch_seconds ),
-						$video->duration_label ?: 'N/A',
+						! empty( $video->duration_label ) ? $video->duration_label : 'N/A',
 						number_format_i18n( $completion, 2 ) . '%',
 					)
 				);
 			}
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- CSV export requires direct file operations
 		fclose( $output );
 		exit;
 	}

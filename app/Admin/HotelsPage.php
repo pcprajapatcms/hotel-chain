@@ -352,20 +352,20 @@ class HotelsPage implements ServiceProviderInterface {
 	private function sanitize_hotel_code( string $code ): string {
 		// Remove all special characters except alphanumeric and dashes.
 		$code = preg_replace( '/[^A-Za-z0-9\-]/', '', $code );
-		
+
 		// Remove multiple consecutive dashes.
 		$code = preg_replace( '/-+/', '-', $code );
-		
+
 		// Remove leading/trailing dashes.
 		$code = trim( $code, '-' );
-		
-		// Try to extract and validate format: {INITIALS}-{YEAR} or {INITIALS}-{YEAR}-{SUFFIX}
+
+		// Try to extract and validate format: {INITIALS}-{YEAR} or {INITIALS}-{YEAR}-{SUFFIX}.
 		$parts = explode( '-', $code );
-		
+
 		if ( count( $parts ) >= 2 ) {
 			$initials = preg_replace( '/[^A-Za-z0-9]/', '', $parts[0] );
 			$year     = preg_replace( '/[^0-9]/', '', $parts[1] );
-			
+
 			// Ensure initials are uppercase and at least 2 characters.
 			$initials = strtoupper( $initials );
 			if ( strlen( $initials ) < 2 ) {
@@ -374,11 +374,11 @@ class HotelsPage implements ServiceProviderInterface {
 			if ( strlen( $initials ) > 10 ) {
 				$initials = substr( $initials, 0, 10 );
 			}
-			
+
 			// Validate year (should be 4 digits).
 			if ( strlen( $year ) === 4 && is_numeric( $year ) ) {
 				$sanitized = $initials . '-' . $year;
-				
+
 				// Add suffix if present (for duplicates).
 				if ( count( $parts ) > 2 ) {
 					$suffix = preg_replace( '/[^0-9]/', '', $parts[2] );
@@ -386,11 +386,11 @@ class HotelsPage implements ServiceProviderInterface {
 						$sanitized .= '-' . $suffix;
 					}
 				}
-				
+
 				return $sanitized;
 			}
 		}
-		
+
 		// If format is invalid, generate a new code from initials.
 		$initials = preg_replace( '/[^A-Za-z0-9]/', '', $code );
 		$initials = strtoupper( $initials );
@@ -400,7 +400,7 @@ class HotelsPage implements ServiceProviderInterface {
 		if ( strlen( $initials ) > 10 ) {
 			$initials = substr( $initials, 0, 10 );
 		}
-		
+
 		$year = gmdate( 'Y' );
 		return $initials . '-' . $year;
 	}
@@ -759,7 +759,7 @@ class HotelsPage implements ServiceProviderInterface {
 								<span class="block mb-1.5 font-semibold text-sm"><?php esc_html_e( 'Guest Access Duration (days)', 'hotel-chain' ); ?></span>
 								<?php
 								$system_default_duration = \HotelChain\Support\AccountSettings::get_default_guest_duration();
-								$placeholder_value = isset( $preserved_data['duration'] ) && ! empty( $preserved_data['duration'] ) ? esc_attr( $preserved_data['duration'] ) : '0';
+								$placeholder_value       = isset( $preserved_data['duration'] ) && ! empty( $preserved_data['duration'] ) ? esc_attr( $preserved_data['duration'] ) : '0';
 								/* translators: %d: System default duration in days */
 								$placeholder_text = sprintf( __( '0 (uses system default: %d days)', 'hotel-chain' ), $system_default_duration );
 								?>
@@ -767,7 +767,7 @@ class HotelsPage implements ServiceProviderInterface {
 								<p class="text-xs text-gray-600 mt-1">
 									<?php
 									/* translators: %d: System default duration */
-									printf( esc_html__( 'Set to 0 to use system default (%d days). Set a specific number to override for this hotel.', 'hotel-chain' ), $system_default_duration );
+									printf( esc_html__( 'Set to 0 to use system default (%d days). Set a specific number to override for this hotel.', 'hotel-chain' ), esc_html( $system_default_duration ) );
 									?>
 								</p>
 								<span class="hotel-field-error text-red-600 text-sm mt-1 hidden"></span>

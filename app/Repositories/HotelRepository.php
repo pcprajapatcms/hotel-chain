@@ -149,7 +149,7 @@ class HotelRepository {
 
 		if ( isset( $data['logo_id'] ) ) {
 			$update_data['logo_id'] = absint( $data['logo_id'] );
-			$format[]                = '%d';
+			$format[]               = '%d';
 		}
 
 		if ( isset( $data['favicon_id'] ) ) {
@@ -305,21 +305,21 @@ class HotelRepository {
 		// Handle -1 limit as "no limit".
 		$limit_clause = '';
 		if ( $args['limit'] > 0 ) {
-			$limit  = absint( $args['limit'] );
-			$offset = absint( $args['offset'] );
+			$limit        = absint( $args['limit'] );
+			$offset       = absint( $args['offset'] );
 			$limit_clause = "LIMIT {$limit} OFFSET {$offset}";
 		}
 
 		if ( ! empty( $args['status'] ) && ! empty( $args['search'] ) ) {
 			// Both status and search filters.
-			$search  = '%' . $wpdb->esc_like( $args['search'] ) . '%';
-			$query   = "SELECT * FROM {$table} WHERE status = %s AND (hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s) ORDER BY {$orderby} {$order}";
+			$search = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+			$query  = "SELECT * FROM {$table} WHERE status = %s AND (hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s) ORDER BY {$orderby} {$order}";
 			if ( $limit_clause ) {
 				$query .= ' ' . $limit_clause;
 			}
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
-					$query, // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$query, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$args['status'],
 					$search,
 					$search,
@@ -330,26 +330,26 @@ class HotelRepository {
 			);
 		} elseif ( ! empty( $args['status'] ) ) {
 			// Only status filter.
-			$query   = "SELECT * FROM {$table} WHERE status = %s ORDER BY {$orderby} {$order}";
+			$query = "SELECT * FROM {$table} WHERE status = %s ORDER BY {$orderby} {$order}";
 			if ( $limit_clause ) {
 				$query .= ' ' . $limit_clause;
 			}
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
-					$query, // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$query, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$args['status']
 				)
 			);
 		} elseif ( ! empty( $args['search'] ) ) {
 			// Only search filter.
-			$search  = '%' . $wpdb->esc_like( $args['search'] ) . '%';
-			$query   = "SELECT * FROM {$table} WHERE (hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s) ORDER BY {$orderby} {$order}";
+			$search = '%' . $wpdb->esc_like( $args['search'] ) . '%';
+			$query  = "SELECT * FROM {$table} WHERE (hotel_name LIKE %s OR hotel_code LIKE %s OR contact_email LIKE %s OR city LIKE %s OR country LIKE %s) ORDER BY {$orderby} {$order}";
 			if ( $limit_clause ) {
 				$query .= ' ' . $limit_clause;
 			}
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
-					$query, // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$query, // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$search,
 					$search,
 					$search,
@@ -359,7 +359,7 @@ class HotelRepository {
 			);
 		} else {
 			// No filters.
-			$query   = "SELECT * FROM {$table} ORDER BY {$orderby} {$order}";
+			$query = "SELECT * FROM {$table} ORDER BY {$orderby} {$order}";
 			if ( $limit_clause ) {
 				$query .= ' ' . $limit_clause;
 			}
@@ -575,20 +575,20 @@ class HotelRepository {
 	private function sanitize_hotel_code( string $code ): string {
 		// Remove all special characters except alphanumeric and dashes.
 		$code = preg_replace( '/[^A-Za-z0-9\-]/', '', $code );
-		
+
 		// Remove multiple consecutive dashes.
 		$code = preg_replace( '/-+/', '-', $code );
-		
+
 		// Remove leading/trailing dashes.
 		$code = trim( $code, '-' );
-		
-		// Try to extract and validate format: {INITIALS}-{YEAR} or {INITIALS}-{YEAR}-{SUFFIX}
+
+		// Try to extract and validate format: {INITIALS}-{YEAR} or {INITIALS}-{YEAR}-{SUFFIX}.
 		$parts = explode( '-', $code );
-		
+
 		if ( count( $parts ) >= 2 ) {
 			$initials = preg_replace( '/[^A-Za-z0-9]/', '', $parts[0] );
 			$year     = preg_replace( '/[^0-9]/', '', $parts[1] );
-			
+
 			// Ensure initials are uppercase and at least 2 characters.
 			$initials = strtoupper( $initials );
 			if ( strlen( $initials ) < 2 ) {
@@ -597,11 +597,11 @@ class HotelRepository {
 			if ( strlen( $initials ) > 10 ) {
 				$initials = substr( $initials, 0, 10 );
 			}
-			
+
 			// Validate year (should be 4 digits).
 			if ( strlen( $year ) === 4 && is_numeric( $year ) ) {
 				$sanitized = $initials . '-' . $year;
-				
+
 				// Add suffix if present (for duplicates).
 				if ( count( $parts ) > 2 ) {
 					$suffix = preg_replace( '/[^0-9]/', '', $parts[2] );
@@ -609,11 +609,11 @@ class HotelRepository {
 						$sanitized .= '-' . $suffix;
 					}
 				}
-				
+
 				return $sanitized;
 			}
 		}
-		
+
 		// If format is invalid, generate a new code from initials.
 		$initials = preg_replace( '/[^A-Za-z0-9]/', '', $code );
 		$initials = strtoupper( $initials );
@@ -623,7 +623,7 @@ class HotelRepository {
 		if ( strlen( $initials ) > 10 ) {
 			$initials = substr( $initials, 0, 10 );
 		}
-		
+
 		$year = gmdate( 'Y' );
 		return $initials . '-' . $year;
 	}

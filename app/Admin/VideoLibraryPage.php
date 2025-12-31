@@ -60,7 +60,8 @@ class VideoLibraryPage implements ServiceProviderInterface {
 	 * @return void
 	 */
 	public function modify_menu_title(): void {
-		global $menu;
+		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- WordPress doesn't provide a filter for menu titles, this is the only way
+		global $menu_title;
 
 		$current_user = wp_get_current_user();
 		if ( ! $current_user instanceof \WP_User ) {
@@ -69,9 +70,9 @@ class VideoLibraryPage implements ServiceProviderInterface {
 
 		// Change menu title to "Video Library" for hotel users.
 		if ( in_array( 'hotel', $current_user->roles, true ) ) {
-			foreach ( $menu as $key => $item ) {
+			foreach ( $menu_title as $key => $item ) {
 				if ( isset( $item[2] ) && 'hotel-video-library' === $item[2] ) {
-					$menu[ $key ][0] = __( 'Video Library', 'hotel-chain' );
+					$menu_title[ $key ][0] = __( 'Video Library', 'hotel-chain' );
 					break;
 				}
 			}

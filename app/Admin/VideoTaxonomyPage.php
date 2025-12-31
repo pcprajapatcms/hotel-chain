@@ -56,7 +56,7 @@ class VideoTaxonomyPage implements ServiceProviderInterface {
 		$categories    = $taxonomy_repo->get_categories();
 		$tags          = $taxonomy_repo->get_tags();
 
-		$updated = isset( $_GET['updated'] ) ? absint( $_GET['updated'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$updated  = isset( $_GET['updated'] ) ? absint( $_GET['updated'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$logo_url = StyleSettings::get_logo_url();
 		?>
 		<div class="flex-1 overflow-auto p-4 lg:p-8 lg:px-0">
@@ -270,12 +270,18 @@ class VideoTaxonomyPage implements ServiceProviderInterface {
 		// Get existing items to track what to delete.
 		$existing_categories = $taxonomy_repo->get_categories();
 		$existing_tags       = $taxonomy_repo->get_tags();
-		$existing_cat_ids    = array_map( function( $cat ) {
-			return $cat->id;
-		}, $existing_categories );
-		$existing_tag_ids    = array_map( function( $tag ) {
-			return $tag->id;
-		}, $existing_tags );
+		$existing_cat_ids    = array_map(
+			function ( $cat ) {
+				return $cat->id;
+			},
+			$existing_categories
+		);
+		$existing_tag_ids    = array_map(
+			function ( $tag ) {
+				return $tag->id;
+			},
+			$existing_tags
+		);
 
 		// Process categories.
 		$raw_categories = isset( $_POST['categories'] ) ? (array) wp_unslash( $_POST['categories'] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification.Missing

@@ -57,18 +57,18 @@ class AdminDashboardPage implements ServiceProviderInterface {
 
 		global $wpdb;
 
-		$hotel_repo   = new HotelRepository();
-		$guest_repo   = new GuestRepository();
-		$video_repo   = new VideoRepository();
+		$hotel_repo      = new HotelRepository();
+		$guest_repo      = new GuestRepository();
+		$video_repo      = new VideoRepository();
 		$assignment_repo = new HotelVideoAssignmentRepository();
 
 		// Get statistics.
-		$total_hotels = $hotel_repo->count();
+		$total_hotels  = $hotel_repo->count();
 		$active_hotels = $hotel_repo->count( array( 'status' => 'active' ) );
 
 		// Hotels active this week.
-		$week_ago = gmdate( 'Y-m-d H:i:s', strtotime( '-7 days' ) );
-		$hotels_table = Schema::get_table_name( 'hotels' );
+		$week_ago         = gmdate( 'Y-m-d H:i:s', strtotime( '-7 days' ) );
+		$hotels_table     = Schema::get_table_name( 'hotels' );
 		$active_this_week = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$hotels_table} WHERE status = 'active' AND (created_at >= %s OR updated_at >= %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -82,7 +82,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 		$total_guests = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$guests_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Guests added this month.
-		$month_ago = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
+		$month_ago         = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
 		$guests_this_month = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$guests_table} WHERE created_at >= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
@@ -95,18 +95,18 @@ class AdminDashboardPage implements ServiceProviderInterface {
 
 		// Total views.
 		$video_views_table = Schema::get_table_name( 'video_views' );
-		$total_views = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$video_views_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$total_views       = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$video_views_table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Views this month vs last month.
-		$views_this_month = (int) $wpdb->get_var(
+		$views_this_month        = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$video_views_table} WHERE viewed_at >= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$month_ago
 			)
 		);
-		$last_month_start = gmdate( 'Y-m-d H:i:s', strtotime( '-60 days' ) );
-		$last_month_end = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
-		$views_last_month = (int) $wpdb->get_var(
+		$last_month_start        = gmdate( 'Y-m-d H:i:s', strtotime( '-60 days' ) );
+		$last_month_end          = gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) );
+		$views_last_month        = (int) $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$video_views_table} WHERE viewed_at >= %s AND viewed_at < %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$last_month_start,
@@ -122,7 +122,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 				$month_ago
 			)
 		);
-		$watch_hours_this_month = round( $watch_seconds_this_month / 3600 );
+		$watch_hours_this_month   = round( $watch_seconds_this_month / 3600 );
 
 		// Top hotels by engagement (this month).
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names cannot be parameterized.
@@ -404,13 +404,13 @@ class AdminDashboardPage implements ServiceProviderInterface {
 						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400"><?php esc_html_e( 'Guest Activity Status', 'hotel-chain' ); ?></h3>
 						<?php
 						// Calculate guest activity status.
-						$active_guests = (int) $wpdb->get_var(
+						$active_guests  = (int) $wpdb->get_var(
 							$wpdb->prepare(
 								"SELECT COUNT(*) FROM {$guests_table} WHERE status = 'active' AND (access_end IS NULL OR access_end > %s)", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 								current_time( 'mysql' )
 							)
 						);
-						$expiring_soon = (int) $wpdb->get_var(
+						$expiring_soon  = (int) $wpdb->get_var(
 							$wpdb->prepare(
 								"SELECT COUNT(*) FROM {$guests_table} WHERE status = 'active' AND access_end IS NOT NULL AND access_end > %s AND access_end <= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 								current_time( 'mysql' ),
@@ -495,10 +495,10 @@ class AdminDashboardPage implements ServiceProviderInterface {
 							// Add hotel creation activities.
 							foreach ( $recent_hotels as $hotel ) {
 								// Try to get the hotel's user, otherwise use current admin.
-								$hotel_user = get_user_by( 'id', $hotel->user_id );
+								$hotel_user   = get_user_by( 'id', $hotel->user_id );
 								$current_user = wp_get_current_user();
 								$display_user = $current_user->display_name ? $current_user->display_name : __( 'System', 'hotel-chain' );
-								
+
 								$activity_items[] = array(
 									'type'    => 'hotel',
 									'message' => sprintf(
@@ -516,7 +516,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 							foreach ( $recent_videos as $video ) {
 								$current_user = wp_get_current_user();
 								$display_user = $current_user->display_name ? $current_user->display_name : __( 'System', 'hotel-chain' );
-								
+
 								$activity_items[] = array(
 									'type'    => 'video',
 									'message' => sprintf(
@@ -533,7 +533,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 							// Sort by time (most recent first).
 							usort(
 								$activity_items,
-								function( $a, $b ) {
+								function ( $a, $b ) {
 									return strtotime( $b['time'] ) - strtotime( $a['time'] );
 								}
 							);
@@ -551,7 +551,7 @@ class AdminDashboardPage implements ServiceProviderInterface {
 							if ( ! empty( $activity_items ) ) :
 								foreach ( $activity_items as $activity ) :
 									$color_class = isset( $color_map[ $activity['color'] ] ) ? $color_map[ $activity['color'] ] : 'border-gray-500';
-									$time_ago = human_time_diff( strtotime( $activity['time'] ), current_time( 'timestamp' ) );
+									$time_ago    = human_time_diff( strtotime( $activity['time'] ), time() );
 									?>
 									<div class="p-3 bg-gray-50 border-l-4 <?php echo esc_attr( $color_class ); ?>">
 										<div><?php echo esc_html( $activity['message'] ); ?></div>

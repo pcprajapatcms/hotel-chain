@@ -54,12 +54,12 @@ class StyleSettings {
 	 * Get a specific style setting.
 	 *
 	 * @param string $key Setting key.
-	 * @param mixed  $default Default value if not found.
+	 * @param mixed  $default_value Default value if not found.
 	 * @return mixed Setting value.
 	 */
-	public static function get( string $key, $default = null ) {
+	public static function get( string $key, $default_value = null ) {
 		$settings = self::get_all();
-		return $settings[ $key ] ?? $default;
+		return $settings[ $key ] ?? $default_value;
 	}
 
 	/**
@@ -69,7 +69,7 @@ class StyleSettings {
 	 * @return string Font name.
 	 */
 	public static function get_typography_font( string $element ): string {
-		$key = 'typography_' . $element . '_font';
+		$key      = 'typography_' . $element . '_font';
 		$defaults = array(
 			'h1' => 'Playfair Display',
 			'h2' => 'Playfair Display',
@@ -100,7 +100,7 @@ class StyleSettings {
 	 * @return string Font weight.
 	 */
 	public static function get_typography_font_weight( string $element ): string {
-		$key = 'typography_' . $element . '_font_weight';
+		$key      = 'typography_' . $element . '_font_weight';
 		$defaults = array(
 			'h1' => '600',
 			'h2' => '600',
@@ -150,29 +150,29 @@ class StyleSettings {
 	 * @return int Font size in pixels.
 	 */
 	public static function get_responsive_font_size( string $element, string $breakpoint ): int {
-		$key = 'font_size_' . $element . '_' . $breakpoint;
-		$defaults = array(
-			'h1_mobile'   => 28,
-			'h1_tablet'   => 32,
-			'h1_desktop'  => 36,
-			'h2_mobile'   => 24,
-			'h2_tablet'   => 28,
-			'h2_desktop'  => 32,
-			'h3_mobile'   => 20,
-			'h3_tablet'   => 24,
-			'h3_desktop'  => 28,
-			'h4_mobile'   => 18,
-			'h4_tablet'   => 20,
-			'h4_desktop'  => 24,
-			'h5_mobile'   => 16,
-			'h5_tablet'   => 18,
-			'h5_desktop'  => 20,
-			'h6_mobile'   => 14,
-			'h6_tablet'   => 16,
-			'h6_desktop'  => 18,
-			'p_mobile'    => 14,
-			'p_tablet'    => 16,
-			'p_desktop'   => 18,
+		$key         = 'font_size_' . $element . '_' . $breakpoint;
+		$defaults    = array(
+			'h1_mobile'  => 28,
+			'h1_tablet'  => 32,
+			'h1_desktop' => 36,
+			'h2_mobile'  => 24,
+			'h2_tablet'  => 28,
+			'h2_desktop' => 32,
+			'h3_mobile'  => 20,
+			'h3_tablet'  => 24,
+			'h3_desktop' => 28,
+			'h4_mobile'  => 18,
+			'h4_tablet'  => 20,
+			'h4_desktop' => 24,
+			'h5_mobile'  => 16,
+			'h5_tablet'  => 18,
+			'h5_desktop' => 20,
+			'h6_mobile'  => 14,
+			'h6_tablet'  => 16,
+			'h6_desktop' => 18,
+			'p_mobile'   => 14,
+			'p_tablet'   => 16,
+			'p_desktop'  => 18,
 		);
 		$default_key = $element . '_' . $breakpoint;
 		return (int) self::get( $key, $defaults[ $default_key ] ?? 16 );
@@ -197,57 +197,57 @@ class StyleSettings {
 	private static function get_defaults(): array {
 		return array(
 			'typography_h1_font'        => 'Playfair Display',
-			'typography_h1_font_url'     => '',
-			'typography_h1_font_weight'  => '600',
+			'typography_h1_font_url'    => '',
+			'typography_h1_font_weight' => '600',
 			'typography_h2_font'        => 'Playfair Display',
-			'typography_h2_font_url'     => '',
-			'typography_h2_font_weight'  => '600',
+			'typography_h2_font_url'    => '',
+			'typography_h2_font_weight' => '600',
 			'typography_h3_font'        => 'Playfair Display',
-			'typography_h3_font_url'     => '',
-			'typography_h3_font_weight'  => '600',
+			'typography_h3_font_url'    => '',
+			'typography_h3_font_weight' => '600',
 			'typography_h4_font'        => 'Playfair Display',
-			'typography_h4_font_url'     => '',
-			'typography_h4_font_weight'  => '600',
+			'typography_h4_font_url'    => '',
+			'typography_h4_font_weight' => '600',
 			'typography_h5_font'        => 'Playfair Display',
-			'typography_h5_font_url'     => '',
-			'typography_h5_font_weight'  => '600',
+			'typography_h5_font_url'    => '',
+			'typography_h5_font_weight' => '600',
 			'typography_h6_font'        => 'Playfair Display',
-			'typography_h6_font_url'     => '',
-			'typography_h6_font_weight'  => '600',
-			'typography_p_font'          => 'Inter',
-			'typography_p_font_url'      => '',
-			'typography_p_font_weight'   => '400',
-			'logo_id'               => 0,
-			'logo_url'              => '',
-			'favicon_id'            => 0,
-			'favicon_url'           => '',
-			'font_size_h1_mobile'   => 28,
-			'font_size_h1_tablet'   => 32,
-			'font_size_h1_desktop'  => 36,
-			'font_size_h2_mobile'   => 24,
-			'font_size_h2_tablet'   => 28,
-			'font_size_h2_desktop'  => 32,
-			'font_size_h3_mobile'   => 20,
-			'font_size_h3_tablet'   => 24,
-			'font_size_h3_desktop'  => 28,
-			'font_size_h4_mobile'   => 18,
-			'font_size_h4_tablet'   => 20,
-			'font_size_h4_desktop'  => 24,
-			'font_size_h5_mobile'   => 16,
-			'font_size_h5_tablet'   => 18,
-			'font_size_h5_desktop'  => 20,
-			'font_size_h6_mobile'   => 14,
-			'font_size_h6_tablet'   => 16,
-			'font_size_h6_desktop'  => 18,
-			'font_size_p_mobile'    => 14,
-			'font_size_p_tablet'    => 16,
-			'font_size_p_desktop'   => 18,
-			'button_primary_color'  => '#1f88ff',
-			'button_secondary_color' => '#6b7280',
-			'button_success_color'  => '#10b981',
-			'button_info_color'     => '#3b82f6',
-			'button_warning_color'  => '#f59e0b',
-			'button_danger_color'   => '#ef4444',
+			'typography_h6_font_url'    => '',
+			'typography_h6_font_weight' => '600',
+			'typography_p_font'         => 'Inter',
+			'typography_p_font_url'     => '',
+			'typography_p_font_weight'  => '400',
+			'logo_id'                   => 0,
+			'logo_url'                  => '',
+			'favicon_id'                => 0,
+			'favicon_url'               => '',
+			'font_size_h1_mobile'       => 28,
+			'font_size_h1_tablet'       => 32,
+			'font_size_h1_desktop'      => 36,
+			'font_size_h2_mobile'       => 24,
+			'font_size_h2_tablet'       => 28,
+			'font_size_h2_desktop'      => 32,
+			'font_size_h3_mobile'       => 20,
+			'font_size_h3_tablet'       => 24,
+			'font_size_h3_desktop'      => 28,
+			'font_size_h4_mobile'       => 18,
+			'font_size_h4_tablet'       => 20,
+			'font_size_h4_desktop'      => 24,
+			'font_size_h5_mobile'       => 16,
+			'font_size_h5_tablet'       => 18,
+			'font_size_h5_desktop'      => 20,
+			'font_size_h6_mobile'       => 14,
+			'font_size_h6_tablet'       => 16,
+			'font_size_h6_desktop'      => 18,
+			'font_size_p_mobile'        => 14,
+			'font_size_p_tablet'        => 16,
+			'font_size_p_desktop'       => 18,
+			'button_primary_color'      => '#1f88ff',
+			'button_secondary_color'    => '#6b7280',
+			'button_success_color'      => '#10b981',
+			'button_info_color'         => '#3b82f6',
+			'button_warning_color'      => '#f59e0b',
+			'button_danger_color'       => '#ef4444',
 		);
 	}
 
@@ -260,4 +260,3 @@ class StyleSettings {
 		self::$settings = null;
 	}
 }
-

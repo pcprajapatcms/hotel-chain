@@ -110,7 +110,7 @@ class HotelView implements ServiceProviderInterface {
 		// Get video views and watch time statistics.
 		global $wpdb;
 		$video_views_table = Schema::get_table_name( 'video_views' );
-		
+
 		// Total views for this hotel.
 		$total_views = (int) $wpdb->get_var(
 			$wpdb->prepare(

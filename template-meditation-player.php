@@ -30,9 +30,9 @@ if ( ! $hotel ) {
 }
 
 // Check if user is logged in and is a guest for this hotel with valid access.
-$is_guest        = false;
-$guest           = null;
-$current_user_id = get_current_user_id();
+$is_guest             = false;
+$guest                = null;
+$current_user_id      = get_current_user_id();
 $guest_status_message = '';
 
 if ( $current_user_id ) {
@@ -40,7 +40,7 @@ if ( $current_user_id ) {
 	$guest      = $guest_repo->get_by_hotel_and_user( $hotel->id, $current_user_id );
 	// Check if guest has valid access (status is active AND access_end hasn't passed).
 	$is_guest = GuestExpiration::is_guest_access_valid( $guest );
-	
+
 	// Set status message for locked/expired guests.
 	if ( $guest && ! $is_guest ) {
 		if ( 'revoked' === $guest->status || 'locked' === $guest->status ) {
@@ -80,7 +80,7 @@ $video_url = $video->video_file_id ? wp_get_attachment_url( $video->video_file_i
 $enable_download = false;
 global $wpdb;
 $system_settings_table = Schema::get_table_name( 'system_settings' );
-$content_settings_row = $wpdb->get_row( "SELECT content_settings FROM {$system_settings_table} LIMIT 1", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+$content_settings_row  = $wpdb->get_row( "SELECT content_settings FROM {$system_settings_table} LIMIT 1", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 if ( $content_settings_row && ! empty( $content_settings_row['content_settings'] ) ) {
 	$content_settings = json_decode( $content_settings_row['content_settings'], true );
 	if ( is_array( $content_settings ) && isset( $content_settings['enable_download'] ) ) {

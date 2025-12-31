@@ -195,18 +195,16 @@ class GuestRepository {
 					$args['status']
 				);
 			}
-		} else {
-			if ( $limit_clause ) {
+		} elseif ( $limit_clause ) {
 				$sql = $wpdb->prepare(
 					"SELECT * FROM {$this->table} WHERE hotel_id = %d ORDER BY {$orderby} {$limit_clause}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$hotel_id
 				);
-			} else {
-				$sql = $wpdb->prepare(
-					"SELECT * FROM {$this->table} WHERE hotel_id = %d ORDER BY {$orderby}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-					$hotel_id
-				);
-			}
+		} else {
+			$sql = $wpdb->prepare(
+				"SELECT * FROM {$this->table} WHERE hotel_id = %d ORDER BY {$orderby}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$hotel_id
+			);
 		}
 
 		return $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
