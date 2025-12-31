@@ -21,7 +21,7 @@ class Migration implements ServiceProviderInterface {
 	/**
 	 * Current database version.
 	 */
-	const DB_VERSION = '1.5.0';
+	const DB_VERSION = '1.6.0';
 
 	/**
 	 * Register service hooks.
@@ -150,6 +150,22 @@ class Migration implements ServiceProviderInterface {
 		if ( empty( $welcome_exists ) ) {
 			$wpdb->query(
 				"ALTER TABLE {$hotels_table} ADD COLUMN welcome_section longtext DEFAULT NULL COMMENT 'JSON: welcome video, message, steps' AFTER website" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			);
+		}
+
+		// Add logo_id and favicon_id columns to hotels table.
+		$logo_exists = $wpdb->get_results(
+			$wpdb->prepare(
+				"SHOW COLUMNS FROM {$hotels_table} LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				'logo_id'
+			)
+		);
+
+		if ( empty( $logo_exists ) ) {
+			$wpdb->query(
+				"ALTER TABLE {$hotels_table} 
+				ADD COLUMN logo_id bigint(20) UNSIGNED DEFAULT NULL COMMENT 'WordPress attachment ID for logo' AFTER welcome_section,
+				ADD COLUMN favicon_id bigint(20) UNSIGNED DEFAULT NULL COMMENT 'WordPress attachment ID for favicon' AFTER logo_id" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			);
 		}
 

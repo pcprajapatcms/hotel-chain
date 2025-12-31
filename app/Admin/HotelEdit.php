@@ -174,7 +174,12 @@ class HotelEdit implements ServiceProviderInterface {
 							<div class="mb-4">
 								<label class="mb-1 text-sm font-semibold text-slate-800 block" for="access_duration"><?php esc_html_e( 'Access Duration (days)', 'hotel-chain' ); ?></label>
 								<input type="number" id="access_duration" name="access_duration" value="<?php echo esc_attr( $access_duration ); ?>" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
-								<p class="text-xs text-gray-600 mt-1"><?php esc_html_e( 'Number of days guests can access the meditation series. Set to 0 for unlimited access.', 'hotel-chain' ); ?></p>
+								<?php
+								$system_default = \HotelChain\Support\AccountSettings::get_default_guest_duration();
+								/* translators: %d: System default duration in days */
+								$help_text = sprintf( __( 'Number of days guests can access the meditation series. Set to 0 to use system default (%d days).', 'hotel-chain' ), $system_default );
+								?>
+								<p class="text-xs text-gray-600 mt-1"><?php echo esc_html( $help_text ); ?></p>
 							</div>
 						</div>
 

@@ -26,6 +26,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 	 */
 	public function register(): void {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
+		add_action( 'admin_menu', array( $this, 'modify_menu_title' ), 999 );
 		add_action( 'admin_post_hotel_chain_export_videos', array( $this, 'handle_export' ) );
 		add_action( 'admin_post_hotel_chain_update_video', array( $this, 'handle_update' ) );
 		add_action( 'admin_post_hotel_chain_delete_video', array( $this, 'handle_delete' ) );
@@ -45,12 +46,36 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		add_menu_page(
 			__( 'System Video Library', 'hotel-chain' ),
 			__( 'System Library', 'hotel-chain' ),
-			'manage_options',
+			'read',
 			'hotel-video-library',
 			array( $this, 'render_page' ),
 			'dashicons-video-alt3',
 			5
 		);
+	}
+
+	/**
+	 * Modify menu title for hotel users.
+	 *
+	 * @return void
+	 */
+	public function modify_menu_title(): void {
+		global $menu;
+
+		$current_user = wp_get_current_user();
+		if ( ! $current_user instanceof \WP_User ) {
+			return;
+		}
+
+		// Change menu title to "Video Library" for hotel users.
+		if ( in_array( 'hotel', $current_user->roles, true ) ) {
+			foreach ( $menu as $key => $item ) {
+				if ( isset( $item[2] ) && 'hotel-video-library' === $item[2] ) {
+					$menu[ $key ][0] = __( 'Video Library', 'hotel-chain' );
+					break;
+				}
+			}
+		}
 	}
 
 	/**
@@ -129,7 +154,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 		// Hotels for assignment table.
 		$all_hotels      = $hotel_repository->get_all(
 			array(
-				'status' => 'active',
+				'status' => '',
 				'limit'  => -1,
 			)
 		);
@@ -986,6 +1011,15 @@ class VideoLibraryPage implements ServiceProviderInterface {
 	 * @return void
 	 */
 	public function render_page(): void {
+		// Check if user is a hotel user - if so, delegate to hotel video library page.
+		$current_user = wp_get_current_user();
+		if ( in_array( 'hotel', $current_user->roles, true ) ) {
+			$library_page = new \HotelChain\Frontend\HotelVideoLibraryPage();
+			$library_page->render_page();
+			return;
+		}
+
+		// For admin users, require manage_options capability.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -1124,7 +1158,7 @@ class VideoLibraryPage implements ServiceProviderInterface {
 								$hotel_count = $assignment_repository->get_video_assignment_count( $video->video_id );
 								?>
 								<div class="video-card border border-solid border-gray-300 rounded overflow-hidden hover:border-blue-400 cursor-pointer bg-white" data-video-id="<?php echo esc_attr( $video->video_id ); ?>">
-									<div class="bg-gray-200 border-b border-solid border-gray-300 h-32 flex items-center justify-center relative overflow-hidden">
+									<div class="bg-gray-200 border-b border-solid border-gray-300 h-42 flex items-center justify-center relative overflow-hidden">
 										<?php if ( $thumbnail_url ) : ?>
 											<img src="<?php echo esc_url( $thumbnail_url ); ?>" alt="" class="w-full h-full object-cover" />
 										<?php else : ?>

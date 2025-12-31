@@ -81,6 +81,7 @@ class Theme {
 			new HotelDashboard(),
 			new HotelProfilePage(),
 			new GuestRegistration(),
+			new \HotelChain\Frontend\HotelGuestManagementPage(),
 			new Assets( $assets ),
 			new Videos(),
 			new Roles(),

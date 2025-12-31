@@ -243,132 +243,142 @@ class HotelVideoLibraryPage {
 			);
 		};
 
+		// Get logo URL from hotel.
+		$logo_id  = isset( $hotel->logo_id ) ? absint( $hotel->logo_id ) : 0;
+		$logo_url = $logo_id ? wp_get_attachment_url( $logo_id ) : '';	
+
 		?>
-		<div class="flex-1 overflow-auto p-4 lg:p-8 wrap w-8/12 mx-auto hotel-video-library">
-			<div class="max-w-7xl mx-auto">
-				<div class="space-y-6">
-					<!-- Header -->
-					<div class="mb-6 border-b border-solid border-gray-300 pb-3">
-						<h1 class="mb-1 hotel-video-library-heading-primary"><?php esc_html_e( 'HOTEL – Video Library', 'hotel-chain' ); ?></h1>
-						<p class="hotel-video-library-text-muted"><?php esc_html_e( 'Browse all videos available in the system', 'hotel-chain' ); ?></p>
-					</div>
-
-				<!-- Filters -->
-				<div class="bg-white rounded p-4 border border-solid border-gray-300">
-					<div class="space-y-4">
-						<!-- Search Row -->
-						<div class="flex flex-col sm:flex-row gap-4">
-							<!-- Search -->
-							<div class="flex-1 flex items-center gap-3 border border-solid border-gray-300 rounded px-4 py-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-5 h-5 hotel-video-library-icon-muted" aria-hidden="true">
-									<path d="m21 21-4.34-4.34"></path>
-									<circle cx="11" cy="11" r="8"></circle>
-								</svg>
-								<input 
-									type="text" 
-									id="hotel-video-search" 
-									placeholder="<?php esc_attr_e( 'Search videos...', 'hotel-chain' ); ?>" 
-									value="<?php echo esc_attr( $search_query ); ?>"
-									class="flex-1 border-none outline-none bg-transparent hotel-video-library-text-muted"
-								/>
-							</div>
-
-							<!-- Filter Button -->
-							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2 cursor-pointer whitespace-nowrap" id="hotel-filter-toggle">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel w-5 h-5 hotel-video-library-text-muted" aria-hidden="true">
-									<path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"></path>
-								</svg>
-								<span class="hotel-video-library-text-primary"><?php esc_html_e( 'Filter', 'hotel-chain' ); ?></span>
-							</div>
+		<div class="flex-1 overflow-auto p-4 lg:p-8 lg:px-0 hotel-video-library">
+			<div class="w-12/12 md:w-10/12 mx-auto p-0">
+				<div class="flex items-center gap-4 mb-6 pb-3 border-b border-solid border-gray-400">
+					<?php if ( ! empty( $logo_url ) ) : ?>
+						<div class="flex-shrink-0">
+							<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php esc_attr_e( 'Logo', 'hotel-chain' ); ?>" class="h-12 md:h-16 w-auto object-contain" />
 						</div>
-
-						<!-- Filters Row -->
-						<div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
-							<!-- Category Dropdown -->
-							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2 whitespace-nowrap">
-								<span class="hotel-video-library-text-muted"><?php esc_html_e( 'Category:', 'hotel-chain' ); ?></span>
-								<select id="hotel-category-filter" class="border-none outline-none bg-transparent cursor-pointer hotel-video-library-text-primary">
-									<option value=""><?php esc_html_e( 'All', 'hotel-chain' ); ?></option>
-									<?php foreach ( $categories as $cat ) : ?>
-										<option value="<?php echo esc_attr( $cat ); ?>" <?php selected( $category_filter, $cat ); ?>>
-											<?php echo esc_html( $cat ); ?>
-										</option>
-									<?php endforeach; ?>
-								</select>
-							</div>
-
-							<!-- Status Dropdown -->
-							<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2 whitespace-nowrap">
-								<span class="hotel-video-library-text-muted"><?php esc_html_e( 'Status:', 'hotel-chain' ); ?></span>
-								<select id="hotel-status-filter" class="border-none outline-none bg-transparent cursor-pointer hotel-video-library-text-primary">
-									<option value=""><?php esc_html_e( 'All', 'hotel-chain' ); ?></option>
-									<option value="active" <?php selected( $status_filter, 'active' ); ?>><?php esc_html_e( 'Active', 'hotel-chain' ); ?></option>
-									<option value="inactive" <?php selected( $status_filter, 'inactive' ); ?>><?php esc_html_e( 'Inactive', 'hotel-chain' ); ?></option>
-								</select>
-							</div>
-
-							<!-- View Toggle -->
-							<div class="flex gap-2 ml-auto">
-								<button 
-									type="button" 
-									class="p-3 border border-solid border-gray-300 rounded hotel-view-btn <?php echo 'grid' === $view_mode ? 'active hotel-video-library-bg-cream' : ''; ?>" 
-									data-view="grid"
-								>
-									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grid3x3 lucide-grid-3x3 w-5 h-5 hotel-video-library-icon-primary" aria-hidden="true">
-										<rect width="18" height="18" x="3" y="3" rx="2"></rect>
-										<path d="M3 9h18"></path>
-										<path d="M3 15h18"></path>
-										<path d="M9 3v18"></path>
-										<path d="M15 3v18"></path>
-									</svg>
-								</button>
-								<button 
-									type="button" 
-									class="p-3 border rounded hotel-view-btn <?php echo 'list' === $view_mode ? 'active hotel-video-library-bg-cream hotel-video-library-border-light' : 'border-gray-300'; ?>" 
-									data-view="list"
-								>
-									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list w-5 h-5 hotel-video-library-text-muted" aria-hidden="true">
-										<path d="M3 5h.01"></path>
-										<path d="M3 12h.01"></path>
-										<path d="M3 19h.01"></path>
-										<path d="M8 5h13"></path>
-										<path d="M8 12h13"></path>
-										<path d="M8 19h13"></path>
-									</svg>
-								</button>
-							</div>
-						</div>
+					<?php endif; ?>
+					<div class="flex-1">
+						<h1><?php esc_html_e( 'HOTEL – Video Library', 'hotel-chain' ); ?></h1>
+						<p class="text-slate-600"><?php esc_html_e( 'Browse all videos available in the system', 'hotel-chain' ); ?></p>
 					</div>
 				</div>
+
+				<div class="space-y-6">
+					<!-- Filters -->
+					<div class="bg-white rounded p-4 border border-solid border-gray-300">
+						<div class="space-y-4">
+							<!-- Search Row -->
+							<div class="flex flex-col sm:flex-row gap-4">
+								<!-- Search -->
+								<div class="flex-1 flex items-center gap-3 border border-solid border-gray-300 rounded px-4 py-2">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-5 h-5 hotel-video-library-icon-muted" aria-hidden="true">
+										<path d="m21 21-4.34-4.34"></path>
+										<circle cx="11" cy="11" r="8"></circle>
+									</svg>
+									<input 
+										type="text" 
+										id="hotel-video-search" 
+										placeholder="<?php esc_attr_e( 'Search videos...', 'hotel-chain' ); ?>" 
+										value="<?php echo esc_attr( $search_query ); ?>"
+										class="flex-1 border-none outline-none bg-transparent hotel-video-library-text-muted"
+									/>
+								</div>
+
+								<!-- Filter Button -->
+								<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2 cursor-pointer whitespace-nowrap" id="hotel-filter-toggle">
+									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-funnel w-5 h-5 hotel-video-library-text-muted" aria-hidden="true">
+										<path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"></path>
+									</svg>
+									<span class="hotel-video-library-text-primary"><?php esc_html_e( 'Filter', 'hotel-chain' ); ?></span>
+								</div>
+							</div>
+
+							<!-- Filters Row -->
+							<div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
+								<!-- Category Dropdown -->
+								<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2 whitespace-nowrap">
+									<span class="hotel-video-library-text-muted"><?php esc_html_e( 'Category:', 'hotel-chain' ); ?></span>
+									<select id="hotel-category-filter" class="border-none outline-none bg-transparent cursor-pointer hotel-video-library-text-primary">
+										<option value=""><?php esc_html_e( 'All', 'hotel-chain' ); ?></option>
+										<?php foreach ( $categories as $cat ) : ?>
+											<option value="<?php echo esc_attr( $cat ); ?>" <?php selected( $category_filter, $cat ); ?>>
+												<?php echo esc_html( $cat ); ?>
+											</option>
+										<?php endforeach; ?>
+									</select>
+								</div>
+
+								<!-- Status Dropdown -->
+								<div class="flex items-center gap-2 border border-solid border-gray-300 rounded px-4 py-2 whitespace-nowrap">
+									<span class="hotel-video-library-text-muted"><?php esc_html_e( 'Status:', 'hotel-chain' ); ?></span>
+									<select id="hotel-status-filter" class="border-none outline-none bg-transparent cursor-pointer hotel-video-library-text-primary">
+										<option value=""><?php esc_html_e( 'All', 'hotel-chain' ); ?></option>
+										<option value="active" <?php selected( $status_filter, 'active' ); ?>><?php esc_html_e( 'Active', 'hotel-chain' ); ?></option>
+										<option value="inactive" <?php selected( $status_filter, 'inactive' ); ?>><?php esc_html_e( 'Inactive', 'hotel-chain' ); ?></option>
+									</select>
+								</div>
+
+								<!-- View Toggle -->
+								<div class="flex gap-2 ml-auto">
+									<button 
+										type="button" 
+										class="p-3 border border-solid border-gray-300 rounded hotel-view-btn <?php echo 'grid' === $view_mode ? 'active hotel-video-library-bg-cream' : ''; ?>" 
+										data-view="grid"
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grid3x3 lucide-grid-3x3 w-5 h-5 hotel-video-library-icon-primary" aria-hidden="true">
+											<rect width="18" height="18" x="3" y="3" rx="2"></rect>
+											<path d="M3 9h18"></path>
+											<path d="M3 15h18"></path>
+											<path d="M9 3v18"></path>
+											<path d="M15 3v18"></path>
+										</svg>
+									</button>
+									<button 
+										type="button" 
+										class="p-3 border rounded hotel-view-btn <?php echo 'list' === $view_mode ? 'active hotel-video-library-bg-cream hotel-video-library-border-light' : 'border-gray-300'; ?>" 
+										data-view="list"
+									>
+										<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-list w-5 h-5 hotel-video-library-text-muted" aria-hidden="true">
+											<path d="M3 5h.01"></path>
+											<path d="M3 12h.01"></path>
+											<path d="M3 19h.01"></path>
+											<path d="M8 5h13"></path>
+											<path d="M8 12h13"></path>
+											<path d="M8 19h13"></path>
+										</svg>
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
 
 					<!-- Stats Cards -->
 					<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 						<div class="bg-white rounded p-4 border border-solid border-gray-300">
 							<div class="flex items-center gap-3 mb-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-6 h-6 hotel-video-library-icon-muted" aria-hidden="true">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 lucide-flower-2 w-6 h-6" aria-hidden="true">
 									<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
 									<circle cx="12" cy="8" r="2"></circle>
 									<path d="M12 10v12"></path>
 									<path d="M12 22c4.2 0 7-1.667 7-5-4.2 0-7 1.667-7 5Z"></path>
 									<path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z"></path>
 								</svg>
-								<div class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Total Videos', 'hotel-chain' ); ?></div>
+								<p class="text-black"><?php esc_html_e( 'Total Videos', 'hotel-chain' ); ?></p>
 							</div>
-							<div class="hotel-video-library-heading-primary text-3xl"><?php echo esc_html( $total_videos ); ?></div>
+							<h2><?php echo esc_html( $total_videos ); ?></h2>
 						</div>
 						<div class="bg-white rounded p-4 border border-solid border-gray-300">
 							<div class="flex items-center gap-3 mb-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-6 h-6 hotel-video-library-icon-muted" aria-hidden="true">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-check w-6 h-6" aria-hidden="true">
 									<circle cx="12" cy="12" r="10"></circle>
 									<path d="m9 12 2 2 4-4"></path>
 								</svg>
-								<div class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></div>
+								<p class="text-black"><?php esc_html_e( 'Active', 'hotel-chain' ); ?></p>
 							</div>
-							<div class="hotel-video-library-heading-primary text-3xl"><?php echo esc_html( $active_videos ); ?></div>
+							<h2><?php echo esc_html( $active_videos ); ?></h2>
 						</div>
 						<div class="bg-white rounded p-4 border border-solid border-gray-300">
 							<div class="flex items-center gap-3 mb-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sunrise w-6 h-6 hotel-video-library-icon-muted" aria-hidden="true">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sunrise w-6 h-6" aria-hidden="true">
 									<path d="M12 2v8"></path>
 									<path d="m4.93 10.93 1.41 1.41"></path>
 									<path d="M2 18h2"></path>
@@ -378,21 +388,21 @@ class HotelVideoLibraryPage {
 									<path d="m8 6 4-4 4 4"></path>
 									<path d="M16 18a4 4 0 0 0-8 0"></path>
 								</svg>
-								<div class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Total Duration', 'hotel-chain' ); ?></div>
+								<p class="text-black"><?php esc_html_e( 'Total Duration', 'hotel-chain' ); ?></p>
 							</div>
-							<div class="hotel-video-library-heading-primary text-3xl"><?php echo esc_html( $total_duration_hours ); ?> <?php esc_html_e( 'hrs', 'hotel-chain' ); ?></div>
+							<h2><?php echo esc_html( $total_duration_hours ); ?> <?php esc_html_e( 'hrs', 'hotel-chain' ); ?></h2>
 						</div>
 						<div class="bg-white rounded p-4 border border-solid border-gray-300">
 							<div class="flex items-center gap-3 mb-2">
-								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles w-6 h-6 hotel-video-library-icon-muted" aria-hidden="true">
+								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles w-6 h-6" aria-hidden="true">
 									<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path>
 									<path d="M20 2v4"></path>
 									<path d="M22 4h-4"></path>
 									<circle cx="4" cy="20" r="2"></circle>
 								</svg>
-								<div class="hotel-video-library-text-muted text-sm"><?php esc_html_e( 'Avg. Completion', 'hotel-chain' ); ?></div>
+								<p class="text-black"><?php esc_html_e( 'Avg. Completion', 'hotel-chain' ); ?></p>
 							</div>
-							<div class="hotel-video-library-heading-primary text-3xl"><?php echo esc_html( $avg_completion ); ?>%</div>
+							<h2><?php echo esc_html( $avg_completion ); ?>%</h2>
 						</div>
 					</div>
 
@@ -485,7 +495,7 @@ class HotelVideoLibraryPage {
 									<div class="bg-white border border-solid border-gray-300 rounded overflow-hidden cursor-pointer transition-all hover:shadow-lg hotel-video-card" 
 										data-video-id="<?php echo esc_attr( $video->video_id ); ?>"
 										data-video-data="<?php echo esc_attr( wp_json_encode( $video_json_data ) ); ?>">
-										<div class="border-b border-solid border-gray-300 h-32 flex items-center justify-center relative hotel-video-library-bg-cream">
+										<div class="border-b border-solid border-gray-300 h-42 flex items-center justify-center relative hotel-video-library-bg-cream">
 											<?php
 											$thumbnail_url = '';
 											if ( $video->thumbnail_id ) {

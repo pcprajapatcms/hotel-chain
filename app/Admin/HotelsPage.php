@@ -216,6 +216,9 @@ class HotelsPage implements ServiceProviderInterface {
 		$code = $data['code'];
 		if ( empty( $code ) ) {
 			$code = $this->generate_code( $data['name'] );
+		} else {
+			// Sanitize manually entered code to remove special characters.
+			$code = $this->sanitize_hotel_code( $code );
 		}
 
 		$hotel_slug = sanitize_title( $data['name'] );
@@ -340,6 +343,69 @@ class HotelsPage implements ServiceProviderInterface {
 	}
 
 	/**
+	 * Sanitize hotel code to only allow alphanumeric characters and single dash before year.
+	 * Format: {INITIALS}-{YEAR} or {INITIALS}-{YEAR}-{SUFFIX}
+	 *
+	 * @param string $code Hotel code to sanitize.
+	 * @return string Sanitized hotel code.
+	 */
+	private function sanitize_hotel_code( string $code ): string {
+		// Remove all special characters except alphanumeric and dashes.
+		$code = preg_replace( '/[^A-Za-z0-9\-]/', '', $code );
+		
+		// Remove multiple consecutive dashes.
+		$code = preg_replace( '/-+/', '-', $code );
+		
+		// Remove leading/trailing dashes.
+		$code = trim( $code, '-' );
+		
+		// Try to extract and validate format: {INITIALS}-{YEAR} or {INITIALS}-{YEAR}-{SUFFIX}
+		$parts = explode( '-', $code );
+		
+		if ( count( $parts ) >= 2 ) {
+			$initials = preg_replace( '/[^A-Za-z0-9]/', '', $parts[0] );
+			$year     = preg_replace( '/[^0-9]/', '', $parts[1] );
+			
+			// Ensure initials are uppercase and at least 2 characters.
+			$initials = strtoupper( $initials );
+			if ( strlen( $initials ) < 2 ) {
+				$initials = 'HTL';
+			}
+			if ( strlen( $initials ) > 10 ) {
+				$initials = substr( $initials, 0, 10 );
+			}
+			
+			// Validate year (should be 4 digits).
+			if ( strlen( $year ) === 4 && is_numeric( $year ) ) {
+				$sanitized = $initials . '-' . $year;
+				
+				// Add suffix if present (for duplicates).
+				if ( count( $parts ) > 2 ) {
+					$suffix = preg_replace( '/[^0-9]/', '', $parts[2] );
+					if ( ! empty( $suffix ) ) {
+						$sanitized .= '-' . $suffix;
+					}
+				}
+				
+				return $sanitized;
+			}
+		}
+		
+		// If format is invalid, generate a new code from initials.
+		$initials = preg_replace( '/[^A-Za-z0-9]/', '', $code );
+		$initials = strtoupper( $initials );
+		if ( strlen( $initials ) < 2 ) {
+			$initials = 'HTL';
+		}
+		if ( strlen( $initials ) > 10 ) {
+			$initials = substr( $initials, 0, 10 );
+		}
+		
+		$year = gmdate( 'Y' );
+		return $initials . '-' . $year;
+	}
+
+	/**
 	 * Extract initials from hotel name.
 	 *
 	 * @param string $hotel_name Hotel name.
@@ -357,9 +423,10 @@ class HotelsPage implements ServiceProviderInterface {
 				continue;
 			}
 
-			// Get first letter of each significant word.
+			// Get first letter of each significant word - only alphanumeric.
 			$first_char = mb_substr( trim( $word ), 0, 1 );
-			if ( ! empty( $first_char ) ) {
+			// Only add if it's alphanumeric.
+			if ( ! empty( $first_char ) && preg_match( '/[A-Za-z0-9]/', $first_char ) ) {
 				$initials .= strtoupper( $first_char );
 			}
 		}
@@ -689,8 +756,20 @@ class HotelsPage implements ServiceProviderInterface {
 								<span class="hotel-field-error text-red-600 text-sm mt-1 hidden"></span>
 							</label>
 							<label class="block">
-								<span class="block mb-1.5 font-semibold text-sm"><?php esc_html_e( 'Default Guest Access Duration', 'hotel-chain' ); ?></span>
-								<input type="text" name="access_duration" id="access_duration" value="<?php echo isset( $preserved_data['duration'] ) ? esc_attr( $preserved_data['duration'] ) : ''; ?>" placeholder="<?php esc_attr_e( '30 days', 'hotel-chain' ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
+								<span class="block mb-1.5 font-semibold text-sm"><?php esc_html_e( 'Guest Access Duration (days)', 'hotel-chain' ); ?></span>
+								<?php
+								$system_default_duration = \HotelChain\Support\AccountSettings::get_default_guest_duration();
+								$placeholder_value = isset( $preserved_data['duration'] ) && ! empty( $preserved_data['duration'] ) ? esc_attr( $preserved_data['duration'] ) : '0';
+								/* translators: %d: System default duration in days */
+								$placeholder_text = sprintf( __( '0 (uses system default: %d days)', 'hotel-chain' ), $system_default_duration );
+								?>
+								<input type="number" name="access_duration" id="access_duration" value="<?php echo esc_attr( $placeholder_value ); ?>" min="0" placeholder="<?php echo esc_attr( $placeholder_text ); ?>" class="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-500" />
+								<p class="text-xs text-gray-600 mt-1">
+									<?php
+									/* translators: %d: System default duration */
+									printf( esc_html__( 'Set to 0 to use system default (%d days). Set a specific number to override for this hotel.', 'hotel-chain' ), $system_default_duration );
+									?>
+								</p>
 								<span class="hotel-field-error text-red-600 text-sm mt-1 hidden"></span>
 							</label>
 						</div>

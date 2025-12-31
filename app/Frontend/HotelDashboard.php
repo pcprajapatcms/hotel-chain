@@ -13,6 +13,7 @@ use HotelChain\Repositories\HotelVideoAssignmentRepository;
 use HotelChain\Repositories\GuestRepository;
 use HotelChain\Repositories\VideoRepository;
 use HotelChain\Database\Schema;
+use HotelChain\Support\AccountSettings;
 
 /**
  * Hotel Dashboard menu and routing.
@@ -71,7 +72,13 @@ class HotelDashboard implements ServiceProviderInterface {
 		$result = $assignment_repo->request( $hotel->id, $video_id, $current_user->ID );
 
 		if ( $result ) {
-			wp_send_json_success( array( 'message' => __( 'Request sent successfully.', 'hotel-chain' ) ) );
+			// Auto-approve if setting is enabled.
+			if ( AccountSettings::is_auto_approve_requests() ) {
+				$assignment_repo->approve( $result, get_current_user_id() );
+				wp_send_json_success( array( 'message' => __( 'Video access granted automatically.', 'hotel-chain' ) ) );
+			} else {
+				wp_send_json_success( array( 'message' => __( 'Request sent successfully.', 'hotel-chain' ) ) );
+			}
 		} else {
 			wp_send_json_error( array( 'message' => __( 'Failed to send request.', 'hotel-chain' ) ) );
 		}
@@ -170,16 +177,19 @@ class HotelDashboard implements ServiceProviderInterface {
 			2
 		);
 
-		// Video Library as separate top-level menu.
+		// Guest Management menu.
 		add_menu_page(
-			__( 'Video Library', 'hotel-chain' ),
-			__( 'Video Library', 'hotel-chain' ),
+			__( 'Guest Management', 'hotel-chain' ),
+			__( 'Guest Management', 'hotel-chain' ),
 			'read',
-			'hotel-video-library',
-			array( $this, 'render_video_library' ),
-			'dashicons-video-alt3',
-			3
+			'hotel-guest-management',
+			array( $this, 'render_guest_management' ),
+			'dashicons-groups',
+			4
 		);
+
+		// Note: Video Library menu is registered by VideoLibraryPage to avoid conflicts.
+		// It delegates to HotelVideoLibraryPage for hotel users.
 	}
 
 	/**
@@ -199,6 +209,10 @@ class HotelDashboard implements ServiceProviderInterface {
 		if ( ! $hotel ) {
 			wp_die( esc_html__( 'Hotel account not found.', 'hotel-chain' ) );
 		}
+
+		// Get logo URL from hotel logo_id.
+		$logo_id  = isset( $hotel->logo_id ) ? absint( $hotel->logo_id ) : 0;
+		$logo_url = $logo_id ? wp_get_attachment_url( $logo_id ) : '';
 
 		// Get repositories.
 		$guest_repo      = new GuestRepository();
@@ -375,27 +389,36 @@ class HotelDashboard implements ServiceProviderInterface {
 		$recent_activities = array_slice( $recent_activities, 0, 3 );
 
 		?>
-		<div class="flex-1 overflow-auto p-4 lg:p-8" style="background-color: rgb(240, 231, 215);">
-			<div class="max-w-7xl mx-auto">
-				<div class="space-y-6">
-					<div class="mb-6 pb-4" style="border-bottom: 2px solid rgb(196, 196, 196);">
-						<h1 class="mb-1" style="color: rgb(60, 56, 55); font-family: var(--font-serif);">HOTEL – Dashboard</h1>
-						<p style="color: rgb(122, 122, 122); font-family: var(--font-sans);">Overview metrics and quick links for hotel administrators</p>
+		<div class="flex-1 overflow-auto p-4 lg:p-8 lg:px-0">
+			<div class="w-12/12 md:w-10/12 mx-auto p-0">
+				<div class="flex items-center gap-4 mb-6 pb-3 border-b border-solid border-gray-400">
+					<?php if ( ! empty( $logo_url ) ) : ?>
+						<div class="flex-shrink-0">
+							<img src="<?php echo esc_url( $logo_url ); ?>" alt="<?php esc_attr_e( 'Logo', 'hotel-chain' ); ?>" class="h-12 md:h-16 w-auto object-contain" />
+						</div>
+					<?php endif; ?>
+					<div class="flex-1">
+						<h1><?php esc_html_e( 'HOTEL – Dashboard', 'hotel-chain' ); ?></h1>
+						<p class="text-slate-600"><?php esc_html_e( 'Overview metrics and quick links for hotel administrators', 'hotel-chain' ); ?></p>
 					</div>
+				</div>
 
+
+
+				<div class="space-y-6">
 					<!-- Statistics Cards -->
 					<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-						<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+						<div class="bg-white rounded p-4 border border-solid border-gray-400">
 							<div class="flex items-center gap-3 mb-2">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart w-8 h-8" aria-hidden="true" style="color: rgb(196, 196, 196);">
 									<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"></path>
 								</svg>
-								<div style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;">Total Guests</div>
+								<p>Total Guests</p>
 							</div>
-							<div style="color: rgb(60, 56, 55); font-family: var(--font-serif); font-size: 2rem;"><?php echo esc_html( number_format_i18n( $total_guests ) ); ?></div>
+							<h2><?php echo esc_html( number_format_i18n( $total_guests ) ); ?></h2>
 						</div>
 
-						<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+						<div class="bg-white rounded p-4 border border-solid border-gray-400">
 							<div class="flex items-center gap-3 mb-2">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles w-8 h-8" aria-hidden="true" style="color: rgb(196, 196, 196);">
 									<path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"></path>
@@ -403,12 +426,12 @@ class HotelDashboard implements ServiceProviderInterface {
 									<path d="M22 4h-4"></path>
 									<circle cx="4" cy="20" r="2"></circle>
 								</svg>
-								<div style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;">Active Guests</div>
+								<p>Active Guests</p>
 							</div>
-							<div style="color: rgb(60, 56, 55); font-family: var(--font-serif); font-size: 2rem;"><?php echo esc_html( number_format_i18n( $active_guests ) ); ?></div>
+							<h2><?php echo esc_html( number_format_i18n( $active_guests ) ); ?></h2>
 						</div>
 
-						<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+						<div class="bg-white rounded p-4 border border-solid border-gray-400">
 							<div class="flex items-center gap-3 mb-2">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-hand-heart w-8 h-8" aria-hidden="true" style="color: rgb(196, 196, 196);">
 									<path d="M11 14h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16"></path>
@@ -416,12 +439,12 @@ class HotelDashboard implements ServiceProviderInterface {
 									<path d="m2 15 6 6"></path>
 									<path d="m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a1 1 0 0 0-2.75-2.91"></path>
 								</svg>
-								<div style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;">Expired Guests</div>
+								<p>Expired Guests</p>
 							</div>
-							<div style="color: rgb(60, 56, 55); font-family: var(--font-serif); font-size: 2rem;"><?php echo esc_html( number_format_i18n( $expired_guests ) ); ?></div>
+							<h2><?php echo esc_html( number_format_i18n( $expired_guests ) ); ?></h2>
 						</div>
 
-						<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+						<div class="bg-white rounded p-4 border border-solid border-gray-400">
 							<div class="flex items-center gap-3 mb-2">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sunrise w-8 h-8" aria-hidden="true" style="color: rgb(196, 196, 196);">
 									<path d="M12 2v8"></path>
@@ -433,12 +456,12 @@ class HotelDashboard implements ServiceProviderInterface {
 									<path d="m8 6 4-4 4 4"></path>
 									<path d="M16 18a4 4 0 0 0-8 0"></path>
 								</svg>
-								<div style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;">Total Practice Time</div>
+								<p>Total Practice Time</p>
 							</div>
-							<div style="color: rgb(60, 56, 55); font-family: var(--font-serif); font-size: 2rem;"><?php echo esc_html( number_format_i18n( $total_practice_hours ) ); ?> hrs</div>
+							<h2><?php echo esc_html( number_format_i18n( $total_practice_hours ) ); ?> hrs</h2>
 						</div>
 
-						<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
+						<div class="bg-white rounded p-4 border border-solid border-gray-400">
 							<div class="flex items-center gap-3 mb-2">
 								<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 w-8 h-8" aria-hidden="true" style="color: rgb(196, 196, 196);">
 									<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
@@ -447,18 +470,18 @@ class HotelDashboard implements ServiceProviderInterface {
 									<path d="M12 22c4.2 0 7-1.667 7-5-4.2 0-7 1.667-7 5Z"></path>
 									<path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z"></path>
 								</svg>
-								<div style="color: rgb(122, 122, 122); font-family: var(--font-sans); font-size: 0.875rem;">Meditations Available</div>
+								<p>Meditations Available</p>
 							</div>
-							<div style="color: rgb(60, 56, 55); font-family: var(--font-serif); font-size: 2rem;"><?php echo esc_html( number_format_i18n( $meditations_available ) ); ?></div>
+							<h2><?php echo esc_html( number_format_i18n( $meditations_available ) ); ?></h2>
 						</div>
 					</div>
 
 					<!-- Quick Links -->
-					<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
-						<h3 class="mb-4 pb-3 border-b-2" style="border-color: rgb(196, 196, 196); font-family: var(--font-serif); color: rgb(60, 56, 55); font-size: 1.25rem; letter-spacing: 0.02em;">QUICK LINKS</h3>
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
+						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400">QUICK LINKS</h3>
 						<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-video-library' ) ); ?>" class="border-2 rounded p-6 text-center cursor-pointer transition-all hover:shadow-md no-underline" style="border-color: rgb(196, 196, 196);">
-								<div class="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center" style="background-color: rgb(240, 231, 215);">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-video-library' ) ); ?>" class="border border-solid border-gray-400 rounded p-6 text-center hover:bg-gray-50 cursor-pointer no-underline">
+								<div class="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center bg-primary">
 									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 w-8 h-8" aria-hidden="true" style="color: rgb(60, 56, 55);">
 										<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
 										<circle cx="12" cy="8" r="2"></circle>
@@ -467,17 +490,17 @@ class HotelDashboard implements ServiceProviderInterface {
 										<path d="M12 22c-4.2 0-7-1.667-7-5 4.2 0 7 1.667 7 5Z"></path>
 									</svg>
 								</div>
-								<div style="font-family: var(--font-sans); color: rgb(60, 56, 55); font-weight: 600; margin-bottom: 0.5rem;">Meditation Library</div>
-								<div style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;">
+								<p class="mb-2 text-black">Meditation Library</p>
+								<p class="text-gray-600">
 								<?php
 								/* translators: %d: Number of meditations */
 								echo esc_html( sprintf( _n( '%d meditation', '%d meditations', $meditations_available, 'hotel-chain' ), $meditations_available ) );
 								?>
-								</div>
+								</p>
 							</a>
 
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-profile' ) ); ?>" class="border-2 rounded p-6 text-center cursor-pointer transition-all hover:shadow-md no-underline" style="border-color: rgb(196, 196, 196);">
-								<div class="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center" style="background-color: rgb(240, 231, 215);">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-profile' ) ); ?>" class="border border-solid border-gray-400 rounded p-6 text-center hover:bg-gray-50 cursor-pointer no-underline">
+								<div class="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center bg-primary">
 									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column w-8 h-8" aria-hidden="true" style="color: rgb(60, 56, 55);">
 										<path d="M3 3v16a2 2 0 0 0 2 2h16"></path>
 										<path d="M18 17V9"></path>
@@ -485,32 +508,32 @@ class HotelDashboard implements ServiceProviderInterface {
 										<path d="M8 17v-3"></path>
 									</svg>
 								</div>
-								<div style="font-family: var(--font-sans); color: rgb(60, 56, 55); font-weight: 600; margin-bottom: 0.5rem;">Analytics</div>
-								<div style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;">View reports</div>
+								<p class="mb-2 text-black">Analytics</p>
+								<p class="text-gray-600">View reports</p>
 							</a>
 
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-profile' ) ); ?>" class="border-2 rounded p-6 text-center cursor-pointer transition-all hover:shadow-md no-underline" style="border-color: rgb(196, 196, 196);">
-								<div class="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center" style="background-color: rgb(240, 231, 215);">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-profile' ) ); ?>" class="border border-solid border-gray-400 rounded p-6 text-center hover:bg-gray-50 cursor-pointer no-underline">
+								<div class="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center bg-primary">
 									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings w-8 h-8" aria-hidden="true" style="color: rgb(60, 56, 55);">
 										<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"></path>
 										<circle cx="12" cy="12" r="3"></circle>
 									</svg>
 								</div>
-								<div style="font-family: var(--font-sans); color: rgb(60, 56, 55); font-weight: 600; margin-bottom: 0.5rem;">Hotel Profile</div>
-								<div style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;">Settings</div>
+								<p class="mb-2 text-black">Hotel Profile</p>
+								<p class="text-gray-600">Settings</p>
 							</a>
 						</div>
 					</div>
 
 					<!-- Top Meditations This Week -->
-					<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
-						<h3 class="mb-4 pb-3 border-b-2" style="border-color: rgb(196, 196, 196); font-family: var(--font-serif); color: rgb(60, 56, 55); font-size: 1.25rem; letter-spacing: 0.02em;">TOP MEDITATIONS THIS WEEK</h3>
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
+						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400">TOP MEDITATIONS THIS WEEK</h3>
 						<div class="space-y-3">
 							<?php if ( ! empty( $top_meditations_data ) ) : ?>
 								<?php foreach ( $top_meditations_data as $meditation ) : ?>
-									<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-2 rounded p-4" style="border-color: rgb(196, 196, 196);">
+									<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-solid border-gray-400 rounded p-4">
 										<div class="flex items-center gap-4 flex-1">
-											<div class="w-16 h-16 rounded flex items-center justify-center flex-shrink-0" style="background-color: rgb(240, 231, 215);">
+											<div class="w-16 h-16 rounded flex items-center justify-center flex-shrink-0 bg-primary">
 												<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-flower2 w-8 h-8" aria-hidden="true" style="color: rgb(60, 56, 55);">
 													<path d="M12 5a3 3 0 1 1 3 3m-3-3a3 3 0 1 0-3 3m3-3v1M9 8a3 3 0 1 0 3 3M9 8h1m5 0a3 3 0 1 1-3 3m3-3h-1m-2 3v-1"></path>
 													<circle cx="12" cy="8" r="2"></circle>
@@ -520,17 +543,17 @@ class HotelDashboard implements ServiceProviderInterface {
 												</svg>
 											</div>
 											<div class="flex-1 min-w-0">
-												<div style="font-family: var(--font-sans); color: rgb(60, 56, 55); font-weight: 600;"><?php echo esc_html( $meditation['title'] ); ?></div>
-												<div style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;">
+													<p class="mb-2 text-black"><?php echo esc_html( $meditation['title'] ); ?></p>
+												<p class="text-gray-600">
 												<?php
 												/* translators: %d: Number of practices */
 												echo esc_html( sprintf( _n( '%d practice', '%d practices', $meditation['practices'], 'hotel-chain' ), $meditation['practices'] ) );
 												?>
-												</div>
+												</p>
 											</div>
 										</div>
 										<div class="text-left sm:text-right">
-											<div style="font-family: var(--font-sans); color: rgb(60, 56, 55); font-weight: 600;"><?php echo esc_html( $meditation['completion'] ); ?>% completion</div>
+											<p class="mb-2 text-black"><?php echo esc_html( $meditation['completion'] ); ?>% completion</p>
 										</div>
 									</div>
 								<?php endforeach; ?>
@@ -543,12 +566,12 @@ class HotelDashboard implements ServiceProviderInterface {
 					</div>
 
 					<!-- Recent Activity -->
-					<div class="bg-white rounded p-4" style="border: 2px solid rgb(196, 196, 196);">
-						<h3 class="mb-4 pb-3 border-b-2" style="border-color: rgb(196, 196, 196); font-family: var(--font-serif); color: rgb(60, 56, 55); font-size: 1.25rem; letter-spacing: 0.02em;">RECENT ACTIVITY</h3>
+					<div class="bg-white rounded p-4 border border-solid border-gray-400">
+						<h3 class="mb-4 pb-3 border-b border-solid border-gray-400">RECENT ACTIVITY</h3>
 						<div class="space-y-3">
 							<?php if ( ! empty( $recent_activities ) ) : ?>
 								<?php foreach ( $recent_activities as $activity ) : ?>
-									<div class="p-4 rounded-l border-l-4 flex items-start gap-3" style="background-color: rgb(240, 231, 215); border-left-color: rgb(60, 56, 55);">
+									<div class="p-4 rounded-l border-l-4 flex items-start gap-3 bg-primary">
 										<?php if ( 'registration' === $activity['type'] ) : ?>
 											<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart w-5 h-5 flex-shrink-0" aria-hidden="true" style="color: rgb(60, 56, 55); margin-top: 2px;">
 												<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5"></path>
@@ -573,8 +596,8 @@ class HotelDashboard implements ServiceProviderInterface {
 											</svg>
 										<?php endif; ?>
 										<div class="flex-1">
-											<div style="font-family: var(--font-sans); color: rgb(60, 56, 55);"><?php echo esc_html( $activity['message'] ); ?></div>
-											<div style="font-family: var(--font-sans); color: rgb(122, 122, 122); font-size: 0.875rem;"><?php echo esc_html( $activity['time'] ); ?></div>
+											<p class="mb-2 text-black"><?php echo esc_html( $activity['message'] ); ?></p>
+											<p class="text-gray-600"><?php echo esc_html( $activity['time'] ); ?></p>
 										</div>
 									</div>
 								<?php endforeach; ?>
@@ -588,13 +611,6 @@ class HotelDashboard implements ServiceProviderInterface {
 				</div>
 			</div>
 		</div>
-		<style>
-			:root {
-				--font-serif: 'TAN Aegean', serif;
-				--font-script: 'TAN Aegean', serif;
-				--font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-			}
-		</style>
 		<?php
 	}
 
@@ -606,5 +622,15 @@ class HotelDashboard implements ServiceProviderInterface {
 	public function render_video_library(): void {
 		$library_page = new \HotelChain\Frontend\HotelVideoLibraryPage();
 		$library_page->render_page();
+	}
+
+	/**
+	 * Render guest management page.
+	 *
+	 * @return void
+	 */
+	public function render_guest_management(): void {
+		$management_page = new \HotelChain\Frontend\HotelGuestManagementPage();
+		$management_page->render_page();
 	}
 }

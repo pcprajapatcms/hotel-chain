@@ -175,21 +175,38 @@ class GuestRepository {
 		$sanitized_orderby = sanitize_sql_orderby( $args['orderby'] . ' ' . $args['order'] );
 		$orderby           = $sanitized_orderby ? $sanitized_orderby : 'created_at DESC';
 
+		// Handle -1 limit as "no limit".
+		$limit_clause = '';
+		if ( $args['limit'] > 0 ) {
+			$limit_clause = sprintf( 'LIMIT %d OFFSET %d', absint( $args['limit'] ), absint( $args['offset'] ) );
+		}
+
 		if ( $args['status'] ) {
-			$sql = $wpdb->prepare(
-				"SELECT * FROM {$this->table} WHERE hotel_id = %d AND status = %s ORDER BY {$orderby} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$hotel_id,
-				$args['status'],
-				$args['limit'],
-				$args['offset']
-			);
+			if ( $limit_clause ) {
+				$sql = $wpdb->prepare(
+					"SELECT * FROM {$this->table} WHERE hotel_id = %d AND status = %s ORDER BY {$orderby} {$limit_clause}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$hotel_id,
+					$args['status']
+				);
+			} else {
+				$sql = $wpdb->prepare(
+					"SELECT * FROM {$this->table} WHERE hotel_id = %d AND status = %s ORDER BY {$orderby}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$hotel_id,
+					$args['status']
+				);
+			}
 		} else {
-			$sql = $wpdb->prepare(
-				"SELECT * FROM {$this->table} WHERE hotel_id = %d ORDER BY {$orderby} LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$hotel_id,
-				$args['limit'],
-				$args['offset']
-			);
+			if ( $limit_clause ) {
+				$sql = $wpdb->prepare(
+					"SELECT * FROM {$this->table} WHERE hotel_id = %d ORDER BY {$orderby} {$limit_clause}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$hotel_id
+				);
+			} else {
+				$sql = $wpdb->prepare(
+					"SELECT * FROM {$this->table} WHERE hotel_id = %d ORDER BY {$orderby}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$hotel_id
+				);
+			}
 		}
 
 		return $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
