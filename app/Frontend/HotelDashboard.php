@@ -499,7 +499,7 @@ class HotelDashboard implements ServiceProviderInterface {
 								</p>
 							</a>
 
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-profile' ) ); ?>" class="border border-solid border-gray-400 rounded p-6 text-center hover:bg-gray-50 cursor-pointer no-underline">
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=hotel-analytics' ) ); ?>" class="border border-solid border-gray-400 rounded p-6 text-center hover:bg-gray-50 cursor-pointer no-underline">
 								<div class="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center bg-primary">
 									<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column w-8 h-8" aria-hidden="true" style="color: rgb(60, 56, 55);">
 										<path d="M3 3v16a2 2 0 0 0 2 2h16"></path>

@@ -49,6 +49,7 @@ class MenuVisibility {
 				'users.php',
 				'tools.php',
 				'options-general.php',
+				'profile.php',
 			),
 		);
 	}
