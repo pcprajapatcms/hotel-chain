@@ -33,6 +33,7 @@ use HotelChain\Admin\SystemAnalyticsPage;
 use HotelChain\Admin\SystemSettingsPage;
 use HotelChain\Frontend\HotelDashboard;
 use HotelChain\Frontend\HotelProfilePage;
+use HotelChain\Frontend\HotelAnalyticsPage;
 use HotelChain\Frontend\GuestRegistration;
 
 /**
@@ -80,6 +81,7 @@ class Theme {
 			new SystemSettingsPage(),
 			new HotelDashboard(),
 			new HotelProfilePage(),
+			new HotelAnalyticsPage(),
 			new GuestRegistration(),
 			new \HotelChain\Frontend\HotelGuestManagementPage(),
 			new Assets( $assets ),
