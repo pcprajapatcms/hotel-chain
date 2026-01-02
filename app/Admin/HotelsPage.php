@@ -27,6 +27,7 @@ class HotelsPage implements ServiceProviderInterface {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_post_hotel_chain_create_hotel', array( $this, 'handle_create_hotel' ) );
 		add_action( 'admin_post_hotel_chain_export_hotels', array( $this, 'handle_export_hotels' ) );
+		add_action( 'admin_post_hotel_chain_download_qr', array( $this, 'handle_download_qr' ) );
 	}
 
 	/**
@@ -665,7 +666,15 @@ class HotelsPage implements ServiceProviderInterface {
 									<div class="flex flex-col items-center justify-start p-4 bg-white border border-solid border-gray-400 rounded">
 										<h4 class="mb-1 text-sm font-semibold text-gray-800 uppercase tracking-wide"><?php esc_html_e( 'QR Code', 'hotel-chain' ); ?></h4>
 										<p class="text-xs text-gray-600 mb-2 text-center"><?php esc_html_e( 'Scan to access registration', 'hotel-chain' ); ?></p>
-										<img src="<?php echo esc_attr( $qr_code_data_uri ); ?>" alt="<?php esc_attr_e( 'Registration QR Code', 'hotel-chain' ); ?>" class="border border-solid border-gray-300 rounded bg-white w-full h-auto" />
+										<img src="<?php echo esc_attr( $qr_code_data_uri ); ?>" alt="<?php esc_attr_e( 'Registration QR Code', 'hotel-chain' ); ?>" class="border border-solid border-gray-300 rounded bg-white w-full h-auto mb-4" />
+										<a href="<?php echo esc_url( admin_url( 'admin-post.php?action=hotel_chain_download_qr&url=' . rawurlencode( $reg_url ) . '&hotel=' . rawurlencode( $created_hotel->hotel_name ?? 'hotel' ) . '&_wpnonce=' . wp_create_nonce( 'download_qr_code' ) ) ); ?>" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-800 text-white hover:text-white font-medium rounded-md shadow-sm hover:shadow-md transition-all duration-200 text-sm">
+											<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+												<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+												<polyline points="7 10 12 15 17 10"></polyline>
+												<line x1="12" y1="15" x2="12" y2="3"></line>
+											</svg>
+											<?php esc_html_e( 'Download QR Code', 'hotel-chain' ); ?>
+										</a>
 									</div>
 								<?php endif; ?>
 							</div>
@@ -1144,6 +1153,62 @@ class HotelsPage implements ServiceProviderInterface {
 				error_log( 'QR Code generation error: ' . $e->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			}
 			return null;
+		}
+	}
+
+	/**
+	 * Handle QR code download.
+	 *
+	 * @return void
+	 */
+	public function handle_download_qr(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Unauthorized request.', 'hotel-chain' ) );
+		}
+
+		$url = isset( $_GET['url'] ) ? esc_url_raw( wp_unslash( $_GET['url'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$hotel_name = isset( $_GET['hotel'] ) ? sanitize_text_field( wp_unslash( $_GET['hotel'] ) ) : 'hotel'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		if ( empty( $url ) || ! wp_verify_nonce( $nonce, 'download_qr_code' ) ) {
+			wp_die( esc_html__( 'Invalid request.', 'hotel-chain' ) );
+		}
+
+		// Generate QR code as PNG.
+		try {
+			if ( ! class_exists( 'Endroid\QrCode\QrCode' ) ) {
+				wp_die( esc_html__( 'QR code library not available.', 'hotel-chain' ) );
+			}
+
+			if ( ! extension_loaded( 'gd' ) ) {
+				wp_die( esc_html__( 'GD extension not available.', 'hotel-chain' ) );
+			}
+
+			$qr_code = QrCode::create( $url )
+				->setSize( 500 )
+				->setMargin( 20 )
+				->setErrorCorrectionLevel( new ErrorCorrectionLevelHigh() );
+
+			$writer = new PngWriter();
+			$result = $writer->write( $qr_code );
+
+			// Get PNG data.
+			$png_data = $result->getString();
+
+			// Set headers for download.
+			nocache_headers();
+			header( 'Content-Type: image/png' );
+			$filename = 'qr-code-' . sanitize_file_name( $hotel_name ) . '-' . gmdate( 'Y-m-d' ) . '.png';
+			header( 'Content-Disposition: attachment; filename=' . $filename );
+			header( 'Content-Length: ' . strlen( $png_data ) );
+
+			// Output PNG data.
+			echo $png_data; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			exit;
+		} catch ( \Exception $e ) {
+			wp_die( esc_html__( 'Error generating QR code: ', 'hotel-chain' ) . esc_html( $e->getMessage() ) );
+		} catch ( \Throwable $e ) {
+			wp_die( esc_html__( 'Error generating QR code: ', 'hotel-chain' ) . esc_html( $e->getMessage() ) );
 		}
 	}
 }
